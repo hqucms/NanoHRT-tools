@@ -1,0 +1,6 @@
+.autotools
+.cproject
+.project
+.pydevproject
+.settings/
+
