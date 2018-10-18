@@ -55,7 +55,7 @@ def main(args):
     p = PostProcessor(outputDir='.',
                       inputFiles=[xrd(f) for f in md['jobs'][args.jobid]['inputfiles']],
                       cut=md.get('cut'),
-                      branchsel=md.get('branchsel'),
+                      branchsel=os.path.basename(md['branchsel_in']),
                       modules=modules,
                       compression=md.get('compression', 'LZMA:9'),
                       friend=md.get('friend', False),
@@ -63,7 +63,7 @@ def main(args):
                       jsonInput=md.get('json'),
                       provenance=md.get('provenance', False),
                       haddFileName=None,
-                      outputbranchsel=md.get('outputbranchsel'),
+                      outputbranchsel=os.path.basename(md['branchsel_out']),
                       )
     p.run()
 

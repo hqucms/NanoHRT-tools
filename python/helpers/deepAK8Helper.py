@@ -11,6 +11,7 @@ _decorr_qcd = ('nnMDQCDbb', 'nnMDQCDcc', 'nnMDQCDb', 'nnMDQCDc', 'nnMDQCDothers'
 _decorr_score_dict = {
     'TvsQCD': (('nnMDTbcq', 'nnMDTbqq'), _decorr_qcd),
     'WvsQCD': (('nnMDWcq', 'nnMDWqq'), _decorr_qcd),
+    'ZvsQCD': (('nnMDZbb', 'nnMDZcc', 'nnMDZqq'), _decorr_qcd),
     'ZHbbvsQCD': (('nnMDZbb', 'nnMDHbb'), _decorr_qcd),
     'bbvsLight': (('nnMDZbb', 'nnMDHbb', 'nnQCDbb'), ('nnQCDcc', 'nnQCDb', 'nnQCDc', 'nnQCDothers')),
     }
