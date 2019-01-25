@@ -1,0 +1,21 @@
+# this is a comment
+drop *
+# event info
+keep run
+keep luminosityBlock
+keep event
+keep PV_npvs
+# triggers
+keep HLT_Iso*Mu24
+keep HLT_Ele27_WPTight_Gsf
+keep HLT_Mu17*Mu8*
+keep HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL*
+keep HLT_Photon165*
+keep HLT_Photon175*
+keep HLT_CaloJet500_NoJetID
+keep HLT_PFMET*
+keep HLT_PFHT*
+# genweight
+keep genWeight
+# PDF/Scale weights
+keep *LHE*Weight

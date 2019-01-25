@@ -106,7 +106,7 @@ class PhotonSampleProducer(Module):
         event.ak8Subjets = Collection(event, "CustomAK8PuppiSubJet")  # do not sort after updating!!
         event.ca15Subjets = Collection(event, "CA15PuppiSubJet")  # do not sort after updating!!
         
-        if self.isMC or self._systOpt['jec']:
+        if self.isMC: 
             rho = event.fixedGridRhoFastjetAll
 
         ## construct AK8 p4 from (updated) subjets

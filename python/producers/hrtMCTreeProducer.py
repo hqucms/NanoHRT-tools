@@ -28,7 +28,7 @@ class HRTMCTreeProducer(Module):
     def __init__(self):
         self._maxDeltaRJetParton = 0.6
         self._deepAK8_nominal_scores = ('TvsQCD', 'WvsQCD', 'ZvsQCD', 'HbbvsQCD')
-        self._deepAK8_decorr_scores = ('TvsQCD', 'WvsQCD', 'ZHbbvsQCD', 'bbvsLight')
+        self._deepAK8_decorr_scores = ('TvsQCD', 'WvsQCD', 'ZvsQCD', 'ZHbbvsQCD', 'bbvsLight')
         self._BEST_scores = ('bestT', 'bestW', 'bestZ', 'bestH', 'bestQCD', 'bestB')
         self._n2helper = N2DDTHelper(os.path.expandvars('$CMSSW_BASE/src/PhysicsTools/NanoHRTTools/data/N2DDT/OutputAK82016v13.root'))
 
