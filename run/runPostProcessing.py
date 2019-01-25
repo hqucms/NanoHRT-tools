@@ -242,8 +242,14 @@ def submit(args, configs):
     scriptfile = os.path.join(os.path.dirname(__file__), 'run_postproc_condor.sh')
     macrofile = os.path.join(os.path.dirname(__file__), 'processor.py')
     metadatafile = os.path.join(args.jobdir, args.metadata)
-    configfiles = []
     joboutputdir = os.path.join(args.outputdir, 'pieces')
+
+    # create config file for the scripts
+    configfiles = []
+    if configs is not None:
+        for cfgname in configs:
+            cfgpath = os.path.join(args.jobdir, cfgname)
+            configfiles.append(cfgpath)
 
     if not args.resubmit:
         # create jobdir
@@ -269,12 +275,10 @@ def submit(args, configs):
 
         # create config file for the scripts
         if configs is not None:
-            for cfgname in configs:
-                cfgpath = os.path.join(args.jobdir, cfgname)
+            for cfgname, cfgpath in zip(configs, configfiles):
                 with open(cfgpath, 'w') as f:
                     json.dump(configs[cfgname], f, ensure_ascii=True, indent=2, sort_keys=True)
                 shutil.copy2(cfgpath, joboutputdir)
-                configfiles.append(cfgpath)
 
         # create metadata file
         md = create_metadata(args)
@@ -380,11 +384,11 @@ def run_add_weight(args):
         logging.debug('...' + cmd)
         p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         log = p.communicate()[0]
-        if p.returncode != 0:
-            raise RuntimeError('Hadd failed on %s!' % samp)
         log_lower = log.lower()
         if 'error' in log_lower or 'fail' in log_lower:
             logging.error(log)
+        if p.returncode != 0:
+            raise RuntimeError('Hadd failed on %s!' % samp)
 
         # add weight
         if args.weight_file:
