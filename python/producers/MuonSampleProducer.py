@@ -107,7 +107,7 @@ class MuonSampleProducer(Module):
         event.ca15Subjets = Collection(event, "CA15PuppiSubJet")  # do not sort after updating!!
 	event.genParticles = Collection(event, "Jet")       
 	if self.isMC:
-		event.genParticles = Collection(event, "GenParticles")       
+		event.genParticles = Collection(event, "GenPart")       
 	event.maxDR = -999.
 	event.isFullyMerged = 0 
 	event.isSemiMerged = 0
@@ -222,37 +222,44 @@ class MuonSampleProducer(Module):
 	if self.isMC:
 		event.genTops = []
 		index = -1
-		matchIndex = -1
+		matchIndex = []
 		for p in event.genParticles:
 			index += 1
 			if not (abs(p.pdgId) == 6):
 				continue
 			pLV = ROOT.TLorentzVector()
 			pLV.SetPtEtaPhiM(p.pt, p.eta, p.phi, p.mass)
-			if deltaR(event.ak8jets[0], p) < 0.6:
-				event.genTops.append(p)
-				matchIndex = index
+			#if deltaR(event.ak8jets[0], p) < 1.0:
+			event.genTops.append(p)
+			matchIndex.append(index)
+		#print "Found gen tops", len(event.genTops)
 
 		event.topDecayParts = []
 		if matchIndex > -1:
 
 			index = -1
+			event.genWs = []
+			genWindx = []
 			for p in event.genParticles:
 				index += 1
-				if not (matchIndex  == p.genPartIdxMother):
-					continue
+				#if not (p.genPartIdxMother in matchIndex):
+				#	continue
 				pLV = ROOT.TLorentzVector()
 				pLV.SetPtEtaPhiM(p.pt, p.eta, p.phi, p.mass)
-				if abs(p.pdgId) == 5:
+				if abs(p.pdgId) == 5 and (p.genPartIdxMother in matchIndex):
 					event.topDecayParts.append(p)
-				if abs(p.pdgId) == 24:
-					for q in event.genParticles:
-						if (q.genPartIdxMother == index):
-							qLV = ROOT.TLorentzVector()
-        		        			qLV.SetPtEtaPhiM(q.pt, q.eta, q.phi, q.mass)
-							event.topDecayParts.append(q)
+				if abs(p.pdgId) == 24 and (abs(event.genParticles[p.genPartIdxMother].pdgId) == 24):
+					event.genWs.append(p)
+					genWindx.append(index)
+		#print "Found gen Ws", len(event.genWs)		
+		#print event.genWs
+		for q in event.genParticles:
+			if (q.genPartIdxMother in genWindx):
+				qLV = ROOT.TLorentzVector()
+        			qLV.SetPtEtaPhiM(q.pt, q.eta, q.phi, q.mass)
+				event.topDecayParts.append(q)
 	
-	
+		#print "Top decay parts", len(event.topDecayParts)
 		event.maxDR = -999.
 		nMerged = 0
 		for d in event.topDecayParts:
@@ -262,15 +269,15 @@ class MuonSampleProducer(Module):
 			if thisDR > event.maxDR:
 				event.maxDR = thisDR
 	
-		print nMerged
+		#print nMerged
 		if nMerged >= 3:
-			print "full"
+			#print "full"
 			event.isFullyMerged = 1
 		elif nMerged == 2:
-			print "semi"
+			#print "semi"
 			event.isSemiMerged = 1
 		elif nMerged <= 1:
-			print "un"
+			#print "un"
 			event.isUnMerged = 1
 				
 		
