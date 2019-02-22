@@ -90,6 +90,8 @@ class MuonSampleProducer(Module):
 	self.out.branch("ak8_1_isSemiMerged", "I")
 	self.out.branch("ak8_1_isUnMerged", "I")
 	
+	self.out.branch("muon_pTrel", "F")
+	self.out.branch("muon_drMuJet", "F")
 
         self.out.branch("ca15_1_pt"           , "F")
         self.out.branch("ca15_1_eta"          , "F")
@@ -112,6 +114,8 @@ class MuonSampleProducer(Module):
 	event.isFullyMerged = 0 
 	event.isSemiMerged = 0
 	event.isUnMerged = 0
+	event.muonpTrel = -999.9
+	event.drMuJet = -999.9
  
         if self.isMC:
             rho = event.fixedGridRhoFastjetAll
@@ -157,13 +161,25 @@ class MuonSampleProducer(Module):
 	event._allMuons = Collection(event, "Muon")	
 	event.muons = []
 	for muon in event._allMuons:
-	   if muon.pt > 45.0 and\
-	      abs(muon.eta) < 2.4 and\
+	   if abs(muon.eta) < 2.4 and\
 	      abs(muon.dxy) < 0.2 and\
-	      abs(muon.dz) < 0.5 and\
-	      muon.pfRelIso03_all < 0.15:
-		  event.muons.append(muon)
-	
+	      abs(muon.dz) < 0.5:# and\
+	      #muon.pfRelIso03_all < 0.15:
+		  drMuJet = deltaR(muon, event._allJets[muon.jetIdx]) if muon.jetIdx >= 0 else -999
+		  ptRel = muon.pt
+		  if drMuJet > -999:
+			jetforPtRel = event._allJets[muon.jetIdx]
+		  	jetLV = ROOT.TLorentzVector()
+		  	jetLV.SetPtEtaPhiM(jetforPtRel.pt, jetforPtRel.eta, jetforPtRel.phi, jetforPtRel.mass) 
+		  	thismuonLV = ROOT.TLorentzVector()
+		  	thismuonLV.SetPtEtaPhiM(muon.pt, muon.eta, muon.phi, muon.mass)
+		  	ptRel = muon.pt * math.cos(thismuonLV.Angle(jetLV.Vect()))
+		  if ptRel > 55.0 or drMuJet > 0.4:
+		  	event.muons.append(muon)
+			event.muonpTrel = ptRel
+			event.drMuJet = drMuJet
+
+
 	if (len(event.muons) != 1):
 		return False
 	
@@ -182,6 +198,8 @@ class MuonSampleProducer(Module):
 
         if (len(event.ak4jets) < 1):
 		return False 
+
+
 
 	
 
@@ -304,12 +322,12 @@ class MuonSampleProducer(Module):
         passMuTrig_ = False
 
         try:
-            if event.HLT_IsoMu24:
+            if event.HLT_Mu50:
                 passMuTrig_ = True
         except:
             passMuTrig_ = False
         try:
-            if event.HLT_IsoTkMu24:
+            if event.HLT_TkMu50:
                 passMuTrig_ = True
         except:
             passMuTrig_ = False
@@ -354,7 +372,8 @@ class MuonSampleProducer(Module):
 	self.out.fillBranch("ak8_1_isFullyMerged", event.isFullyMerged)
 	self.out.fillBranch("ak8_1_isSemiMerged", event.isSemiMerged)
 	self.out.fillBranch("ak8_1_isUnMerged", event.isUnMerged)
-
+	self.out.fillBranch("muon_pTrel", event.muonpTrel)
+	self.out.fillBranch("muon_drMuJet", event.drMuJet)
 
         self.out.fillBranch("ca15_1_pt"           , event.ca15jets[0].pt)
         self.out.fillBranch("ca15_1_eta"          , event.ca15jets[0].eta)
