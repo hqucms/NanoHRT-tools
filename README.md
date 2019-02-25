@@ -14,6 +14,12 @@ cmsenv
 git clone https://github.com/cms-nanoAOD/nanoAOD-tools.git PhysicsTools/NanoAODTools
 ```
 
+Enable `LZ4` compression algo by adding the following line after L47 of `$CMSSW_BASE/src/PhysicsTools/NanoAODTools/python/postprocessing/framework/postprocessor.py`:
+
+```python
+elif algo == "LZ4":  compressionAlgo  = ROOT.ROOT.kLZ4
+```
+
 ### Get customized NanoAOD tools for HeavyResTagging (NanoHRT-tools)
 
 ```bash
@@ -40,5 +46,7 @@ python runPostProcessing.py /path/of/input /path/to/output --friend -I PhysicsTo
 ```
 
  - To resubmit failed jobs, run the same command but add `--resubmit`.
+
+ - To add cross section weights and merge output trees according to the config file, run the same command but add `--post`.
 
 More options of `runPostProcessing.py` can be found with `python runPostProcessing.py -h`.

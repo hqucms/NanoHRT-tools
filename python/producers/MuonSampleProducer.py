@@ -33,7 +33,6 @@ class genParticle:
         self.idx   = idx_
         self.pdgid = pdgid_
 
-
     
 def get_subjets(jet, subjetCollection, idxNames=('subJetIdx1', 'subJetIdx2')):
     subjets = []
@@ -52,7 +51,6 @@ def isQuark(gp):
         return True
     else:
         return False
-
 
 class MuonSampleProducer(Module):
 
@@ -340,7 +338,6 @@ class MuonSampleProducer(Module):
 
                     drfjb_ = deltaR(event.ak8jets[0].eta,event.ak8jets[0].phi,i.bp4.Eta(),i.bp4.Phi())
 
-
         ## return True if passes selection
         return True
 
@@ -413,7 +410,6 @@ class MuonSampleProducer(Module):
         self.out.fillBranch("drfj3q"     , event.drfj3q_ )
         self.out.fillBranch("drfj2q"     , event.drfj2q_ )
         self.out.fillBranch("drfjb"      , event.drfjb_ )
-
 
         
     def analyze(self, event):

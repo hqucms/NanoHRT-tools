@@ -74,6 +74,9 @@ class HRTMCTreeProducer(Module):
         for name in self._BEST_scores:
             self.out.branch("ak8_%s" % name, "F")
 
+        self.out.branch("ak8_image_top", "F")
+        self.out.branch("ak8_image_top_md", "F")
+
         self.out.branch("ak8_ecfN2", "F")
         self.out.branch("ak8_ecfN2DDT", "F")
 
@@ -156,6 +159,9 @@ class HRTMCTreeProducer(Module):
 
         for name in self._BEST_scores:
             fillBranch("ak8_%s" % name, getattr(jet, name), -1)
+
+        fillBranch("ak8_image_top", jet.itop, -99)
+        fillBranch("ak8_image_top_md", jet.iMDtop, -99)
 
         fillBranch("ak8_ecfN2", jet.n2b1, 99)
         jet.n2b1ddt = self._n2helper.transform(jet.n2b1, pt=jet.pt, msd=jet.corr_sdmass)
