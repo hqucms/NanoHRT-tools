@@ -339,7 +339,6 @@ transfer_input_files  = {files_to_transfer}
 output                = {jobdir}/$(jobid).out
 error                 = {jobdir}/$(jobid).err
 log                   = {jobdir}/$(jobid).log
-use_x509userproxy     = true
 Should_Transfer_Files = YES
 initialdir            = {outputdir}
 WhenToTransferOutput  = ON_EXIT

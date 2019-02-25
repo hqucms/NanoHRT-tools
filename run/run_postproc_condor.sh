@@ -1,6 +1,7 @@
 #!/bin/bash
 
 workdir=`pwd`
+export USER = $(whoami)
 
 echo `hostname`
 echo "workdir: $workdir"

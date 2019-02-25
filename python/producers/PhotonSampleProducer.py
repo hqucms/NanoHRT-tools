@@ -19,20 +19,6 @@ class METObject(Object):
         ret.SetPtEtaPhiM(self.pt, 0, self.phi, 0)
         return ret
 
-class topDecay:
-    def __init__(self, topp4_, wp4_, bp4_, q1p4_, q2p4_):
-        self.topp4 = topp4_
-        self.wp4   = wp4_
-        self.bp4   = bp4_
-        self.q1p4  = q1p4_
-        self.q2p4  = q2p4_
-
-class genParticle:
-    def __init__(self, p4_, idx_, pdgid_):
-        self.p4    = p4_
-        self.idx   = idx_
-        self.pdgid = pdgid_
-
     
 def get_subjets(jet, subjetCollection, idxNames=('subJetIdx1', 'subJetIdx2')):
     subjets = []
@@ -46,13 +32,7 @@ def get_subjets(jet, subjetCollection, idxNames=('subJetIdx1', 'subJetIdx2')):
 def get_sdmass(subjets):
     return sum([sj.p4() for sj in subjets], ROOT.TLorentzVector()).M()
 
-def isQuark(gp):
-    if ( (abs(gp.pdgId)==1) or (abs(gp.pdgId)==2) or (abs(gp.pdgId)==3) or (abs(gp.pdgId)==4) or (abs(gp.pdgId)==5) ):
-        return True
-    else:
-        return False
-
-class MuonSampleProducer(Module):
+class PhotonSampleProducer(Module):
 
     def __init__(self, **kwargs):
         pass
@@ -69,9 +49,15 @@ class MuonSampleProducer(Module):
         self.out = wrappedOutputTree
 
         ## trigger variables
-        self.out.branch("passMuTrig", "O")
+        self.out.branch("passPhoton165_HE10", "O")
 
         ## event variables
+        self.out.branch("ht", "F")
+
+        ## photons
+        self.out.branch("nphotons", "I")
+        self.out.branch("pho_1_pt", "F")
+        self.out.branch("pho_1_eta", "F")
 
         ## Large-R jets
         self.out.branch("n_ak8" , "I")
@@ -105,9 +91,6 @@ class MuonSampleProducer(Module):
         self.out.branch("ak8_1_sj1_btagCSVV2" , "F")
         self.out.branch("ak8_1_sj2_btagCSVV2" , "F")
 
-	self.out.branch("muon_pTrel", "F")
-	self.out.branch("muon_drMuJet", "F")
-
         self.out.branch("ca15_1_pt"           , "F")
         self.out.branch("ca15_1_eta"          , "F")
         self.out.branch("ca15_1_phi"          , "F")
@@ -117,27 +100,13 @@ class MuonSampleProducer(Module):
         self.out.branch("ca15_1_httFRec"      , "F")
         self.out.branch("ca15_1_tau32sd"      , "F")
 
-        self.out.branch("drgentop3q" , "F")
-        self.out.branch("drfj3q"     , "F")
-        self.out.branch("drfj2q"     , "F")
-        self.out.branch("drfjb"      , "F")
-
 
     def _correctJetAndMET(self, event):
         event._allJets = Collection(event, "Jet")
         event.ak8Subjets = Collection(event, "CustomAK8PuppiSubJet")  # do not sort after updating!!
         event.ca15Subjets = Collection(event, "CA15PuppiSubJet")  # do not sort after updating!!
-	event.genParticles = Collection(event, "Jet")       
-	if self.isMC:
-		event.genParticles = Collection(event, "GenPart")       
-	event.maxDR = -999.
-	event.isFullyMerged = 0 
-	event.isSemiMerged = 0
-	event.isUnMerged = 0
-	event.muonpTrel = -999.9
-	event.drMuJet = -999.9
- 
-        if self.isMC:
+        
+        if self.isMC: 
             rho = event.fixedGridRhoFastjetAll
 
         ## construct AK8 p4 from (updated) subjets
@@ -160,7 +129,7 @@ class MuonSampleProducer(Module):
             fj.pt, fj.eta, fj.phi, fj.mass, fj.msoftdrop = newP4.Pt(), newP4.Eta(), newP4.Phi(), newP4.M(), newP4.M()
         event._allCA15jets = sorted(event._allCA15jets, key=lambda x : x.pt, reverse=True)  # sort by pt
 
-	    
+
         
     def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         pass
@@ -170,66 +139,26 @@ class MuonSampleProducer(Module):
 
         logging.debug('processing event %d' % event.event)
 
-	## met selection
-	if event.MET_pt < 50.0:
-	    return False
-	metLV = ROOT.TLorentzVector()
-	metLV.SetPtEtaPhiM( event.MET_pt, 0.0, event.MET_phi, 0.0)
-	      
-
-	## muon selection
-	event._allMuons = Collection(event, "Muon")	
-	event.muons = []
-	for muon in event._allMuons:
-	   if abs(muon.eta) < 2.4 and\
-	      abs(muon.dxy) < 0.2 and\
-	      abs(muon.dz) < 0.5:# and\
-	      #muon.pfRelIso03_all < 0.15:
-		  drMuJet = deltaR(muon, event._allJets[muon.jetIdx]) if muon.jetIdx >= 0 else -999
-		  ptRel = muon.pt
-		  if drMuJet > -999:
-			jetforPtRel = event._allJets[muon.jetIdx]
-		  	jetLV = ROOT.TLorentzVector()
-		  	jetLV.SetPtEtaPhiM(jetforPtRel.pt, jetforPtRel.eta, jetforPtRel.phi, jetforPtRel.mass) 
-		  	thismuonLV = ROOT.TLorentzVector()
-		  	thismuonLV.SetPtEtaPhiM(muon.pt, muon.eta, muon.phi, muon.mass)
-		  	ptRel = muon.pt * math.cos(thismuonLV.Angle(jetLV.Vect()))
-		  if ptRel > 55.0 or drMuJet > 0.4:
-		  	event.muons.append(muon)
-			event.muonpTrel = ptRel
-			event.drMuJet = drMuJet
-
-
-	if (len(event.muons) != 1):
-		return False
-	
-	muonLV = ROOT.TLorentzVector()
-	muonLV.SetPtEtaPhiM( event.muons[0].pt, event.muons[0].eta, event.muons[0].phi, event.muons[0].mass )
-
-
-	## b-tag AK4 jet selection
-        event.ak4jets = []
-        for j in event._allJets:
-            if not (j.pt > 25.0 and abs(j.eta) < 2.4 and (j.jetId & 2)):
+        ## select leading photon
+        event._allPhotons = Collection(event, "Photon")
+        event.photons = []
+        for ipho in event._allPhotons:
+            if not (ipho.pt > 200 and abs(ipho.eta) < 2.4 and ipho.mvaID_WP90):
                 continue
-	    if j.btagCSVV2 > 0.8484 and\
-	       abs(deltaPhi(j,event.muons[0])) < 2.0:
-		event.ak4jets.append(j)
+            event.photons.append(ipho)
 
-        if (len(event.ak4jets) < 1):
-		return False 
+        if (len(event.photons)<1):
+            return False
 
-
-
-	
-
-	## selection on AK8 jets / drop if overlaps with a photon
+        
+        ## selection on AK8 jets / drop if overlaps with a photon
         event.ak8jets = []
         for fj in event._allAK8jets:
             if not (fj.pt > 200 and abs(fj.eta) < 2.4 and (fj.jetId & 2)):
                 continue
-            if abs(deltaPhi(fj, event.muons[0])) > 2.0:
-		event.ak8jets.append(fj)
+            if deltaR(event.photons[0],fj)<0.8:
+                continue
+            event.ak8jets.append(fj)
 
         if (len(event.ak8jets)<1):
             return False
@@ -239,8 +168,9 @@ class MuonSampleProducer(Module):
         for fj in event._allCA15jets:
             if not (fj.pt > 200 and abs(fj.eta) < 2.4 and (fj.jetId & 2)):
                 continue
-            if abs(deltaPhi(fj, event.muons[0])) > 2.0:
-            	event.ca15jets.append(fj)
+            if deltaR(event.photons[0],fj)<1.5:
+                continue
+            event.ca15jets.append(fj)
    
         if (len(event.ca15jets)<1):
             return False
@@ -250,94 +180,20 @@ class MuonSampleProducer(Module):
         if deltaR(event.ak8jets[0],event.ca15jets[0])>0.8:
             return False
 
-	##leptonic W pt cut
-	WLV = ROOT.TLorentzVector()
-	WLV = muonLV + metLV
-	if WLV.Pt() < 250.0:
-	    return False 
 
-	##Find gen top and compute top size (-999. if unmatched)
-        mindr       = 9999.
-        event.drgentop3q_ = 999.
-        event.drfj3q_     = 999.
-        event.drfj2q_     = 999.
-        event.drfjb_      = 999.
-	if self.isMC:
+        ## ht selection
+        event.ak4jets = []
+        for j in event._allJets:
+            if not (j.pt > 25 and abs(j.eta) < 2.4 and (j.jetId & 2)):
+                continue
+            event.ak4jets.append(j)
 
-            ## get the gen tops
-            indexTop = -1
-            event.genTop = []
-            for p in event.genParticles:
-                indexTop += 1
-                if ( (abs(p.pdgId) == 6) and (p.status>=60) ):
-                    pLV = ROOT.TLorentzVector()
-                    #pLV = p.p4()
-                    pLV.SetPtEtaPhiM(p.pt, p.eta, p.phi, p.mass)
-                    tmpGenTop = genParticle(pLV, indexTop, p.pdgId)
-                    event.genTop.append(tmpGenTop)
-                else:
-                    continue
-
-            ## get the gen ws
-            event.genW = []
-            for top in event.genTop:
-                indexW = -1
-                for p in event.genParticles:
-                    indexW += 1
-                    if ( (abs(p.pdgId) == 24) and (p.status>=50) and ((p.pdgId/abs(p.pdgId))==(top.pdgid/abs(top.pdgid))) ):
-                        pLV = ROOT.TLorentzVector()
-                        pLV.SetPtEtaPhiM(p.pt, p.eta, p.phi, p.mass)
-                        tmpGenW = genParticle(pLV, indexW, p.pdgId)
-                        event.genW.append(tmpGenW)
-                    else:
-                        continue
-
-            ## get the W quarks and the b
-            index = -1
-            event.GenTopDecay = []
-            for w in event.genW:
-                index += 1
-                indexQ = -1
-                genQ = []
-                genb = []
-                for p in event.genParticles:
-                    indexQ += 1
-                    if (p.genPartIdxMother<0):
-                        continue
-                    if (isQuark(p) and (abs(p.pdgId) != 5) and ((event.genParticles[p.genPartIdxMother].pdgId)/(w.pdgid)==1) ):
-                        pLV = ROOT.TLorentzVector()
-                        pLV.SetPtEtaPhiM(p.pt, p.eta, p.phi, p.mass)
-                        tmpGenQ = genParticle(pLV, indexQ, p.pdgId)
-                        genQ.append(tmpGenQ)
-                    if ( (abs(p.pdgId) == 5) and (event.genParticles[p.genPartIdxMother].pdgId==top.pdgid) ):
-                        pLV = ROOT.TLorentzVector()
-                        pLV.SetPtEtaPhiM(p.pt, p.eta, p.phi, p.mass)
-                        tmpGenb = genParticle(pLV, indexQ, p.pdgId)
-                        genb.append(tmpGenb)
-                
-                ## check if we have three quarks
-                if ( (len(genQ)==2) and (len(genb)==1) ):
-                    tmpGenTopDecay = topDecay(event.genTop[index].p4, event.genW[index].p4, genb[0].p4, genQ[0].p4, genQ[1].p4)
-                    event.GenTopDecay.append(tmpGenTopDecay)
-                    
-            ## Define  categories
-            for i in event.GenTopDecay:
-                tmpdr = deltaR(event.ak8jets[0].eta,event.ak8jets[0].phi,i.topp4.Eta(),i.topp4.Phi())
-                if (tmpdr<mindr):
-                    mindr = tmpdr
-                    drgentop3q_ = max(deltaR(i.topp4.Eta(),i.topp4.Phi(),i.bp4.Eta(),i.bp4.Phi()) ,\
-                                          deltaR(i.topp4.Eta(),i.topp4.Phi(),i.q1p4.Eta(),i.q1p4.Phi()) ,\
-                                          deltaR(i.topp4.Eta(),i.topp4.Phi(),i.q1p4.Eta(),i.q1p4.Phi()))
-
-                    drfj3q_ = max(deltaR(event.ak8jets[0].eta,event.ak8jets[0].phi,i.bp4.Eta(),i.bp4.Phi()) ,\
-                                      deltaR(event.ak8jets[0].eta,event.ak8jets[0].phi,i.q1p4.Eta(),i.q1p4.Phi()) ,\
-                                      deltaR(event.ak8jets[0].eta,event.ak8jets[0].phi,i.q1p4.Eta(),i.q1p4.Phi()))
-
-                    drfj2q_ = max(deltaR(event.ak8jets[0].eta,event.ak8jets[0].phi,i.q1p4.Eta(),i.q1p4.Phi()) ,\
-                                      deltaR(event.ak8jets[0].eta,event.ak8jets[0].phi,i.q1p4.Eta(),i.q1p4.Phi()))
-
-                    drfjb_ = deltaR(event.ak8jets[0].eta,event.ak8jets[0].phi,i.bp4.Eta(),i.bp4.Phi())
-
+        event.ht = 0
+        for j in event.ak4jets:
+            event.ht += j.pt
+        if (event.ht<200.):
+            return False
+    
         ## return True if passes selection
         return True
 
@@ -345,23 +201,24 @@ class MuonSampleProducer(Module):
     def _fillEventInfo(self, event):
 
         ## Triggers
-        passMuTrig_ = False
+        passPhoton165_HE10_ = False
 
-        try:
-            if event.HLT_Mu50:
-                passMuTrig_ = True
+        try: 
+            if event.HLT_Photon165_HE10:
+                passPhoton165_HE10_ = True
         except:
-            passMuTrig_ = False
-        try:
-            if event.HLT_TkMu50:
-                passMuTrig_ = True
-        except:
-            passMuTrig_ = False
+            passPhoton165_HE10_ = False
 
-        self.out.fillBranch("passMuTrig", passMuTrig_)
+        self.out.fillBranch("passPhoton165_HE10", passPhoton165_HE10_)
 
 
         ## event variables
+        self.out.fillBranch("ht", event.ht)
+
+        ## photon variables
+        self.out.fillBranch("nphotons" , len(event.photons))
+        self.out.fillBranch("pho_1_pt" , event.photons[0].pt ) 
+        self.out.fillBranch("pho_1_eta", event.photons[0].eta)        
 
         ## Large-R jets
         self.out.fillBranch("n_ak8", len(event.ak8jets))
@@ -394,8 +251,6 @@ class MuonSampleProducer(Module):
         self.out.fillBranch("ak8_1_nnHcc" , event.ak8jets[0].nnHcc)
         self.out.fillBranch("ak8_1_sj1_btagCSVV2" , event.ak8jets[0].subjets[0].btagCSVV2)
         self.out.fillBranch("ak8_1_sj2_btagCSVV2" , event.ak8jets[0].subjets[1].btagCSVV2)
-	self.out.fillBranch("muon_pTrel", event.muonpTrel)
-	self.out.fillBranch("muon_drMuJet", event.drMuJet)
 
         self.out.fillBranch("ca15_1_pt"           , event.ca15jets[0].pt)
         self.out.fillBranch("ca15_1_eta"          , event.ca15jets[0].eta)
@@ -406,10 +261,6 @@ class MuonSampleProducer(Module):
         self.out.fillBranch("ca15_1_httFRec"      , event.ca15jets[0].httFRec)
         self.out.fillBranch("ca15_1_tau32sd"      , event.ca15jets[0].tau32sd)
 
-        self.out.fillBranch("drgentop3q" , event.drgentop3q_ )
-        self.out.fillBranch("drfj3q"     , event.drfj3q_ )
-        self.out.fillBranch("drfj2q"     , event.drfj2q_ )
-        self.out.fillBranch("drfjb"      , event.drfjb_ )
 
         
     def analyze(self, event):
@@ -427,5 +278,5 @@ class MuonSampleProducer(Module):
 
 
 # define modules using the syntax 'name = lambda : constructor' to avoid having them loaded when not needed
-MuonTree = lambda : MuonSampleProducer()
+PhotonTree = lambda : PhotonSampleProducer()
 
