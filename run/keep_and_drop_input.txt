@@ -1,5 +1,5 @@
 drop HLT_*
-keep HLT_Iso*Mu24
+keep HLT_Iso*Mu*
 keep HLT_Ele27_WPTight_Gsf
 keep HLT_Mu17*Mu8*
 keep HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL*
