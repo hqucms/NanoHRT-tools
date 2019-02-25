@@ -57,7 +57,6 @@ def main():
 
     # data, or just nominal MC
     if args.run_data or not args.run_syst:
-        args.cut = loose_cut_dict[channel]
         run(args, configs={hrt_cfgname: default_config})
         return
 
