@@ -11,7 +11,7 @@
 #include <cstdlib>
 
 void setTDRStyle();
-TH1F *create1Dhisto(TTree *tree,TString intLumi,TString cuts,TString branch,int bins,float xmin,float xmax,
+TH1F *create1Dhisto(TString sample,TTree *tree,TString intLumi,TString cuts,TString branch,int bins,float xmin,float xmax,
 		    bool useLog,int color, int style,TString name,bool norm,bool data);
 TH2F *create2Dhisto(TString name,TTree *tree,TString intLumi,TString cuts,TString xbranch,int xbins,float xmin,float xmax,TString ybranch,int ybins,float ymin,float ymax,bool data);
 void makePlotDataMC(TString name, TString dir, 
@@ -20,7 +20,7 @@ void makePlotDataMC(TString name, TString dir,
 		    std::vector<TString> legends, std::vector<int> colors, bool logy, int norm=0);
 
 
-void datamcplots() {
+void datamcplots(TString sample) {
 
   TH1::SetDefaultSumw2(kTRUE);
   setTDRStyle();
@@ -34,12 +34,11 @@ void datamcplots() {
   tmpLumi << intLumi;
   TString lumi = tmpLumi.str();
 
-
-  TString sample = "photons";
-
   std::vector<TTree*>   trees;   trees.clear();
   std::vector<TString> legends; legends.clear();
   std::vector<int>     colors;  colors.clear();
+
+  TString cut_ak8, cut_ca15;
 
   if (sample == "photons") {
     TString path = "root://cmseos.fnal.gov//store//group/lpcjme/noreplica/NanoHRT/Trees/Jan25/photon/";
@@ -57,27 +56,53 @@ void datamcplots() {
     trees.push_back(t_vg);     legends.push_back("V#gamma");           colors.push_back(798); 
     trees.push_back(t_qcdmg);  legends.push_back("QCD");               colors.push_back(412);     
     trees.push_back(t_photon); legends.push_back("#gamma+jets");       colors.push_back(419);     
+
+    cut_ak8  = "ht>500 && ak8_1_pt>=300. && n_ak8>=2";
+    cut_ca15 = "ht>500 && ca15_1_pt>=200. && n_ca15>=2";
  
   }
 
-  makePlotDataMC(sample+"_jetpt","datamcplots_20190126",trees,lumi,"0==0","0==0","ak8_1_pt",16,200.,1000.,"p_{T}(jet) [GeV]",legends,colors,true,1);
-  makePlotDataMC(sample+"_jeteta","datamcplots_20190126",trees,lumi,"0==0","0==0","ak8_1_eta",10,-2.4,2.4,"#eta(jet)",legends,colors,true,1);
-  makePlotDataMC(sample+"_jetmsd","datamcplots_20190126",trees,lumi,"0==0","0==0","ak8_1_mass",20,0.,200.,"m_{SD}(jet) [GeV]",legends,colors,true,1);
-  makePlotDataMC(sample+"_jettau32","datamcplots_20190126",trees,lumi,"0==0","0==0","ak8_1_tau3/ak8_1_tau2",20,0.,1.,"#tau_{32}(jet)",legends,colors,true,1);
-  makePlotDataMC(sample+"_jettau21","datamcplots_20190126",trees,lumi,"0==0","0==0","ak8_1_tau2/ak8_1_tau1",20,0.,1.,"#tau_{21}(jet)",legends,colors,true,1);
-  makePlotDataMC(sample+"_ecftoptag","datamcplots_20190126",trees,lumi,"0==0","0==0","ca15_1_ecfTopTagBDT",20,0.,1.,"ECF BDT (t vs. QCD",legends,colors,true,1);
-  makePlotDataMC(sample+"_bestwvsqcd","datamcplots_20190126",trees,lumi,"0==0","0==0","ak8_1_best_WvsQCD",20,0.,1.,"BEST (W vs. QCD)",legends,colors,true,1);
-  makePlotDataMC(sample+"_besttvsqcd","datamcplots_20190126",trees,lumi,"0==0","0==0","ak8_1_best_TvsQCD",20,0.,1.,"BEST (t vs. QCD)",legends,colors,true,1);
-  makePlotDataMC(sample+"_bestzvsqcd","datamcplots_20190126",trees,lumi,"0==0","0==0","ak8_1_best_ZvsQCD",20,0.,1.,"BEST (Z vs. QCD)",legends,colors,true,1);
-  makePlotDataMC(sample+"_besthvsqcd","datamcplots_20190126",trees,lumi,"0==0","0==0","ak8_1_best_HvsQCD",20,0.,1.,"BEST (H vs. QCD)",legends,colors,true,1);
-  makePlotDataMC(sample+"_deepak8wvsqcd","datamcplots_20190126",trees,lumi,"0==0","0==0","ak8_1_DeepAK8_WvsQCD",20,0.,1.,"DeepAK8 (W vs. QCD)",legends,colors,true,1);
-  makePlotDataMC(sample+"_deepak8tvsqcd","datamcplots_20190126",trees,lumi,"0==0","0==0","ak8_1_DeepAK8_TvsQCD",20,0.,1.,"DeepAK8 (t vs. QCD)",legends,colors,true,1);
-  makePlotDataMC(sample+"_deepak8zvsqcd","datamcplots_20190126",trees,lumi,"0==0","0==0","ak8_1_DeepAK8_ZvsQCD",20,0.,1.,"DeepAK8 (Z vs. QCD)",legends,colors,true,1);
-  makePlotDataMC(sample+"_deepak8hvsqcd","datamcplots_20190126",trees,lumi,"0==0","0==0","ak8_1_DeepAK8_HvsQCD",20,0.,1.,"DeepAK8 (H vs. QCD)",legends,colors,true,1);
-  makePlotDataMC(sample+"_deepak8mdwvsqcd","datamcplots_20190126",trees,lumi,"0==0","0==0","ak8_1_DeepAK8MD_WvsQCD",20,0.,1.,"Deepak8-MD (W vs. QCD)",legends,colors,true,1);
-  makePlotDataMC(sample+"_deepak8mdtvsqcd","datamcplots_20190126",trees,lumi,"0==0","0==0","ak8_1_DeepAK8MD_TvsQCD",20,0.,1.,"Deepak8-MD (t vs. QCD)",legends,colors,true,1);
-  makePlotDataMC(sample+"_deepak8mdzvsqcd","datamcplots_20190126",trees,lumi,"0==0","0==0","ak8_1_DeepAK8MD_ZvsQCD",20,0.,1.,"Deepak8-MD (Z vs. QCD)",legends,colors,true,1);
-  makePlotDataMC(sample+"_deepak8mdhvsqcd","datamcplots_20190126",trees,lumi,"0==0","0==0","ak8_1_DeepAK8MD_HvsQCD",20,0.,1.,"Deepak8-MD (H vs. QCD)",legends,colors,true,1);
+  if (sample == "qcd") {
+    TString path = "root://cmseos.fnal.gov//store//group/lpcjme/noreplica/NanoHRT/Trees/Jan25/qcd/";
+
+    //data: always read the data tree first 
+    TFile *f_data = TFile::Open(path+"/jetht_tree.root" , "READONLY"); TTree *t_data = (TTree*)f_data->Get("Events"); 
+    trees.push_back(t_data); legends.push_back("Data"); colors.push_back(1); 
+
+    // mc
+    TFile *f_qcdmg  = TFile::Open(path+"/qcd-mg_tree.root"     , "READONLY"); TTree *t_qcdmg  = (TTree*)f_qcdmg->Get("Events");
+    //TFile *f_vandvv = TFile::Open(path+"/vandvv_tree.root"     , "READONLY"); TTree *t_vandvv = (TTree*)f_vandvv->Get("Events");
+    //TFile *f_top    = TFile::Open(path+"/tandtt_tree.root"     , "READONLY"); TTree *t_tandtt = (TTree*)f_tandtt->Get("Events");
+    //TFile *f_qcdher = TFile::Open(path+"/qcd-herwig_tree.root" , "READONLY"); TTree *t_qcdher = (TTree*)f_qcdher->Get("Events");
+    trees.push_back(t_qcdmg);  legends.push_back("QCD");        colors.push_back(412);     
+    //trees.push_back(t_vandvv); legends.push_back("V/VV");       colors.push_back(618);
+    //trees.push_back(t_top);    legends.push_back("t/t#bar{t}"); colors.push_back(425);
+    //trees.push_back(t_qcdher); legends.push_back("QCD-Herwig"); colors.push_back(900);
+
+    cut_ak8  = "ht>1000 && ak8_1_pt>=300. && n_ak8>=2";
+    cut_ca15 = "ht>1000 && ca15_1_pt>=200. && n_ca15>=2";
+
+  }
+
+
+  makePlotDataMC(sample+"_jetpt","datamcplots_20190126",trees,lumi,cut_ak8,"0==0","ak8_1_pt",16,200.,1000.,"p_{T}(jet) [GeV]",legends,colors,true,1);
+  makePlotDataMC(sample+"_jeteta","datamcplots_20190126",trees,lumi,cut_ak8,"0==0","ak8_1_eta",10,-2.4,2.4,"#eta(jet)",legends,colors,true,1);
+  makePlotDataMC(sample+"_jetmsd","datamcplots_20190126",trees,lumi,cut_ak8,"0==0","ak8_1_mass",20,0.,200.,"m_{SD}(jet) [GeV]",legends,colors,true,1);
+  makePlotDataMC(sample+"_jettau32","datamcplots_20190126",trees,lumi,cut_ak8,"0==0","ak8_1_tau3/ak8_1_tau2",20,0.,1.,"#tau_{32}(jet)",legends,colors,true,1);
+  makePlotDataMC(sample+"_jettau21","datamcplots_20190126",trees,lumi,cut_ak8,"0==0","ak8_1_tau2/ak8_1_tau1",20,0.,1.,"#tau_{21}(jet)",legends,colors,true,1);
+  makePlotDataMC(sample+"_ecftoptag","datamcplots_20190126",trees,lumi,cut_ca15,"0==0","ca15_1_ecfTopTagBDT",20,0.,1.,"ECF BDT (t vs. QCD",legends,colors,true,1);
+  makePlotDataMC(sample+"_bestwvsqcd","datamcplots_20190126",trees,lumi,cut_ak8,"0==0","ak8_1_best_WvsQCD",20,0.,1.,"BEST (W vs. QCD)",legends,colors,true,1);
+  makePlotDataMC(sample+"_besttvsqcd","datamcplots_20190126",trees,lumi,cut_ak8,"0==0","ak8_1_best_TvsQCD",20,0.,1.,"BEST (t vs. QCD)",legends,colors,true,1);
+  makePlotDataMC(sample+"_bestzvsqcd","datamcplots_20190126",trees,lumi,cut_ak8,"0==0","ak8_1_best_ZvsQCD",20,0.,1.,"BEST (Z vs. QCD)",legends,colors,true,1);
+  makePlotDataMC(sample+"_besthvsqcd","datamcplots_20190126",trees,lumi,cut_ak8,"0==0","ak8_1_best_HvsQCD",20,0.,1.,"BEST (H vs. QCD)",legends,colors,true,1);
+  makePlotDataMC(sample+"_deepak8wvsqcd","datamcplots_20190126",trees,lumi,cut_ak8,"0==0","ak8_1_DeepAK8_WvsQCD",20,0.,1.,"DeepAK8 (W vs. QCD)",legends,colors,true,1);
+  makePlotDataMC(sample+"_deepak8tvsqcd","datamcplots_20190126",trees,lumi,cut_ak8,"0==0","ak8_1_DeepAK8_TvsQCD",20,0.,1.,"DeepAK8 (t vs. QCD)",legends,colors,true,1);
+  makePlotDataMC(sample+"_deepak8zvsqcd","datamcplots_20190126",trees,lumi,cut_ak8,"0==0","ak8_1_DeepAK8_ZvsQCD",20,0.,1.,"DeepAK8 (Z vs. QCD)",legends,colors,true,1);
+  makePlotDataMC(sample+"_deepak8hvsqcd","datamcplots_20190126",trees,lumi,cut_ak8,"0==0","ak8_1_DeepAK8_HvsQCD",20,0.,1.,"DeepAK8 (H vs. QCD)",legends,colors,true,1);
+  makePlotDataMC(sample+"_deepak8mdwvsqcd","datamcplots_20190126",trees,lumi,cut_ak8,"0==0","ak8_1_DeepAK8MD_WvsQCD",20,0.,1.,"Deepak8-MD (W vs. QCD)",legends,colors,true,1);
+  makePlotDataMC(sample+"_deepak8mdtvsqcd","datamcplots_20190126",trees,lumi,cut_ak8,"0==0","ak8_1_DeepAK8MD_TvsQCD",20,0.,1.,"Deepak8-MD (t vs. QCD)",legends,colors,true,1);
+  makePlotDataMC(sample+"_deepak8mdzvsqcd","datamcplots_20190126",trees,lumi,cut_ak8,"0==0","ak8_1_DeepAK8MD_ZvsQCD",20,0.,1.,"Deepak8-MD (Z vs. QCD)",legends,colors,true,1);
+  makePlotDataMC(sample+"_deepak8mdhvsqcd","datamcplots_20190126",trees,lumi,cut_ak8,"0==0","ak8_1_DeepAK8MD_HvsQCD",20,0.,1.,"Deepak8-MD (H vs. QCD)",legends,colors,true,1);
 
 }
 
@@ -88,6 +113,10 @@ void makePlotDataMC(TString name, TString dir,
 
   TH1::SetDefaultSumw2(kTRUE);
   std::cout << " working on " << name << " ...\n";
+
+  TString sample; 
+  if (name.Contains("qcd"))     { sample = "qcd"; }
+  if (name.Contains("photons")) { sample = "photons"; }
 
   TH1F *h_sm; TH1F *h_data; std::vector<TH1F*> mc_histos; mc_histos.clear();
   THStack *hs = new THStack("hs_"+name,"hs_"+name);
@@ -124,17 +153,17 @@ void makePlotDataMC(TString name, TString dir,
     bool data = false;  if (i==0) { data = true; }
 
     pMain->cd();
-    TH1F *h = create1Dhisto(trees[i],lumi,cut+" && "+addcut,var,nbins,xmin,xmax,false,1,1,"h_"+name+"_"+count,false,data); 
+    TH1F *h = create1Dhisto(sample,trees[i],lumi,cut+" && "+addcut,var,nbins,xmin,xmax,false,1,1,"h_"+name+"_"+count,false,data); 
     if (i==0) { 
       h->SetMarkerSize(1.2); h->SetMarkerStyle(20); h->SetLineWidth(1); h->SetLineColor(colors[i]); h->SetFillColor(0);  
       leg->AddEntry(h,legends[i],"P");
       h->GetYaxis()->SetTitleOffset(1.45);
       h->GetXaxis()->SetTitle(xaxisname);
-      if (norm == 0) { h->GetYaxis()->SetTitle("a. u."); } else { h->GetYaxis()->SetTitle("Events / bin"); }
+      if (norm == 0) { h->GetYaxis()->SetTitle("Events / bin"); } else { h->GetYaxis()->SetTitle("a. u."); }
       if (logy) { 
 	gPad->SetLogy(); 
-	h->GetYaxis()->SetRangeUser(1.,20.*h->GetBinContent(h->GetMaximumBin())); 
-	if (var.Contains("tau") || var.Contains("eta") || var.Contains("ecf")) { h->GetYaxis()->SetRangeUser(1.,1000.*h->GetBinContent(h->GetMaximumBin())); }
+	h->GetYaxis()->SetRangeUser(1.,1000.*h->GetBinContent(h->GetMaximumBin())); 
+	if (var.Contains("tau") || var.Contains("eta") || var.Contains("ecf")) { h->GetYaxis()->SetRangeUser(1.,100000.*h->GetBinContent(h->GetMaximumBin())); }
       } 
       else { h->GetYaxis()->SetRangeUser(0.,1.7*h->GetBinContent(h->GetMaximumBin())); }
       h->Draw("P E0");
@@ -196,14 +225,20 @@ void makePlotDataMC(TString name, TString dir,
 
 
 
-TH1F *create1Dhisto(TTree *tree,TString intLumi,TString cuts,TString branch,int bins,float xmin,float xmax,
+TH1F *create1Dhisto(TString sample,TTree *tree,TString intLumi,TString cuts,TString branch,int bins,float xmin,float xmax,
 		    bool useLog,int color, int style,TString name,bool norm,bool data) {
   TH1::SetDefaultSumw2(kTRUE);
 
   TString cut;
-  if (data) { cut ="(passPhoton165_HE10 && "+cuts+")"; } // photon
-  else      { cut ="(xsecWeight*puWeight*"+intLumi+")*(passPhoton165_HE10 &&"+cuts+")"; }
-  //  else { std::cout << name << "\n"; cut ="(xsecWeight*puWeight*topptWeight*"+intLumi+")*("+cuts+")"; }
+  if (sample == "photons") {
+    if (data) { cut ="(passPhoton165_HE10 && "+cuts+")"; } // photon
+    else      { cut ="(xsecWeight*puWeight*"+intLumi+")*(passPhoton165_HE10 &&"+cuts+")"; }
+  }
+  if (sample == "qcd") {
+    if (data) { cut ="(passHTTrig && "+cuts+")"; } // QCD
+    else      { cut ="(xsecWeight*puWeight*"+intLumi+")*(passHTTrig &&"+cuts+")"; }
+  }
+  //else { std::cout << name << "\n"; cut ="(xsecWeight*puWeight*topptWeight*"+intLumi+")*("+cuts+")"; }
 
   TH1F *hTemp = new TH1F(name,name,bins,xmin,xmax); //hTemp->SetName(name);
   tree->Project(name,branch,cut);
