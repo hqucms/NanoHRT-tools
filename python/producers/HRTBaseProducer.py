@@ -190,7 +190,6 @@ class HRTBaseProducer(Module, object):
         self.out.branch("ca15_1_eta", "F")
         self.out.branch("ca15_1_phi", "F")
         self.out.branch("ca15_1_mass", "F")
-        self.out.branch("ca15_1_ecf0", "F")
         self.out.branch("ca15_1_ecfTopTagBDT", "F")
         self.out.branch("ca15_1_httFRec", "F")
         self.out.branch("ca15_1_tau32sd", "F")
