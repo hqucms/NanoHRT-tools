@@ -13,7 +13,8 @@ logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(m
 class MuonSampleProducer(HRTBaseProducer):
 
     def __init__(self, **kwargs):
-        super(MuonSampleProducer, self).__init__(channel='muon', **kwargs)
+        #super(MuonSampleProducer, self).__init__(channel='muon', **kwargs)
+        super(MuonSampleProducer, self).__init__(channel='muon')
 
     def beginJob(self):
         super(MuonSampleProducer, self).beginJob()
