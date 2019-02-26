@@ -7,12 +7,14 @@ def hrtSFTreeFromConfig():
     import yaml
     with open('hrtSFTree_cfg.json') as f:
         cfg = yaml.safe_load(f)
-    if cfg['channel'] == 'muon':
+        channel = cfg['channel']
+        del cfg['channel']
+    if channel == 'muon':
         return MuonSampleProducer(**cfg)
-    elif cfg['channel'] == 'photon':
+    elif channel == 'photon':
         return PhotonSampleProducer(**cfg)
-    elif cfg['channel'] == 'qcd':
+    elif channel == 'qcd':
         return QCDSampleProducer(**cfg)
     else:
-        return RuntimeError('Unsupported channel %s' % cfg['channel'])
+        return RuntimeError('Unsupported channel %s' % channel)
 
