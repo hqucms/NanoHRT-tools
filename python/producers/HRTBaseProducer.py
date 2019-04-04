@@ -97,7 +97,7 @@ class HRTBaseProducer(Module, object):
                                           met_unclustered=self._systOpt['met_unclustered'])
 
         self.ak8Corr = JetMETCorrector(jetType="AK8PFPuppi",
-                                          jec=self._systOpt['jec'],
+                                          jec=self._systOpt['jec'] or self._systOpt.get('data', False),  # FIXME: this is added due to L2L3Residual not applied on AK8 jets in the current Ntuples
                                           jes=self._systOpt['jes'],
                                           jes_source=self._systOpt['jes_source'],
                                           jer=self._systOpt['jer'],
@@ -267,6 +267,14 @@ class HRTBaseProducer(Module, object):
             self.hotvrSubjetCorr.correctJetAndMET(jets=event.hotvrSubjets, met=None, rho=rho,
                                              genjets=Collection(event, 'GenJet') if self.isMC else None,
                                              isMC=self.isMC, runNumber=event.run)
+
+        # FIXME: this is added due to L2L3Residual not applied on AK8 jets in the current Ntuples
+        if self._systOpt.get('data', False):
+            logging.info('Re-correcting AK8Puppi jets on data to apply missing L2L3Residual...')
+            rho = event.fixedGridRhoFastjetAll
+            # correct AK8 fatjets
+            self.ak8Corr.setSeed(rndSeed(event, event._allAK8jets))
+            self.ak8Corr.correctJetAndMET(jets=event._allAK8jets, met=None, rho=rho, genjets=None, isMC=False, runNumber=event.run)
 
         # jet mass resolution smearing
         if self.isMC and self._systOpt['jmr']:
