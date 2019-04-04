@@ -8,7 +8,7 @@ import logging
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
 
 hrt_cfgname = 'hrtSFTree_cfg.json'
-default_config = {'channel': None, 'jec': False, 'jes': None, 'jes_source': '', 'jer': 'nominal', 'jmr':None, 'met_unclustered': None}
+default_config = {'data':False, 'channel': None, 'jec': False, 'jes': None, 'jes_source': '', 'jer': 'nominal', 'jmr':None, 'met_unclustered': None}
 cut_dict = {
     'muon': 'Sum$(Muon_pt>55 && Muon_tightId)>0 && (nCustomAK8Puppi+nCA15Puppi+nHOTVRPuppi)>0',
     'photon': 'Sum$(Photon_pt>200)>0 && (nCustomAK8Puppi+nCA15Puppi+nHOTVRPuppi)>0',
@@ -57,7 +57,9 @@ def main():
 
     # data, or just nominal MC
     if args.run_data or not args.run_syst:
-        run(args, configs={hrt_cfgname: default_config})
+        cfg = copy.deepcopy(default_config)
+        cfg['data'] = True
+        run(args, configs={hrt_cfgname: cfg})
         return
 
     # MC for syst.

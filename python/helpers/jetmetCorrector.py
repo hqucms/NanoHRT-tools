@@ -5,6 +5,9 @@ ROOT.PyConfig.IgnoreCommandLineOptions = True
 from PhysicsTools.NanoHRTTools.helpers.jetSmearingHelper import jetSmearer
 from PhysicsTools.NanoAODTools.postprocessing.modules.jme.JetReCalibrator import JetReCalibrator
 
+import logging
+logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
+
 
 def _sf(vals, syst='nominal'):
     if syst == 'nominal':
@@ -57,35 +60,43 @@ class JetMETCorrector(object):
         if self.jec or self.jes in ['up', 'down']:
             for library in ["libCondFormatsJetMETObjects", "libPhysicsToolsNanoAODTools"]:
                 if library not in ROOT.gSystem.GetLibraries():
-                    print("Load Library '%s'" % library.replace("lib", ""))
+                    logging.info("Load Library '%s'" % library.replace("lib", ""))
                     ROOT.gSystem.Load(library)
 
-            self.jesInputFilePath = os.environ['CMSSW_BASE'] + "/src/PhysicsTools/NanoAODTools/data/jme/"
+            self.jesInputFilePath = os.environ['CMSSW_BASE'] + "/src/PhysicsTools/NanoHRTTools/data/2016/jme/"
 
         # updating JEC
         if self.jec:
-            self.jetReCalibratorMC = JetReCalibrator(globalTag='Summer16_07Aug2017_V15_MC',
-                                                   jetFlavour=self.jetType,
-                                                   doResidualJECs=False,
-                                                   jecPath=self.jesInputFilePath + 'Summer16_07Aug2017_V15_MC/',
-                                                   calculateSeparateCorrections=False,
-                                                   calculateType1METCorrection=False)
-            self.jetReCalibratorDATA_BCD = JetReCalibrator(globalTag='Summer16_07Aug2017BCD_V18_DATA',
-                                                   jetFlavour=self.jetType,
-                                                   doResidualJECs=True,
-                                                   jecPath=self.jesInputFilePath + 'Summer16_07Aug2017BCD_V18_DATA/',
-                                                   calculateSeparateCorrections=False,
-                                                   calculateType1METCorrection=False)
-            self.jetReCalibratorDATA_EF = JetReCalibrator(globalTag='Summer16_07Aug2017EF_V18_DATA',
+            logging.info('Loading JEC parameters...')
+            self.jetReCalibratorMC = None
+#             self.jetReCalibratorMC = JetReCalibrator(globalTag='Summer16_23Sep2016V4_MC',
+#                                                    jetFlavour=self.jetType,
+#                                                    doResidualJECs=False,
+#                                                    jecPath=self.jesInputFilePath + 'Summer16_23Sep2016V4_MC/',
+#                                                    calculateSeparateCorrections=False,
+#                                                    calculateType1METCorrection=False)
+            self.jetReCalibratorDATA_BCD = JetReCalibrator(globalTag='Summer16_23Sep2016BCDV4_DATA',
                                                    jetFlavour=self.jetType,
                                                    doResidualJECs=True,
-                                                   jecPath=self.jesInputFilePath + 'Summer16_07Aug2017EF_V18_DATA/',
+                                                   jecPath=self.jesInputFilePath + 'Summer16_23Sep2016BCDV4_DATA/',
                                                    calculateSeparateCorrections=False,
                                                    calculateType1METCorrection=False)
-            self.jetReCalibratorDATA_GH = JetReCalibrator(globalTag='Summer16_07Aug2017GH_V18_DATA',
+            self.jetReCalibratorDATA_EF = JetReCalibrator(globalTag='Summer16_23Sep2016EFV4_DATA',
                                                    jetFlavour=self.jetType,
                                                    doResidualJECs=True,
-                                                   jecPath=self.jesInputFilePath + 'Summer16_07Aug2017GH_V18_DATA/',
+                                                   jecPath=self.jesInputFilePath + 'Summer16_23Sep2016EFV4_DATA/',
+                                                   calculateSeparateCorrections=False,
+                                                   calculateType1METCorrection=False)
+            self.jetReCalibratorDATA_G = JetReCalibrator(globalTag='Summer16_23Sep2016GV4_DATA',
+                                                   jetFlavour=self.jetType,
+                                                   doResidualJECs=True,
+                                                   jecPath=self.jesInputFilePath + 'Summer16_23Sep2016GV4_DATA/',
+                                                   calculateSeparateCorrections=False,
+                                                   calculateType1METCorrection=False)
+            self.jetReCalibratorDATA_H = JetReCalibrator(globalTag='Summer16_23Sep2016HV4_DATA',
+                                                   jetFlavour=self.jetType,
+                                                   doResidualJECs=True,
+                                                   jecPath=self.jesInputFilePath + 'Summer16_23Sep2016HV4_DATA/',
                                                    calculateSeparateCorrections=False,
                                                    calculateType1METCorrection=False)
 
@@ -133,10 +144,12 @@ class JetMETCorrector(object):
             else:
                 if runNumber >= 272007 and runNumber <= 276811:
                     jetReCalibrator = self.jetReCalibratorDATA_BCD
-                elif runNumber >= 276831 and runNumber <= 278808:
+                elif runNumber >= 276831 and runNumber <= 278801:
                     jetReCalibrator = self.jetReCalibratorDATA_EF
-                elif runNumber >= 278820 and runNumber <= 284044:
-                    jetReCalibrator = self.jetReCalibratorDATA_GH
+                elif runNumber >= 278802 and runNumber <= 280385:
+                    jetReCalibrator = self.jetReCalibratorDATA_G
+                elif runNumber >= 280919 and runNumber <= 284044:
+                    jetReCalibrator = self.jetReCalibratorDATA_H
                 else:
                     raise RuntimeError("Run %d out of range" % runNumber)
             for j in jets:
