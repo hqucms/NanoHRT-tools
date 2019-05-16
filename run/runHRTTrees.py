@@ -55,12 +55,11 @@ def main():
             ('PhysicsTools.NanoAODTools.postprocessing.modules.common.puWeightProducer', 'puWeight'),
             ])
 
-    if args.run_data:
-        cfg['data'] = True
-
     # data, or just nominal MC
     if args.run_data or not args.run_syst:
         cfg = copy.deepcopy(default_config)
+        if args.run_data:
+            cfg['data'] = True
         run(args, configs={hrt_cfgname: cfg})
         return
 
