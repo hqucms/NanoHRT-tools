@@ -270,7 +270,7 @@ class HRTBaseProducer(Module, object):
 
         # FIXME: this is added due to L2L3Residual not applied on AK8 jets in the current Ntuples
         if self._systOpt.get('data', False):
-            logging.info('Re-correcting AK8Puppi jets on data to apply missing L2L3Residual...')
+            logging.debug('Re-correcting AK8Puppi jets on data to apply missing L2L3Residual...')
             rho = event.fixedGridRhoFastjetAll
             # correct AK8 fatjets
             self.ak8Corr.setSeed(rndSeed(event, event._allAK8jets))
@@ -415,16 +415,16 @@ class HRTBaseProducer(Module, object):
         fillBranchAK8("ak8_1_DeepAK8MD_WvsQCD", get_decorr_score(ak8, 'WvsQCD'))
         fillBranchAK8("ak8_1_DeepAK8MD_ZvsQCD", get_decorr_score(ak8, 'ZvsQCD'))
         fillBranchAK8("ak8_1_DeepAK8MD_HvsQCD", get_decorr_score(ak8, 'ZHbbvsQCD'))
-        fillBranchAK8("ak8_1_best_WvsQCD", ak8.bestW / (ak8.bestW + ak8.bestQCD + ak8.bestB))
-        fillBranchAK8("ak8_1_best_ZvsQCD", ak8.bestZ / (ak8.bestZ + ak8.bestQCD + ak8.bestB))
-        fillBranchAK8("ak8_1_best_HvsQCD", ak8.bestH / (ak8.bestH + ak8.bestQCD + ak8.bestB))
-        fillBranchAK8("ak8_1_best_TvsQCD", ak8.bestT / (ak8.bestT + ak8.bestQCD + ak8.bestB))
+        fillBranchAK8("ak8_1_best_WvsQCD", ak8.bestW / (ak8.bestW + ak8.bestQCD + ak8.bestB) if ak8 and ak8.bestQCD > 0 else -1)
+        fillBranchAK8("ak8_1_best_ZvsQCD", ak8.bestZ / (ak8.bestZ + ak8.bestQCD + ak8.bestB) if ak8 and ak8.bestQCD > 0 else -1)
+        fillBranchAK8("ak8_1_best_HvsQCD", ak8.bestH / (ak8.bestH + ak8.bestQCD + ak8.bestB) if ak8 and ak8.bestQCD > 0 else -1)
+        fillBranchAK8("ak8_1_best_TvsQCD", ak8.bestT / (ak8.bestT + ak8.bestQCD + ak8.bestB) if ak8 and ak8.bestQCD > 0 else -1)
         fillBranchAK8("ak8_1_image_top", ak8.itop)
         fillBranchAK8("ak8_1_image_top_md", ak8.iMDtop)
         fillBranchAK8("ak8_1_btagCSVV2", ak8.btagCSVV2)
         fillBranchAK8("ak8_1_btagHbb", ak8.btagHbb)
-        fillBranchAK8("ak8_1_sj1_btagCSVV2", ak8.subjets[0].btagCSVV2 if len(ak8.subjets) > 0 else -9)
-        fillBranchAK8("ak8_1_sj2_btagCSVV2", ak8.subjets[1].btagCSVV2 if len(ak8.subjets) > 1 else -9)
+        fillBranchAK8("ak8_1_sj1_btagCSVV2", ak8.subjets[0].btagCSVV2 if ak8 and len(ak8.subjets) > 0 else -9)
+        fillBranchAK8("ak8_1_sj2_btagCSVV2", ak8.subjets[1].btagCSVV2 if ak8 and len(ak8.subjets) > 1 else -9)
 
         # fill CA15
         self.out.fillBranch("n_ca15", len(event.ca15jets))

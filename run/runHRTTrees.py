@@ -54,6 +54,8 @@ def main():
         args.imports.extend([
             ('PhysicsTools.NanoAODTools.postprocessing.modules.common.puWeightProducer', 'puWeight'),
             ])
+        if args.channel == 'muon':
+            args.imports.append(('PhysicsTools.NanoHRTTools.producers.topPtWeightProducer', 'topPtWeight'))
 
     # data, or just nominal MC
     if args.run_data or not args.run_syst:
