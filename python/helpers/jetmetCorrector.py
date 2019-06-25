@@ -153,9 +153,7 @@ class JetMETCorrector(object):
                 else:
                     raise RuntimeError("Run %d out of range" % runNumber)
             for j in jets:
-                newpt = jetReCalibrator.correct(j, rho)
-                j.mass = newpt / j.pt * j.mass
-                j.pt = newpt
+                j.pt, j.mass = jetReCalibrator.correct(j, rho)
 
         # JES uncertainty
         if isMC and self.jes in ['up', 'down']:
