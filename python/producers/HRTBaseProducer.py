@@ -9,7 +9,7 @@ from PhysicsTools.NanoAODTools.postprocessing.tools import deltaPhi, deltaR, clo
 from PhysicsTools.NanoHRTTools.helpers.jetmetCorrector import JetMETCorrector
 
 from PhysicsTools.NanoHRTTools.helpers.ak8MassCorrectionHelper import get_corrected_sdmass
-from PhysicsTools.NanoHRTTools.helpers.deepAK8Helper import get_nominal_score, get_decorr_score
+from PhysicsTools.NanoHRTTools.helpers.deepAK8Helper import get_nominal_score, get_decorr_score, get_nominal_raw_score, get_decorr_raw_score
 from PhysicsTools.NanoHRTTools.helpers.n2DDTHelper import N2DDTHelper
 
 import logging
@@ -82,6 +82,9 @@ def rndSeed(event, jets, extra=0):
 class HRTBaseProducer(Module, object):
 
     def __init__(self, channel, **kwargs):
+        Year = 2016
+        print ('Running on %d DATA/MC' %(Year))
+
         self._channel = channel
         self._systOpt = {'jec':False, 'jes':None, 'jes_source':'', 'jer':'nominal', 'jmr':None, 'met_unclustered':None}
         for k in kwargs:
@@ -89,14 +92,16 @@ class HRTBaseProducer(Module, object):
 
         logging.info('Running %s channel with systematics %s', self._channel, str(self._systOpt))
 
-        self.jetmetCorr = JetMETCorrector(jetType="AK4PFchs",
+        self.jetmetCorr = JetMETCorrector(Year,
+					  jetType="AK4PFchs",
                                           jec=self._systOpt['jec'],
                                           jes=self._systOpt['jes'],
                                           jes_source=self._systOpt['jes_source'],
                                           jer=self._systOpt['jer'],
                                           met_unclustered=self._systOpt['met_unclustered'])
 
-        self.ak8Corr = JetMETCorrector(jetType="AK8PFPuppi",
+        self.ak8Corr = JetMETCorrector(Year,
+					  jetType="AK8PFPuppi",
                                           jec=self._systOpt['jec'] or self._systOpt.get('data', False),  # FIXME: this is added due to L2L3Residual not applied on AK8 jets in the current Ntuples
                                           jes=self._systOpt['jes'],
                                           jes_source=self._systOpt['jes_source'],
@@ -104,7 +109,8 @@ class HRTBaseProducer(Module, object):
                                           jmr=self._systOpt['jmr'],
                                           met_unclustered=self._systOpt['met_unclustered'])
 
-        self.ak8SubjetCorr = JetMETCorrector(jetType="AK4PFPuppi",
+        self.ak8SubjetCorr = JetMETCorrector(Year,
+					  jetType="AK4PFPuppi",
                                           jec=self._systOpt['jec'],
                                           jes=self._systOpt['jes'],
                                           jes_source=self._systOpt['jes_source'],
@@ -112,7 +118,8 @@ class HRTBaseProducer(Module, object):
                                           jmr=self._systOpt['jmr'],
                                           met_unclustered=self._systOpt['met_unclustered'])
 
-        self.ca15Corr = JetMETCorrector(jetType="AK8PFPuppi",
+        self.ca15Corr = JetMETCorrector(Year,
+					  jetType="AK8PFPuppi",
                                           jec=self._systOpt['jec'],
                                           jes=self._systOpt['jes'],
                                           jes_source=self._systOpt['jes_source'],
@@ -120,7 +127,8 @@ class HRTBaseProducer(Module, object):
                                           jmr=self._systOpt['jmr'],
                                           met_unclustered=self._systOpt['met_unclustered'])
 
-        self.ca15SubjetCorr = JetMETCorrector(jetType="AK4PFPuppi",
+        self.ca15SubjetCorr = JetMETCorrector(Year,
+					  jetType="AK4PFPuppi",
                                           jec=self._systOpt['jec'],
                                           jes=self._systOpt['jes'],
                                           jes_source=self._systOpt['jes_source'],
@@ -128,7 +136,8 @@ class HRTBaseProducer(Module, object):
                                           jmr=self._systOpt['jmr'],
                                           met_unclustered=self._systOpt['met_unclustered'])
 
-        self.hotvrSubjetCorr = JetMETCorrector(jetType="AK4PFPuppi",
+        self.hotvrSubjetCorr = JetMETCorrector(Year,
+					  jetType="AK4PFPuppi",
                                           jec=self._systOpt['jec'],
                                           jes=self._systOpt['jes'],
                                           jes_source=self._systOpt['jes_source'],
@@ -175,6 +184,18 @@ class HRTBaseProducer(Module, object):
         self.out.branch("ak8_1_DeepAK8MD_ZvsQCD", "F")
         self.out.branch("ak8_1_DeepAK8MD_HvsQCD", "F")
         self.out.branch("ak8_1_DeepAK8MD_TvsQCD", "F")
+        ##Raw score
+        self.out.branch("ak8_1_DeepAK8_Top","F")
+        self.out.branch("ak8_1_DeepAK8_W","F")
+        self.out.branch("ak8_1_DeepAK8_Z","F")
+        self.out.branch("ak8_1_DeepAK8_Hbb","F")
+        self.out.branch("ak8_1_DeepAK8_QCD","F")
+        self.out.branch("ak8_1_DeepAK8MD_Top","F")
+        self.out.branch("ak8_1_DeepAK8MD_W","F")
+        self.out.branch("ak8_1_DeepAK8MD_Z","F")
+        self.out.branch("ak8_1_DeepAK8MD_Hbb","F")
+        self.out.branch("ak8_1_DeepAK8MD_QCD","F")
+        ########################
         self.out.branch("ak8_1_best_WvsQCD", "F")
         self.out.branch("ak8_1_best_ZvsQCD", "F")
         self.out.branch("ak8_1_best_HvsQCD", "F")
@@ -415,6 +436,18 @@ class HRTBaseProducer(Module, object):
         fillBranchAK8("ak8_1_DeepAK8MD_WvsQCD", get_decorr_score(ak8, 'WvsQCD'))
         fillBranchAK8("ak8_1_DeepAK8MD_ZvsQCD", get_decorr_score(ak8, 'ZvsQCD'))
         fillBranchAK8("ak8_1_DeepAK8MD_HvsQCD", get_decorr_score(ak8, 'ZHbbvsQCD'))
+        ## Raw Score
+        fillBranchAK8("ak8_1_DeepAK8_Top", get_nominal_raw_score(ak8, 'Top'))  
+        fillBranchAK8("ak8_1_DeepAK8_W", get_nominal_raw_score(ak8, 'W'))
+        fillBranchAK8("ak8_1_DeepAK8_Z", get_nominal_raw_score(ak8, 'Z'))
+        fillBranchAK8("ak8_1_DeepAK8_Hbb", get_nominal_raw_score(ak8, 'Hbb'))
+        fillBranchAK8("ak8_1_DeepAK8_QCD", get_nominal_raw_score(ak8, 'QCD'))
+        fillBranchAK8("ak8_1_DeepAK8MD_Top", get_decorr_raw_score(ak8, 'Top'))
+        fillBranchAK8("ak8_1_DeepAK8MD_W", get_decorr_raw_score(ak8, 'W'))
+        fillBranchAK8("ak8_1_DeepAK8MD_Z", get_decorr_raw_score(ak8, 'Z'))
+        fillBranchAK8("ak8_1_DeepAK8MD_Hbb", get_decorr_raw_score(ak8, 'Hbb'))
+        fillBranchAK8("ak8_1_DeepAK8MD_QCD", get_decorr_raw_score(ak8, 'QCD'))
+        ############
         fillBranchAK8("ak8_1_best_WvsQCD", ak8.bestW / (ak8.bestW + ak8.bestQCD + ak8.bestB) if ak8 and ak8.bestQCD > 0 else -1)
         fillBranchAK8("ak8_1_best_ZvsQCD", ak8.bestZ / (ak8.bestZ + ak8.bestQCD + ak8.bestB) if ak8 and ak8.bestQCD > 0 else -1)
         fillBranchAK8("ak8_1_best_HvsQCD", ak8.bestH / (ak8.bestH + ak8.bestQCD + ak8.bestB) if ak8 and ak8.bestQCD > 0 else -1)
