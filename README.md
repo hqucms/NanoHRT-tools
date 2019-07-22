@@ -23,7 +23,7 @@ elif algo == "LZ4":  compressionAlgo  = ROOT.ROOT.kLZ4
 ### Get customized NanoAOD tools for HeavyResTagging (NanoHRT-tools)
 
 ```bash
-git clone https://github.com/hqucms/NanoHRT-tools.git PhysicsTools/NanoHRTTools
+git clone https://github.com/pkontaxa/NanoHRT-tools.git PhysicsTools/NanoHRTTools
 ```
 
 ### Compile
