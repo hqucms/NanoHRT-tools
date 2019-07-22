@@ -161,11 +161,11 @@ class JetMETCorrector(object):
 						 )
 		    self.jetSmearer.jerInputFilePath = os.environ['CMSSW_BASE'] + "/src/PhysicsTools/NanoHRTTools/data/2016/jme/"
 		    self.jetSmearer.beginJob()
-            elif(self.Year==2017): #To be updated with 2017 txt files
-                    self.jetSmearer = jetSmearer(globalTag='2016',
+            elif(self.Year==2017):
+                    self.jetSmearer = jetSmearer(globalTag='2017',
                                                  jetType=self.jetType,
-                                                 jerInputFileName="Spring16_25nsV10a_MC_PtResolution_%s.txt" % self.jetType,
-                                                 jerUncertaintyInputFileName="Spring16_25nsV10a_MC_SF_%s.txt" % self.jetType
+                                                 jerInputFileName="Fall17_V3_MC_PtResolution_%s.txt" % self.jetType,
+                                                 jerUncertaintyInputFileName="Fall17_V3_MC_SF_%s.txt" % self.jetType
                                                  )
                     self.jetSmearer.jerInputFilePath = os.environ['CMSSW_BASE'] + "/src/PhysicsTools/NanoHRTTools/data/2017/jme/"
                     self.jetSmearer.beginJob()
