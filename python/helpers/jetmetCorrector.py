@@ -67,6 +67,9 @@ class JetMETCorrector(object):
             	self.jesInputFilePath = os.environ['CMSSW_BASE'] + "/src/PhysicsTools/NanoHRTTools/data/2016/jme/"
             elif (self.Year==2017):
 		self.jesInputFilePath = os.environ['CMSSW_BASE'] + "/src/PhysicsTools/NanoHRTTools/data/2017/jme/"
+            elif (self.Year==2018):
+                self.jesInputFilePath = os.environ['CMSSW_BASE'] + "/src/PhysicsTools/NanoHRTTools/data/2018/jme/"
+     
 
         # updating JEC
         if self.jec:
@@ -130,22 +133,54 @@ class JetMETCorrector(object):
                                                            calculateSeparateCorrections=False,
                                                            calculateType1METCorrection=False)
 
-
+            elif(self.Year==2018):
+                    self.jetReCalibratorMC = None
+                    self.jetReCalibratorDATA_A = JetReCalibrator(globalTag='Autumn18_RunA_V8_DATA',
+                                                           jetFlavour=self.jetType,
+                                                           doResidualJECs=True,
+                                                           jecPath=self.jesInputFilePath + 'Autumn18_RunA_V8_DATA/',
+                                                           calculateSeparateCorrections=False,
+                                                           calculateType1METCorrection=False)
+                    self.jetReCalibratorDATA_B = JetReCalibrator(globalTag='Autumn18_RunB_V8_DATA',
+                                                           jetFlavour=self.jetType,
+                                                           doResidualJECs=True,
+                                                           jecPath=self.jesInputFilePath + 'Autumn18_RunB_V8_DATA/',
+                                                           calculateSeparateCorrections=False,
+                                                           calculateType1METCorrection=False)
+                    self.jetReCalibratorDATA_C = JetReCalibrator(globalTag='Autumn18_RunC_V8_DATA',
+                                                           jetFlavour=self.jetType,
+                                                           doResidualJECs=True,
+                                                           jecPath=self.jesInputFilePath + 'Autumn18_RunC_V8_DATA/',
+                                                           calculateSeparateCorrections=False,
+                                                           calculateType1METCorrection=False)
+                    self.jetReCalibratorDATA_D = JetReCalibrator(globalTag='Autumn18_RunD_V8_DATA',
+                                                           jetFlavour=self.jetType,
+                                                           doResidualJECs=True,
+                                                           jecPath=self.jesInputFilePath + 'Autumn18_RunD_V8_DATA/',
+                                                           calculateSeparateCorrections=False,
+                                                           calculateType1METCorrection=False)
 
         # JES uncertainty
         if self.jes in ['up', 'down']:
             if not self.jes_source:
                 # total unc.
+                print "CHECK"    
 		if(self.Year==2016):
 	                self.jesUncertaintyInputFileName = "Summer16_23Sep2016V4_MC_Uncertainty_" + self.jetType + ".txt"
                 elif(self.Year==2017):
 			self.jesUncertaintyInputFileName = "Fall17_17Nov2017_V32_MC_Uncertainty_" + self.jetType + ".txt" 
+                elif(self.Year==2018):
+                        self.jesUncertaintyInputFileName = "Autumn18_V8_MC_Uncertainty_" + self.jetType + ".txt"
+                
             else:
                 # unc. by source
 		if(self.Year==2016):
 	                self.jesUncertaintyInputFileName = "Summer16_23Sep2016V4_MC_UncertaintySources_" + self.jetType + ".txt"
 		elif(self.Year==2017):
 			self.jesUncertaintyInputFileName = "Fall17_17Nov2017_V32_MC_UncertaintySources_" + self.jetType + ".txt"
+                elif(self.Year==2018):
+                        self.jesUncertaintyInputFileName = "Autumn18_V8_MC_UncertaintySources_" + self.jetType + ".txt"
+
 
             pars = ROOT.JetCorrectorParameters(os.path.join(self.jesInputFilePath, self.jesUncertaintyInputFileName), self.jes_source)
             self.jesUncertainty = ROOT.JetCorrectionUncertainty(pars)
@@ -161,7 +196,7 @@ class JetMETCorrector(object):
 						 )
 		    self.jetSmearer.jerInputFilePath = os.environ['CMSSW_BASE'] + "/src/PhysicsTools/NanoHRTTools/data/2016/jme/"
 		    self.jetSmearer.beginJob()
-            elif(self.Year==2017):
+            elif(self.Year==2017): 
                     self.jetSmearer = jetSmearer(globalTag='2017',
                                                  jetType=self.jetType,
                                                  jerInputFileName="Fall17_V3_MC_PtResolution_%s.txt" % self.jetType,
@@ -169,6 +204,15 @@ class JetMETCorrector(object):
                                                  )
                     self.jetSmearer.jerInputFilePath = os.environ['CMSSW_BASE'] + "/src/PhysicsTools/NanoHRTTools/data/2017/jme/"
                     self.jetSmearer.beginJob()
+            elif(self.Year==2018): #To be updated with V8 when it is available
+                    self.jetSmearer = jetSmearer(globalTag='2018',
+                                                 jetType=self.jetType,
+                                                 jerInputFileName="Autumn18_V1_MC_PtResolution_%s.txt" % self.jetType,
+                                                 jerUncertaintyInputFileName="Autumn18_V1_MC_SF_%s.txt" % self.jetType
+                                                 )
+                    self.jetSmearer.jerInputFilePath = os.environ['CMSSW_BASE'] + "/src/PhysicsTools/NanoHRTTools/data/2018/jme/"
+                    self.jetSmearer.beginJob()
+
 
 
     def setSeed(self, seed):
@@ -213,6 +257,19 @@ class JetMETCorrector(object):
                             jetReCalibrator = self.jetReCalibratorDATA_F
                         else:
                             raise RuntimeError("Run %d out of range" % runNumber)
+
+                elif(self.Year==2018): #Run numbers for each era taken from the twiki: https://twiki.cern.ch/twiki/bin/view/CMS/PdmV2018Analysis
+                        if runNumber >= 315252 and runNumber <= 316995:
+                            jetReCalibrator = self.jetReCalibratorDATA_A
+                        elif runNumber >= 317080 and runNumber <= 319310:
+                            jetReCalibrator = self.jetReCalibratorDATA_B
+                        elif runNumber >= 319337 and runNumber <= 320065:
+                            jetReCalibrator = self.jetReCalibratorDATA_C
+                        elif runNumber >= 320673 and runNumber <= 325175:
+                            jetReCalibrator = self.jetReCalibratorDATA_D
+                        else:
+                            raise RuntimeError("Run %d out of range" % runNumber)
+
             for j in jets:
                 newpt = jetReCalibrator.correct(j, rho)
                 j.mass = newpt / j.pt * j.mass

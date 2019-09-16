@@ -8,12 +8,7 @@ import logging
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
 
 hrt_cfgname = 'hrtSFTree_cfg.json'
-default_config = {'data':False, 'channel': None, 'jec': False, 'jes': None, 'jes_source': '', 'jer': 'nominal', 'jmr':None, 'met_unclustered': None}
-cut_dict = {
-    'muon': 'Sum$(Muon_pt>55 && Muon_tightId)>0 && (nCustomAK8Puppi+nCA15Puppi+nHOTVRPuppi)>0',
-    'photon': 'Sum$(Photon_pt>200)>0 && (nCustomAK8Puppi+nCA15Puppi+nHOTVRPuppi)>0',
-    'qcd': 'Sum$((Jet_pt>25 && abs(Jet_eta)<2.4 && (Jet_jetId & 2)) * Jet_pt)>800 && (nCustomAK8Puppi+nCA15Puppi+nHOTVRPuppi)>0',
-    }
+default_config = {'data':False, 'channel': None, 'year': None, 'jec': False, 'jes': None, 'jes_source': '', 'jer': 'nominal', 'jmr':None, 'met_unclustered': None}
 
 def main():
     parser = get_arg_parser()
@@ -34,25 +29,51 @@ def main():
                         help='Run over data. Default: %(default)s'
                         )
 
+    parser.add_argument('--year',
+			type=int,     
+			choices=[2016, 2017, 2018],
+			required=True,
+			help='Year: 2016, 2017, 2018'
+			)
+
     args = parser.parse_args()
 
     channel = args.channel
     default_config['channel'] = channel
 
+    year = args.year
+    default_config['year'] = year
+
+    if (year==2016):
+	cut_dict = {
+	    'muon': 'Sum$(Muon_pt>55 && Muon_tightId)>0 && (nCustomAK8Puppi+nCA15Puppi+nHOTVRPuppi)>0',	  
+	    'photon': 'Sum$(Photon_pt>200)>0 && (nCustomAK8Puppi+nCA15Puppi+nHOTVRPuppi)>0',
+	    'qcd': 'Sum$((Jet_pt>25 && abs(Jet_eta)<2.4 && (Jet_jetId & 2)) * Jet_pt)>800 && (nCustomAK8Puppi+nCA15Puppi+nHOTVRPuppi)>0',	   
+    	}
+	    
+    elif(year==2017 or year==2018):
+	cut_dict = {
+    	'muon': 'Sum$(Muon_pt>55 && Muon_tightId)>0 && (nCustomAK8Puppi)>0', 
+    	'photon': 'Sum$(Photon_pt>200)>0 && (nCustomAK8Puppi)>0',
+    	'qcd': 'Sum$((Jet_pt>25 && abs(Jet_eta)<2.4 && (Jet_jetId & 2)) * Jet_pt)>800 && (nCustomAK8Puppi)>0',
+   	 }
+  
+
     if not (args.post or args.add_weight or args.merge):
         tar_cmssw()
 
 #     args.batch = True
-    basename = os.path.basename(args.outputdir) + '_' + channel
+    basename = os.path.basename(args.outputdir) + '_' + channel + '_' + str(year)
     args.outputdir = os.path.join(os.path.dirname(args.outputdir), basename, 'data' if args.run_data else 'mc')
     args.jobdir = os.path.join('jobs_%s' % basename, 'data' if args.run_data else 'mc')
-    args.datasets = 'samples/%s.conf' % channel
+    args.datasets = 'samples/%s_%d.conf' % (channel, year)
+    print (args.datasets)
     args.cut = cut_dict[channel]
 
     args.imports = [('PhysicsTools.NanoHRTTools.producers.hrtSFTreeProducer', 'hrtSFTreeFromConfig')]
     if not args.run_data:
         args.imports.extend([
-            ('PhysicsTools.NanoAODTools.postprocessing.modules.common.puWeightProducer', 'puWeight'),
+            ('PhysicsTools.NanoAODTools.postprocessing.modules.common.puWeightProducer', 'puAutoWeight_' + str(year)),
             ])
         if args.channel == 'muon':
             args.imports.append(('PhysicsTools.NanoHRTTools.producers.topPtWeightProducer', 'topPtWeight'))

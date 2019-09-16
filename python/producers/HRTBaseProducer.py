@@ -81,9 +81,9 @@ def rndSeed(event, jets, extra=0):
 
 class HRTBaseProducer(Module, object):
 
-    def __init__(self, channel, **kwargs):
-        Year = 2016
-        print ('Running on %d DATA/MC' %(Year))
+    def __init__(self, channel, year, **kwargs):
+        self.year = year
+        print ('Running on %d DATA/MC' %(year))
 
         self._channel = channel
         self._systOpt = {'jec':False, 'jes':None, 'jes_source':'', 'jer':'nominal', 'jmr':None, 'met_unclustered':None}
@@ -92,7 +92,7 @@ class HRTBaseProducer(Module, object):
 
         logging.info('Running %s channel with systematics %s', self._channel, str(self._systOpt))
 
-        self.jetmetCorr = JetMETCorrector(Year,
+        self.jetmetCorr = JetMETCorrector(year,
 					  jetType="AK4PFchs",
                                           jec=self._systOpt['jec'],
                                           jes=self._systOpt['jes'],
@@ -100,7 +100,7 @@ class HRTBaseProducer(Module, object):
                                           jer=self._systOpt['jer'],
                                           met_unclustered=self._systOpt['met_unclustered'])
 
-        self.ak8Corr = JetMETCorrector(Year,
+        self.ak8Corr = JetMETCorrector(year,
 					  jetType="AK8PFPuppi",
                                           jec=self._systOpt['jec'] or self._systOpt.get('data', False),  # FIXME: this is added due to L2L3Residual not applied on AK8 jets in the current Ntuples
                                           jes=self._systOpt['jes'],
@@ -109,7 +109,7 @@ class HRTBaseProducer(Module, object):
                                           jmr=self._systOpt['jmr'],
                                           met_unclustered=self._systOpt['met_unclustered'])
 
-        self.ak8SubjetCorr = JetMETCorrector(Year,
+        self.ak8SubjetCorr = JetMETCorrector(year,
 					  jetType="AK4PFPuppi",
                                           jec=self._systOpt['jec'],
                                           jes=self._systOpt['jes'],
@@ -118,7 +118,7 @@ class HRTBaseProducer(Module, object):
                                           jmr=self._systOpt['jmr'],
                                           met_unclustered=self._systOpt['met_unclustered'])
 
-        self.ca15Corr = JetMETCorrector(Year,
+        self.ca15Corr = JetMETCorrector(year,
 					  jetType="AK8PFPuppi",
                                           jec=self._systOpt['jec'],
                                           jes=self._systOpt['jes'],
@@ -127,7 +127,7 @@ class HRTBaseProducer(Module, object):
                                           jmr=self._systOpt['jmr'],
                                           met_unclustered=self._systOpt['met_unclustered'])
 
-        self.ca15SubjetCorr = JetMETCorrector(Year,
+        self.ca15SubjetCorr = JetMETCorrector(year,
 					  jetType="AK4PFPuppi",
                                           jec=self._systOpt['jec'],
                                           jes=self._systOpt['jes'],
@@ -136,7 +136,7 @@ class HRTBaseProducer(Module, object):
                                           jmr=self._systOpt['jmr'],
                                           met_unclustered=self._systOpt['met_unclustered'])
 
-        self.hotvrSubjetCorr = JetMETCorrector(Year,
+        self.hotvrSubjetCorr = JetMETCorrector(year,
 					  jetType="AK4PFPuppi",
                                           jec=self._systOpt['jec'],
                                           jes=self._systOpt['jes'],
@@ -246,11 +246,11 @@ class HRTBaseProducer(Module, object):
         event._allAK8jets = Collection(event, "CustomAK8Puppi")
         event.ak8Subjets = Collection(event, "CustomAK8PuppiSubJet")  # do not sort subjets after updating!!
 
-        event._allCA15jets = Collection(event, "CA15Puppi")
-        event.ca15Subjets = Collection(event, "CA15PuppiSubJet")  # do not sort subjets after updating!!
+        # Pantelis event._allCA15jets = Collection(event, "CA15Puppi")
+        # Pantelis event.ca15Subjets = Collection(event, "CA15PuppiSubJet")  # do not sort subjets after updating!!
 
-        event._allHOTVRjets = Collection(event, "HOTVRPuppi")
-        event.hotvrSubjets = Collection(event, "HOTVRPuppiSubJet")  # do not sort subjets after updating!!
+        # Pantelis event._allHOTVRjets = Collection(event, "HOTVRPuppi")
+        # Pantelis event.hotvrSubjets = Collection(event, "HOTVRPuppiSubJet")  # do not sort subjets after updating!!
 
         if self.isMC or self._systOpt['jec']:
             rho = event.fixedGridRhoFastjetAll
@@ -271,7 +271,7 @@ class HRTBaseProducer(Module, object):
             self.ak8SubjetCorr.correctJetAndMET(jets=event.ak8Subjets, met=None, rho=rho,
                                              genjets=Collection(event, 'CustomGenSubJetAK8') if self.isMC else None,
                                              isMC=self.isMC, runNumber=event.run)
-
+            ''' Pantelis  
             # correct AK8 fatjets
             self.ca15Corr.setSeed(rndSeed(event, event._allCA15jets))
             self.ca15Corr.correctJetAndMET(jets=event._allCA15jets, met=None, rho=rho,
@@ -288,7 +288,8 @@ class HRTBaseProducer(Module, object):
             self.hotvrSubjetCorr.correctJetAndMET(jets=event.hotvrSubjets, met=None, rho=rho,
                                              genjets=Collection(event, 'GenJet') if self.isMC else None,
                                              isMC=self.isMC, runNumber=event.run)
-
+            Pantelis '''
+ 
         # FIXME: this is added due to L2L3Residual not applied on AK8 jets in the current Ntuples
         if self._systOpt.get('data', False):
             logging.debug('Re-correcting AK8Puppi jets on data to apply missing L2L3Residual...')
@@ -308,7 +309,8 @@ class HRTBaseProducer(Module, object):
             fj.corr_sdmass = get_corrected_sdmass(fj, fj.subjets)
             fj.n2b1ddt = self._n2helper.transform(fj.n2b1, pt=fj.pt, msd=fj.corr_sdmass)
         event._allAK8jets = sorted(event._allAK8jets, key=lambda x : x.pt, reverse=True)  # sort by pt
-
+         
+        ''' Pantelis 
         for fj in event._allCA15jets:
             fj.subjets = get_subjets(fj, event.ca15Subjets, ('subJetIdx1', 'subJetIdx2'))
             fj.msoftdrop = get_sdmass(fj.subjets)
@@ -320,7 +322,7 @@ class HRTBaseProducer(Module, object):
             newP4 = sum([sj.p4() for sj in fj.subjets], ROOT.TLorentzVector())
             fj.pt, fj.eta, fj.phi, fj.mass = newP4.Pt(), newP4.Eta(), newP4.Phi(), newP4.M()
         event._allHOTVRjets = sorted(event._allHOTVRjets, key=lambda x : x.pt, reverse=True)  # sort by pt
-
+        Pantelis ''' 
     def loadGenHistory(self, event):
         # gen matching
         if not self.isMC:
@@ -448,6 +450,7 @@ class HRTBaseProducer(Module, object):
         fillBranchAK8("ak8_1_DeepAK8MD_Hbb", get_decorr_raw_score(ak8, 'Hbb'))
         fillBranchAK8("ak8_1_DeepAK8MD_QCD", get_decorr_raw_score(ak8, 'QCD'))
         ############
+        ''' Pantelis
         fillBranchAK8("ak8_1_best_WvsQCD", ak8.bestW / (ak8.bestW + ak8.bestQCD + ak8.bestB) if ak8 and ak8.bestQCD > 0 else -1)
         fillBranchAK8("ak8_1_best_ZvsQCD", ak8.bestZ / (ak8.bestZ + ak8.bestQCD + ak8.bestB) if ak8 and ak8.bestQCD > 0 else -1)
         fillBranchAK8("ak8_1_best_HvsQCD", ak8.bestH / (ak8.bestH + ak8.bestQCD + ak8.bestB) if ak8 and ak8.bestQCD > 0 else -1)
@@ -483,7 +486,9 @@ class HRTBaseProducer(Module, object):
         fillBranchHOTVR("hotvr_1_fpt", hotvr.fpt)
         fillBranchHOTVR("hotvr_1_mmin", hotvr.mmin)
         fillBranchHOTVR("hotvr_1_nsubjets", hotvr.nsubjets)
-
+        
+        Pantelis '''
+ 
         def drmatch(event, jet):
             dr_b, dr_wq1, dr_wq2 = 999, 999, 999
             if jet:
@@ -504,7 +509,8 @@ class HRTBaseProducer(Module, object):
             self.out.fillBranch("ak8_1_dr_fj_top_b", drak8[0])
             self.out.fillBranch("ak8_1_dr_fj_top_wqmax", drak8[1])
             self.out.fillBranch("ak8_1_dr_fj_top_wqmin", drak8[2])
-
+ 
+            ''' Pantelis  
             drca15 = drmatch(event, ca15)
             self.out.fillBranch("ca15_1_dr_fj_top_b", drca15[0])
             self.out.fillBranch("ca15_1_dr_fj_top_wqmax", drca15[1])
@@ -514,4 +520,5 @@ class HRTBaseProducer(Module, object):
             self.out.fillBranch("hotvr_1_dr_fj_top_b", drhotvr[0])
             self.out.fillBranch("hotvr_1_dr_fj_top_wqmax", drhotvr[1])
             self.out.fillBranch("hotvr_1_dr_fj_top_wqmin", drhotvr[2])
-
+           
+            Pantelis '''  
