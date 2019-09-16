@@ -52,7 +52,7 @@ python runPostProcessing.py /path/of/input /path/to/output --friend -I PhysicsTo
 
 ```bash
 python runHRTTrees.py /eos/uscms/store/user/lpcjme/noreplica/NanoHRT/path/to/input /path/to/output --channel 
-[muon|photon|qcd] -n 20 --batch
+[muon|photon|qcd] --year [2016|2017|2018] -n 20 --batch
 ```
 
   - the preselection for each channel is coded in `runHRTTrees.py`
