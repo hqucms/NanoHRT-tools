@@ -26,7 +26,7 @@ def selectJetsForMET(jet):
 
 class JetMETCorrector(object):
 
-    def __init__(self, Year, jetType="AK4PFchs", jec=False, jes=None, jes_source=None, jer='nominal', jmr=None, met_unclustered=None):
+    def __init__(self, year, jetType="AK4PFchs", jec=False, jes=None, jes_source=None, jer='nominal', jmr=None, met_unclustered=None):
         '''
         jec: re-apply jet energy correction (True|False)
         jes: Jet energy scale options
@@ -47,7 +47,7 @@ class JetMETCorrector(object):
             - 'up', 'down': up/down variation of the unclustered energy
         '''
   
-        self.Year = Year 
+        self.year = year 
         self.jetType = jetType
         self.jec = jec
         self.jes = jes
@@ -63,18 +63,18 @@ class JetMETCorrector(object):
                 if library not in ROOT.gSystem.GetLibraries():
                     logging.info("Load Library '%s'" % library.replace("lib", ""))
                     ROOT.gSystem.Load(library)
-            if (self.Year==2016):
+            if (self.year==2016):
             	self.jesInputFilePath = os.environ['CMSSW_BASE'] + "/src/PhysicsTools/NanoHRTTools/data/2016/jme/"
-            elif (self.Year==2017):
+            elif (self.year==2017):
 		self.jesInputFilePath = os.environ['CMSSW_BASE'] + "/src/PhysicsTools/NanoHRTTools/data/2017/jme/"
-            elif (self.Year==2018):
+            elif (self.year==2018):
                 self.jesInputFilePath = os.environ['CMSSW_BASE'] + "/src/PhysicsTools/NanoHRTTools/data/2018/jme/"
      
 
         # updating JEC
         if self.jec:
             logging.info('Loading JEC parameters...')
-	    if(self.Year==2016):	
+	    if(self.year==2016):	
 		    self.jetReCalibratorMC = None
 	#             self.jetReCalibratorMC = JetReCalibrator(globalTag='Summer16_23Sep2016V4_MC',
 	#                                                    jetFlavour=self.jetType,
@@ -106,7 +106,7 @@ class JetMETCorrector(object):
                                                    jecPath=self.jesInputFilePath + 'Summer16_23Sep2016HV4_DATA/',
                                                    calculateSeparateCorrections=False,
                                                    calculateType1METCorrection=False)
-            elif(self.Year==2017):
+            elif(self.year==2017):
 		    self.jetReCalibratorMC = None	
 		    self.jetReCalibratorDATA_B = JetReCalibrator(globalTag='Fall17_17Nov2017B_V32_DATA',
                                                            jetFlavour=self.jetType,
@@ -133,7 +133,7 @@ class JetMETCorrector(object):
                                                            calculateSeparateCorrections=False,
                                                            calculateType1METCorrection=False)
 
-            elif(self.Year==2018):
+            elif(self.year==2018):
                     self.jetReCalibratorMC = None
                     self.jetReCalibratorDATA_A = JetReCalibrator(globalTag='Autumn18_RunA_V8_DATA',
                                                            jetFlavour=self.jetType,
@@ -163,22 +163,21 @@ class JetMETCorrector(object):
         # JES uncertainty
         if self.jes in ['up', 'down']:
             if not self.jes_source:
-                # total unc.
-                print "CHECK"    
-		if(self.Year==2016):
+                # total unc.    
+		if(self.year==2016):
 	                self.jesUncertaintyInputFileName = "Summer16_23Sep2016V4_MC_Uncertainty_" + self.jetType + ".txt"
-                elif(self.Year==2017):
+                elif(self.year==2017):
 			self.jesUncertaintyInputFileName = "Fall17_17Nov2017_V32_MC_Uncertainty_" + self.jetType + ".txt" 
-                elif(self.Year==2018):
+                elif(self.year==2018):
                         self.jesUncertaintyInputFileName = "Autumn18_V8_MC_Uncertainty_" + self.jetType + ".txt"
                 
             else:
                 # unc. by source
-		if(self.Year==2016):
+		if(self.year==2016):
 	                self.jesUncertaintyInputFileName = "Summer16_23Sep2016V4_MC_UncertaintySources_" + self.jetType + ".txt"
-		elif(self.Year==2017):
+		elif(self.year==2017):
 			self.jesUncertaintyInputFileName = "Fall17_17Nov2017_V32_MC_UncertaintySources_" + self.jetType + ".txt"
-                elif(self.Year==2018):
+                elif(self.year==2018):
                         self.jesUncertaintyInputFileName = "Autumn18_V8_MC_UncertaintySources_" + self.jetType + ".txt"
 
 
@@ -188,7 +187,7 @@ class JetMETCorrector(object):
         # set up JER
         self.jetSmearer = None
         if self.jer is not None or self.jmr is not None:
-	    if(self.Year==2016):
+	    if(self.year==2016):
 		    self.jetSmearer = jetSmearer(globalTag='2016',
 						 jetType=self.jetType,
 						 jerInputFileName="Spring16_25nsV10a_MC_PtResolution_%s.txt" % self.jetType,
@@ -196,7 +195,7 @@ class JetMETCorrector(object):
 						 )
 		    self.jetSmearer.jerInputFilePath = os.environ['CMSSW_BASE'] + "/src/PhysicsTools/NanoHRTTools/data/2016/jme/"
 		    self.jetSmearer.beginJob()
-            elif(self.Year==2017): 
+            elif(self.year==2017): 
                     self.jetSmearer = jetSmearer(globalTag='2017',
                                                  jetType=self.jetType,
                                                  jerInputFileName="Fall17_V3_MC_PtResolution_%s.txt" % self.jetType,
@@ -204,7 +203,7 @@ class JetMETCorrector(object):
                                                  )
                     self.jetSmearer.jerInputFilePath = os.environ['CMSSW_BASE'] + "/src/PhysicsTools/NanoHRTTools/data/2017/jme/"
                     self.jetSmearer.beginJob()
-            elif(self.Year==2018): #To be updated with V8 when it is available
+            elif(self.year==2018): #To be updated with V8 when it is available
                     self.jetSmearer = jetSmearer(globalTag='2018',
                                                  jetType=self.jetType,
                                                  jerInputFileName="Autumn18_V1_MC_PtResolution_%s.txt" % self.jetType,
@@ -234,7 +233,7 @@ class JetMETCorrector(object):
             if isMC:
                 jetReCalibrator = self.jetReCalibratorMC
             else:
-		if(self.Year==2016):
+		if(self.year==2016):
 			if runNumber >= 272007 and runNumber <= 276811:
 			    jetReCalibrator = self.jetReCalibratorDATA_BCD
 			elif runNumber >= 276831 and runNumber <= 278801:
@@ -246,7 +245,7 @@ class JetMETCorrector(object):
 			else:
 			    raise RuntimeError("Run %d out of range" % runNumber)
 
-                elif(self.Year==2017): #Run numbers for each era taken from this presentation (slide 21): https://indico.cern.ch/event/775563/contributions/3224847/attachments/1759380/2853926/20181126_JERC_Status_2016_2017.pdf
+                elif(self.year==2017): #Run numbers for each era taken from this presentation (slide 21): https://indico.cern.ch/event/775563/contributions/3224847/attachments/1759380/2853926/20181126_JERC_Status_2016_2017.pdf
 			if runNumber >= 297046 and runNumber <= 299329:
 			    jetReCalibrator = self.jetReCalibratorDATA_B
 			elif runNumber >= 299368 and runNumber <= 302029:
@@ -258,7 +257,7 @@ class JetMETCorrector(object):
                         else:
                             raise RuntimeError("Run %d out of range" % runNumber)
 
-                elif(self.Year==2018): #Run numbers for each era taken from the twiki: https://twiki.cern.ch/twiki/bin/view/CMS/PdmV2018Analysis
+                elif(self.year==2018): #Run numbers for each era taken from the twiki: https://twiki.cern.ch/twiki/bin/view/CMS/PdmV2018Analysis
                         if runNumber >= 315252 and runNumber <= 316995:
                             jetReCalibrator = self.jetReCalibratorDATA_A
                         elif runNumber >= 317080 and runNumber <= 319310:
