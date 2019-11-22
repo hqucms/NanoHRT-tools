@@ -495,7 +495,7 @@ def run_merge(args):
         outname = '%s_tree.root' % outtree_name
         merge_dict[outname] = []
         merge_dict_found[outname] = []
-        for samp in outtree_to_samples[outname]:
+        for samp in outtree_to_samples[outtree_name]:
             fname = samp + '_tree.root'
             merge_dict[outname].append(os.path.join(parts_dir, fname))
             if fname in allfiles:
