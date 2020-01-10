@@ -144,9 +144,11 @@ class HFQCDSFTreeProducer(Module, object):
         self.out.branch("fj_1_sj1_sv1_pt", "F")
         self.out.branch("fj_1_sj1_sv1_mass", "F")
         self.out.branch("fj_1_sj1_sv1_masscor", "F")
+        '''
         self.out.branch("fj_1_sj1_sv1_ntracks", "I")
         self.out.branch("fj_1_sj1_sv1_dxy", "F")
         self.out.branch("fj_1_sj1_sv1_dxysig", "F")
+        '''
         self.out.branch("fj_1_sj1_sv1_dlen", "F")
         self.out.branch("fj_1_sj1_sv1_dlensig", "F")
         self.out.branch("fj_1_sj1_sv1_chi2ndof", "F")
@@ -162,9 +164,11 @@ class HFQCDSFTreeProducer(Module, object):
         self.out.branch("fj_1_sj2_sv1_pt", "F")
         self.out.branch("fj_1_sj2_sv1_mass", "F")
         self.out.branch("fj_1_sj2_sv1_masscor", "F")
+        '''
         self.out.branch("fj_1_sj2_sv1_ntracks", "I")
         self.out.branch("fj_1_sj2_sv1_dxy", "F")
         self.out.branch("fj_1_sj2_sv1_dxysig", "F")
+        '''
         self.out.branch("fj_1_sj2_sv1_dlen", "F")
         self.out.branch("fj_1_sj2_sv1_dlensig", "F")
         self.out.branch("fj_1_sj2_sv1_chi2ndof", "F")
@@ -195,15 +199,19 @@ class HFQCDSFTreeProducer(Module, object):
         self.out.branch("fj_2_sj1_sv1_pt", "F")
         self.out.branch("fj_2_sj1_sv1_mass", "F")
         self.out.branch("fj_2_sj1_sv1_masscor", "F")
+        '''
         self.out.branch("fj_2_sj1_sv1_ntracks", "I")
         self.out.branch("fj_2_sj1_sv1_dxy", "F")
         self.out.branch("fj_2_sj1_sv1_dxysig", "F")
+        '''
         self.out.branch("fj_2_sj1_sv1_dlen", "F")
         self.out.branch("fj_2_sj1_sv1_dlensig", "F")
         self.out.branch("fj_2_sj1_sv1_chi2ndof", "F")
         self.out.branch("fj_2_sj1_sv1_pangle", "F")
+        ''' 
         self.out.branch("fj_2_sj2_nbhadrons", "F")
         self.out.branch("fj_2_sj2_nchadrons", "F")
+        ''' 
         self.out.branch("fj_2_sj2_pt", "F")
         self.out.branch("fj_2_sj2_eta", "F")
         self.out.branch("fj_2_sj2_phi", "F")
@@ -213,9 +221,11 @@ class HFQCDSFTreeProducer(Module, object):
         self.out.branch("fj_2_sj2_sv1_pt", "F")
         self.out.branch("fj_2_sj2_sv1_mass", "F")
         self.out.branch("fj_2_sj2_sv1_masscor", "F")
+        '''
         self.out.branch("fj_2_sj2_sv1_ntracks", "I")
         self.out.branch("fj_2_sj2_sv1_dxy", "F")
         self.out.branch("fj_2_sj2_sv1_dxysig", "F")
+        '''
         self.out.branch("fj_2_sj2_sv1_dlen", "F")
         self.out.branch("fj_2_sj2_sv1_dlensig", "F")
         self.out.branch("fj_2_sj2_sv1_chi2ndof", "F")
@@ -399,8 +409,10 @@ class HFQCDSFTreeProducer(Module, object):
         self.out.fillBranch("n_fatjet", len(event.ak8jets))
 
         if len(event.ak8jets)>0:
+            '''
             self.out.fillBranch("fj_1_nbhadrons", event.ak8jets[0].nBHadrons)
             self.out.fillBranch("fj_1_nchadrons", event.ak8jets[0].nCHadrons)
+            '''
             self.out.fillBranch("fj_1_pt", event.ak8jets[0].pt)
             self.out.fillBranch("fj_1_eta", event.ak8jets[0].eta)
             self.out.fillBranch("fj_1_phi", event.ak8jets[0].phi)
@@ -416,16 +428,20 @@ class HFQCDSFTreeProducer(Module, object):
 	    self.out.fillBranch("fj_1_sj1_pt", event.ak8jets[0].subjets[0].pt)
 	    self.out.fillBranch("fj_1_sj1_eta", event.ak8jets[0].subjets[0].eta)
 	    self.out.fillBranch("fj_1_sj1_phi", event.ak8jets[0].subjets[0].phi)
+            '''
             self.out.fillBranch("fj_1_sj1_nbhadrons", event.ak8jets[0].subjets[0].nBHadrons)
 	    self.out.fillBranch("fj_1_sj1_nchadrons", event.ak8jets[0].subjets[0].nCHadrons)
+            '''
 	    self.out.fillBranch("fj_1_sj1_btagcsvv2", event.ak8jets[0].subjets[0].btagCSVV2)
             #Self.out.fillBranch("fj_1_sj1_btagjp", event.ak8jets[0].subjets[0].btagJP)
 
 	    self.out.fillBranch("fj_1_sj2_pt", event.ak8jets[0].subjets[1].pt)
 	    self.out.fillBranch("fj_1_sj2_eta", event.ak8jets[0].subjets[1].eta)
 	    self.out.fillBranch("fj_1_sj2_phi", event.ak8jets[0].subjets[1].phi)
+            ''' 
             self.out.fillBranch("fj_1_sj2_nbhadrons", event.ak8jets[0].subjets[1].nBHadrons)
 	    self.out.fillBranch("fj_1_sj2_nchadrons", event.ak8jets[0].subjets[1].nCHadrons)
+            ''' 
             self.out.fillBranch("fj_1_sj2_btagcsvv2", event.ak8jets[0].subjets[1].btagCSVV2)
             #self.out.fillBranch("fj_1_sj2_btagjp", event.ak8jets[0].subjets[1].btagJP)
 
@@ -445,35 +461,39 @@ class HFQCDSFTreeProducer(Module, object):
                         self.out.fillBranch("fj_1_sj1_sv1_pt", isv.pt)
                         self.out.fillBranch("fj_1_sj1_sv1_mass", isv.mass)
                         self.out.fillBranch("fj_1_sj1_sv1_masscor", correctedsvmass(isv))
+                        ''' 
                         self.out.fillBranch("fj_1_sj1_sv1_ntracks", isv.ntracks)
                         self.out.fillBranch("fj_1_sj1_sv1_dxy", isv.dxy)
                         self.out.fillBranch("fj_1_sj1_sv1_dxysig", isv.dxySig)
+                        ''' 
                         self.out.fillBranch("fj_1_sj1_sv1_dlen", isv.dlen)
                         self.out.fillBranch("fj_1_sj1_sv1_dlensig", isv.dlenSig)
                         self.out.fillBranch("fj_1_sj1_sv1_chi2ndof", (isv.chi2/isv.ndof) if isv.ndof>0 else -1.)
                         self.out.fillBranch("fj_1_sj1_sv1_pangle", isv.pAngle)
                         sj1_masscor_ = correctedsvmass(isv)
-                        sj1_dxysig_  = isv.dxySig 
+                        #sj1_dxysig_  = isv.dxySig 
                 elif deltaR(isv,event.ak8jets[0].subjets[1]) < sj_drcut_:
                     sj2_nsv_ += 1
                     if sj2_nsv_ == 1:
                         self.out.fillBranch("fj_1_sj2_sv1_pt", isv.pt)
                         self.out.fillBranch("fj_1_sj2_sv1_mass", isv.mass)
                         self.out.fillBranch("fj_1_sj2_sv1_masscor", correctedsvmass(isv))
+                        '''
                         self.out.fillBranch("fj_1_sj2_sv1_ntracks", isv.ntracks)
                         self.out.fillBranch("fj_1_sj2_sv1_dxy", isv.dxy)
                         self.out.fillBranch("fj_1_sj2_sv1_dxysig", isv.dxySig)
+                        '''  
                         self.out.fillBranch("fj_1_sj2_sv1_dlen", isv.dlen)
                         self.out.fillBranch("fj_1_sj2_sv1_dlensig", isv.dlenSig)
                         self.out.fillBranch("fj_1_sj2_sv1_chi2ndof", (isv.chi2/isv.ndof) if isv.ndof>0 else -1.)
                         self.out.fillBranch("fj_1_sj2_sv1_pangle", isv.pAngle)
                         sj2_masscor_ = correctedsvmass(isv)
-                        sj2_dxysig_  = isv.dxySig 
+                        #sj2_dxysig_  = isv.dxySig 
             if (sj1_nsv_>0 and sj2_nsv_>0):
-                if (sj1_dxysig_ > sj2_dxysig_):
+                #if (sj1_dxysig_ > sj2_dxysig_):
                     fj_1_sj12_masscor_dxysig_ = sj1_masscor_
-                else:
-                    fj_1_sj12_masscor_dxysig_ = sj2_masscor_
+                #else:
+                    #fj_1_sj12_masscor_dxysig_ = sj2_masscor_
 	    self.out.fillBranch("fj_1_sj1_nsv", sj1_nsv_)
 	    self.out.fillBranch("fj_1_sj2_nsv", sj2_nsv_)	    
             self.out.fillBranch("fj_1_sj12_masscor_dxysig", fj_1_sj12_masscor_dxysig_)
@@ -481,9 +501,10 @@ class HFQCDSFTreeProducer(Module, object):
 
 
         if len(event.ak8jets)>1:
-            
+            '''
             self.out.fillBranch("fj_2_nbhadrons", event.ak8jets[1].nBHadrons)
             self.out.fillBranch("fj_2_nchadrons", event.ak8jets[1].nCHadrons)
+            '''
             self.out.fillBranch("fj_2_pt", event.ak8jets[1].pt)
             self.out.fillBranch("fj_2_eta", event.ak8jets[1].eta)
             self.out.fillBranch("fj_2_phi", event.ak8jets[1].phi)
@@ -499,16 +520,20 @@ class HFQCDSFTreeProducer(Module, object):
 	    self.out.fillBranch("fj_2_sj1_pt", event.ak8jets[1].subjets[0].pt)
 	    self.out.fillBranch("fj_2_sj1_eta", event.ak8jets[1].subjets[0].eta)
 	    self.out.fillBranch("fj_2_sj1_phi", event.ak8jets[1].subjets[0].phi)
+            '''
             self.out.fillBranch("fj_2_sj1_nbhadrons", event.ak8jets[1].subjets[0].nBHadrons)
 	    self.out.fillBranch("fj_2_sj1_nchadrons", event.ak8jets[1].subjets[0].nCHadrons)
+            '''
 	    self.out.fillBranch("fj_2_sj1_btagcsvv2", event.ak8jets[1].subjets[0].btagCSVV2)
             #self.out.fillBranch("fj_2_sj1_btagjp", event.ak8jets[1].subjets[0].btagJP)
 
 	    self.out.fillBranch("fj_2_sj2_pt", event.ak8jets[1].subjets[1].pt)
 	    self.out.fillBranch("fj_2_sj2_eta", event.ak8jets[1].subjets[1].eta)
 	    self.out.fillBranch("fj_2_sj2_phi", event.ak8jets[1].subjets[1].phi)
+            '''  
             self.out.fillBranch("fj_2_sj2_nbhadrons", event.ak8jets[1].subjets[1].nBHadrons)
 	    self.out.fillBranch("fj_2_sj2_nchadrons", event.ak8jets[1].subjets[1].nCHadrons)
+            '''
             self.out.fillBranch("fj_2_sj2_btagcsvv2", event.ak8jets[1].subjets[1].btagCSVV2)
             #self.out.fillBranch("fj_2_sj2_btagjp", event.ak8jets[1].subjets[1].btagJP)
 
@@ -528,36 +553,40 @@ class HFQCDSFTreeProducer(Module, object):
                         self.out.fillBranch("fj_2_sj1_sv1_pt", isv.pt)
                         self.out.fillBranch("fj_2_sj1_sv1_mass", isv.mass)
                         self.out.fillBranch("fj_2_sj1_sv1_masscor", correctedsvmass(isv))
+                        ''' 
                         self.out.fillBranch("fj_2_sj1_sv1_ntracks", isv.ntracks)
                         self.out.fillBranch("fj_2_sj1_sv1_dxy", isv.dxy)
                         self.out.fillBranch("fj_2_sj1_sv1_dxysig", isv.dxySig)
+                        ''' 
                         self.out.fillBranch("fj_2_sj1_sv1_dlen", isv.dlen)
                         self.out.fillBranch("fj_2_sj1_sv1_dlensig", isv.dlenSig)
                         self.out.fillBranch("fj_2_sj1_sv1_chi2ndof", (isv.chi2/isv.ndof) if isv.ndof>0 else -1.)
                         self.out.fillBranch("fj_2_sj1_sv1_pangle", isv.pAngle)
                         sj1_masscor_ = correctedsvmass(isv)
-                        sj1_dxysig_  = isv.dxySig
+                        #sj1_dxysig_  = isv.dxySig
                 elif deltaR(isv,event.ak8jets[1].subjets[1]) < sj_drcut_:
                     sj2_nsv_ += 1
                     if sj2_nsv_ == 1:
                         self.out.fillBranch("fj_2_sj2_sv1_pt", isv.pt)
                         self.out.fillBranch("fj_2_sj2_sv1_mass", isv.mass)
                         self.out.fillBranch("fj_2_sj2_sv1_masscor", correctedsvmass(isv))
+                        ''' 
                         self.out.fillBranch("fj_2_sj2_sv1_ntracks", isv.ntracks)
                         self.out.fillBranch("fj_2_sj2_sv1_dxy", isv.dxy)
                         self.out.fillBranch("fj_2_sj2_sv1_dxysig", isv.dxySig)
+                        ''' 
                         self.out.fillBranch("fj_2_sj2_sv1_dlen", isv.dlen)
                         self.out.fillBranch("fj_2_sj2_sv1_dlensig", isv.dlenSig)
                         self.out.fillBranch("fj_2_sj2_sv1_chi2ndof", (isv.chi2/isv.ndof) if isv.ndof>0 else -1.)
                         self.out.fillBranch("fj_2_sj2_sv1_pangle", isv.pAngle)
                         sj2_masscor_ = correctedsvmass(isv)
-                        sj2_dxysig_  = isv.dxySig
+                        #sj2_dxysig_  = isv.dxySig
 
             if (sj1_nsv_>0 and sj2_nsv_>0):
-                if (sj1_dxysig_ > sj2_dxysig_):
+                #if (sj1_dxysig_ > sj2_dxysig_):
                     fj_2_sj12_masscor_dxysig_ = sj1_masscor_
-                else:
-                    fj_2_sj12_masscor_dxysig_ = sj2_masscor_
+                #else:
+                    #fj_2_sj12_masscor_dxysig_ = sj2_masscor_
 	    self.out.fillBranch("fj_2_sj1_nsv", sj1_nsv_)
 	    self.out.fillBranch("fj_2_sj2_nsv", sj2_nsv_)
 	    self.out.fillBranch("fj_2_sj12_masscor_dxysig", fj_2_sj12_masscor_dxysig_)

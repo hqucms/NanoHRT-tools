@@ -23,6 +23,43 @@ def natural_sort(l):
     return sorted(l, key=alphanum_key)
 
 
+def sname(sample_or_dataset_name):
+    if sample_or_dataset_name[0] == '/':
+        return sample_or_dataset_name.split('/')[1]
+    else:
+        return sample_or_dataset_name
+
+
+def get_filenames(dataset, retry=3):
+    """Return files for given DAS query via dasgoclient"""
+    import subprocess
+    import time
+    query = 'file dataset=%s' % dataset
+    cmd = ['dasgoclient', '-query', query, '-json']
+    retry_count = 0
+    while True:
+        logging.info('Querying DAS:\n  %s' % ' '.join(cmd) + '' if retry_count == 0 else '\n... retry %d ...' % retry_count)
+        if retry_count > 0:
+            time.sleep(3)
+        retry_count += 1
+        if retry_count > retry:
+            raise RuntimeError('Failed to retrieve file names from DAS for: %s' % dataset)
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        outs, errs = proc.communicate()
+        if errs:
+            logging.error('DAS error: %s' % errs)
+            continue
+        else:
+            files = []
+            for row in json.loads(outs):
+                for rec in row.get('file', []):
+                    fname = rec.get('name', '')
+                    if fname:
+                        files.append(str(fname))
+            logging.info('Found %d files for %s' % (len(files), dataset))
+            return files
+
+
 def add_weight_branch(file, xsec, lumi=1000., treename='Events', wgtbranch='xsecWeight'):
     from array import array
     import ROOT
@@ -81,6 +118,27 @@ def add_weight_branch(file, xsec, lumi=1000., treename='Events', wgtbranch='xsec
     f.Close()
 
 
+def load_dataset_file(dataset_file):
+    import yaml
+    with open(dataset_file) as f:
+        d = yaml.safe_load(f)
+
+    outtree_to_samples = {}
+    samp_to_datasets = {}
+    for outtree_name in d:
+        outtree_to_samples[outtree_name] = []
+        for samp_or_list in d[outtree_name]:
+            if isinstance(samp_or_list, list):
+                samp = sname(samp_or_list[0])
+                sample_list = samp_or_list
+            else:
+                samp = sname(samp_or_list)
+                sample_list = [samp_or_list]
+            outtree_to_samples[outtree_name].append(samp)
+            samp_to_datasets[samp] = sample_list
+    return outtree_to_samples, samp_to_datasets
+
+
 def parse_sample_xsec(cfgfile):
     xsec_dict = {}
     with open(cfgfile) as f:
@@ -93,9 +151,9 @@ def parse_sample_xsec(cfgfile):
             xsec = None
             isData = False
             for s in pieces:
-                if '/MINIAOD' in s:
+                if '/MINIAOD' in s or '/NANOAOD' in s:
                     samp = s.split('/')[1]
-                    if '/MINIAODSIM' not in s:
+                    if '/MINIAODSIM' not in s and '/NANOAODSIM' not in s:
                         isData = True
                         break
                 else:
@@ -161,64 +219,77 @@ def create_metadata(args):
     md['inputfiles'] = {}
     md['jobs'] = []
 
-    selected_datasets = None
-    if args.datasets:
-        selected_datasets = []
-        with open(args.datasets) as f:
-            for l in f:
-                l = l.strip()
-                if l.startswith('#') or l.startswith('$'):
-                    continue
-                selected_datasets.append(l)
-
-    # discover all the datasets
-    for samp in os.listdir(args.inputdir):
-        if selected_datasets is not None and samp not in selected_datasets:
-            continue
+    def select_sample(dataset):
+        samp = sname(dataset)
+        keep = True
         if args.select:
             sels = args.select.split(',')
             match = False
             for s in sels:
                 if re.search(s, samp):
-                    logging.debug('Selecting dataset %s', samp)
+                    logging.debug('Selecting dataset %s', dataset)
                     match = True
                     break
             if not match:
-                continue
+                keep = False
         elif args.ignore:
             vetoes = args.ignore.split(',')
             match = False
             for v in vetoes:
                 if re.search(v, samp):
-                    logging.debug('Ignoring dataset %s', samp)
+                    logging.debug('Ignoring dataset %s', dataset)
                     match = True
                     break
             if match:
-                continue
-        md['samples'].append(samp)
+                keep = False
+        return keep
+
+    _, samp_to_datasets = load_dataset_file(args.datasets)
+
+    # discover all the datasets
+    if args.inputdir:
+        found_samples = os.listdir(args.inputdir)
+        for samp in samp_to_datasets:
+            filelist = []
+            for dataset in samp_to_datasets[samp]:
+                if sname(dataset) not in found_samples:
+                    logging.warning('Cannot find dataset %s in the input dir %s' % (dataset, args.inputdir))
+                    continue
+                if not select_sample(dataset):
+                    continue
+                sampdir = os.path.join(args.inputdir, sname(dataset))
+                for dp, dn, filenames in os.walk(sampdir):
+                    if 'failed' in dp:
+                        continue
+                    for f in filenames:
+                        if not f.endswith('.root'):
+                            continue
+                        if os.path.getsize(os.path.join(dp, f)) < 1000:
+                            if '-' not in samp and '_' not in samp:
+                                raise RuntimeError('Empty data file %s' % os.path.join(dp, f))
+                            else:
+                                logging.warning('Ignoring empty MC file %s' % os.path.join(dp, f))
+                                continue
+                        filelist.append(os.path.join(dp, f))
+            if len(filelist):
+                md['samples'].append(samp)
+                md['inputfiles'][samp] = filelist
+    else:
+        # use remote files
+        for samp in samp_to_datasets:
+            filelist = []
+            for dataset in samp_to_datasets[samp]:
+                if select_sample(dataset):
+                    filelist.extend(get_filenames(dataset))
+            if len(filelist):
+                md['samples'].append(samp)
+                md['inputfiles'][samp] = filelist
 
     # sort the samples
     md['samples'] = natural_sort(md['samples'])
 
     # discover the files
     for samp in md['samples']:
-        # get all files of this sample
-        md['inputfiles'][samp] = []
-        sampdir = os.path.join(args.inputdir, samp)
-        for dp, dn, filenames in os.walk(sampdir):
-            if 'failed' in dp:
-                continue
-            for f in filenames:
-                if not f.endswith('.root'):
-                    continue
-                if os.path.getsize(os.path.join(dp, f)) < 1000:
-                    if '-' not in samp and '_' not in samp:
-                        raise RuntimeError('Empty data file %s' % os.path.join(dp, f))
-                    else:
-                        logging.warning('Ignoring empty MC file %s' % os.path.join(dp, f))
-                        continue
-                md['inputfiles'][samp].append(os.path.join(dp, f))
-
         # sort the input list
         md['inputfiles'][samp] = natural_sort(md['inputfiles'][samp])
 
@@ -295,11 +366,18 @@ def submit(args, configs):
 
     else:
         # resubmit
+        with open(metadatafile) as f:
+            md = json.load(f)
+        njobs = len(md['jobs'])
         jobids = []
         jobids_file = os.path.join(args.jobdir, 'resubmit.txt')
-        log_files = [f for f in os.listdir(args.jobdir) if f.endswith('.log')]
-        for fn in log_files:
-            with open(os.path.join(args.jobdir, fn)) as logfile:
+        for jobid in range(njobs):
+            logpath = os.path.join(args.jobdir, '%d.log' % jobid)
+            if not os.path.exists(logpath):
+                logging.debug('Cannot find log file %s' % logpath)
+                jobids.append(str(jobid))
+                continue
+            with open(logpath) as logfile:
                 errormsg = None
                 for line in reversed(logfile.readlines()):
                     if 'Job removed' in line or 'aborted' in line:
@@ -312,9 +390,8 @@ def submit(args, configs):
                             errormsg = line
                         break
                 if errormsg:
-                    logging.debug(fn + '\n   ' + errormsg)
-                    jobids.append(fn.split('.')[0])
-                    assert jobids[-1].isdigit()
+                    logging.debug(logpath + '\n   ' + errormsg)
+                    jobids.append(str(jobid))
 
     with open(jobids_file, 'w') as f:
         f.write('\n'.join(jobids))
@@ -339,6 +416,7 @@ transfer_input_files  = {files_to_transfer}
 output                = {jobdir}/$(jobid).out
 error                 = {jobdir}/$(jobid).err
 log                   = {jobdir}/$(jobid).log
+use_x509userproxy     = true
 Should_Transfer_Files = YES
 initialdir            = {outputdir}
 WhenToTransferOutput  = ON_EXIT
@@ -411,20 +489,18 @@ def run_merge(args):
     allfiles = [f for f in os.listdir(parts_dir) if f.endswith('.root')]
     merge_dict = {}  # outname: expected files
     merge_dict_found = {}  # outname: [infile list]
-    with open(args.datasets) as f:
-        for l in f:
-            l = l.strip()
-            if not l or l.startswith('#'):
-                continue
-            if l.startswith('$'):
-                outname = '%s_tree.root' % l.split()[1]
-                merge_dict[outname] = []
-                merge_dict_found[outname] = []
-            else:
-                fname = l + '_tree.root'
-                merge_dict[outname].append(os.path.join(parts_dir, fname))
-                if fname in allfiles:
-                    merge_dict_found[outname].append(os.path.join(parts_dir, fname))
+    outtree_to_samples, _ = load_dataset_file(args.datasets)
+
+    for outtree_name in outtree_to_samples:
+        outname = '%s_tree.root' % outtree_name
+        outname2 = outtree_name
+        merge_dict[outname] = []
+        merge_dict_found[outname] = []       
+        for samp in outtree_to_samples[outname2]:
+            fname = samp + '_tree.root'
+            merge_dict[outname].append(os.path.join(parts_dir, fname))
+            if fname in allfiles:
+                merge_dict_found[outname].append(os.path.join(parts_dir, fname))
 
     for outname in merge_dict:
         if len(merge_dict_found[outname]) == 0:
@@ -463,10 +539,10 @@ def run_all(args):
 def get_arg_parser():
     import argparse
     parser = argparse.ArgumentParser('Preprocess ntuples')
-    parser.add_argument('inputdir',
+    parser.add_argument('-i', '--inputdir', default=None,
         help='Input diretory.'
     )
-    parser.add_argument('outputdir',
+    parser.add_argument('-o', '--outputdir', required=True,
         help='Output directory'
     )
     parser.add_argument('-m', '--metadata',
@@ -480,7 +556,7 @@ def get_arg_parser():
     parser.add_argument('-t', '--submittype',
         default='condor', choices=['interactive', 'condor'],
         help='Method of job submission. [Default: %(default)s]'
-        )
+    )
     parser.add_argument('--resubmit',
         action='store_true', default=False,
         help='Resubmit failed jobs. Default: %(default)s'
@@ -489,7 +565,7 @@ def get_arg_parser():
         default='jobs',
         help='Directory for job files. [Default: %(default)s]'
     )
-    parser.add_argument('--datasets',
+    parser.add_argument('-d', '--datasets', required=False,
         default='',
         help='Path to the dataset list file. [Default: %(default)s]'
     )
@@ -517,16 +593,6 @@ def get_arg_parser():
         default='',
         help='Specify sites for condor submission. Default: %(default)s'
     )
-
-    parser.add_argument("-s", "--postfix", dest="postfix", default=None, help="Postfix which will be appended to the file name (default: _Friend for friends, _Skim for skims)")
-    parser.add_argument("-J", "--json", dest="json", default=None, help="Select events using this JSON file")
-    parser.add_argument("-c", "--cut", dest="cut", default=None, help="Cut string")
-    parser.add_argument("--bi", "--branch-selection-input", dest="branchsel_in", default='keep_and_drop_input.txt', help="Branch selection input")
-    parser.add_argument("--bo", "--branch-selection-output", dest="branchsel_out", default='keep_and_drop_output.txt', help="Branch selection output")
-    parser.add_argument("--friend", dest="friend", action="store_true", default=False, help="Produce friend trees in output (current default is to produce full trees)")
-    parser.add_argument("-I", "--import", dest="imports", default=[], action="append", nargs=2, help="Import modules (python package, comma-separated list of ")
-    parser.add_argument("-z", "--compression", dest="compression", default=("LZ4:4"), help="Compression: none, or (algo):(level) ")
-
     parser.add_argument('--add-weight',
         action='store_true', default=False,
         help='Merge output files of the same dataset and add cross section weight using the file specified in --weight-file. Default: %(default)s'
@@ -543,11 +609,25 @@ def get_arg_parser():
         action='store_true', default=False,
         help='Add weight and merge. Default: %(default)s'
     )
-
     parser.add_argument('--batch',
         action='store_true', default=False,
         help='Batch mode, do not ask for confirmation and submit the jobs directly. Default: %(default)s'
     )
+
+    # preserve the options in nano_postproc.py
+    parser.add_argument("-s", "--postfix", dest="postfix", default=None, help="Postfix which will be appended to the file name (default: _Friend for friends, _Skim for skims)")
+    parser.add_argument("-J", "--json", dest="json", default=None, help="Select events using this JSON file")
+    parser.add_argument("-c", "--cut", dest="cut", default=None, help="Cut string")
+    parser.add_argument("--bi", "--branch-selection-input", dest="branchsel_in", default='keep_and_drop_input.txt', help="Branch selection input")
+    parser.add_argument("--bo", "--branch-selection-output", dest="branchsel_out", default='keep_and_drop_output.txt', help="Branch selection output")
+    parser.add_argument("--friend", dest="friend", action="store_true", default=False, help="Produce friend trees in output (current default is to produce full trees)")
+    parser.add_argument("-I", "--import", dest="imports", default=[], action="append", nargs=2, help="Import modules (python package, comma-separated list of ")
+    parser.add_argument("-z", "--compression", dest="compression", default=("LZ4:4"), help="Compression: none, or (algo):(level) ")
+    parser.add_argument("-P", "--prefetch", dest="prefetch", action="store_true", default=False, help="Prefetch input files locally instead of accessing them via xrootd")
+    parser.add_argument("--long-term-cache", dest="longTermCache", action="store_true", default=False, help="Keep prefetched files across runs instead of deleting them at the end")
+    parser.add_argument("-N", "--max-entries", dest="maxEntries", type=int, default=None, help="Maximum number of entries to process from any single given input tree")
+    parser.add_argument("--first-entry", dest="firstEntry", type=int, default=0, help="First entry to process in the three (to be used together with --max-entries)")
+    parser.add_argument("--justcount", dest="justcount", default=False, action="store_true", help="Just report the number of selected events")
 
     return parser
 
