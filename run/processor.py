@@ -13,17 +13,25 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import Pos
 import ROOT
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 
-
-def xrd(filepath):
+def xrd_prefix(filepaths):
     prefix = ''
+    allow_prefetch = False
+    filepath = filepaths[0]
     if filepath.startswith('/eos/cms'):
         prefix = 'root://eoscms.cern.ch/'
     elif filepath.startswith('/eos/uscms'):
         prefix = 'root://cmseos.fnal.gov/'
-    if prefix:
-        return prefix + '/' + filepath
-    else:
-        return filepath
+    elif filepath.startswith('/store/'):
+        # remote file
+        import socket
+        host = socket.getfqdn()
+        if 'cern.ch' in host:
+            prefix = 'root://xrootd-cms.infn.it//'
+        else:
+            prefix = 'root://cmsxrootd.fnal.gov//'
+        allow_prefetch = True
+    expanded_paths = [(prefix + '/' + f if prefix else f) for f in filepaths]
+    return expanded_paths, allow_prefetch
 
 
 def outputName(md, jobid):
@@ -51,9 +59,10 @@ def main(args):
                 modules.append(getattr(obj, name)())
 
     # run postprocessor
+    filepaths, allow_prefetch = xrd_prefix(md['jobs'][args.jobid]['inputfiles'])
     outputname = outputName(md, args.jobid)
     p = PostProcessor(outputDir='.',
-                      inputFiles=[xrd(f) for f in md['jobs'][args.jobid]['inputfiles']],
+                      inputFiles=filepaths,
                       cut=md.get('cut'),
                       branchsel=os.path.basename(md['branchsel_in']),
                       modules=modules,
@@ -63,7 +72,11 @@ def main(args):
                       jsonInput=md.get('json'),
                       provenance=md.get('provenance', False),
                       haddFileName=None,
-                      outputbranchsel=os.path.basename(md['branchsel_out']),
+                      prefetch=(allow_prefetch and md.get('prefetch', False)),
+                      longTermCache=md.get('longTermCache', False),
+                      maxEntries=md.get('maxEntries', None),
+                      firstEntry=md.get('firstEntry', 0),
+                      outputbranchsel=os.path.basename(md['branchsel_out'])
                       )
     p.run()
 
