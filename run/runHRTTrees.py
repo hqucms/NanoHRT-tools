@@ -46,16 +46,16 @@ def main():
 
     if (year==2016):
 	cut_dict = {
-	    'muon': 'Sum$(Muon_pt>55 && Muon_tightId)>0 && (nCustomAK8Puppi+nCA15Puppi+nHOTVRPuppi)>0',	  
-	    'photon': 'Sum$(Photon_pt>200)>0 && (nCustomAK8Puppi+nCA15Puppi+nHOTVRPuppi)>0',
-	    'qcd': 'Sum$((Jet_pt>25 && abs(Jet_eta)<2.4 && (Jet_jetId & 2)) * Jet_pt)>800 && (nCustomAK8Puppi+nCA15Puppi+nHOTVRPuppi)>0',	   
+	    'muon': 'Sum$(Muon_pt>55 && Muon_tightId)>0 && (nFatJet)>0',	  
+	    'photon': 'Sum$(Photon_pt>200)>0 && (nFatJet)>0',
+	    'qcd': 'Sum$((Jet_pt>25 && abs(Jet_eta)<2.4 && (Jet_jetId & 2)) * Jet_pt)>800 && (nFatJet)>0',	   
     	}
 	    
     elif(year==2017 or year==2018):
 	cut_dict = {
-    	'muon': 'Sum$(Muon_pt>55 && Muon_tightId)>0 && (nCustomAK8Puppi)>0', 
-    	'photon': 'Sum$(Photon_pt>200)>0 && (nCustomAK8Puppi)>0',
-    	'qcd': 'Sum$((Jet_pt>25 && abs(Jet_eta)<2.4 && (Jet_jetId & 2)) * Jet_pt)>800 && (nCustomAK8Puppi)>0',
+    	'muon': 'Sum$(Muon_pt>55 && Muon_tightId)>0 && (nFatJet)>0', 
+    	'photon': 'Sum$(Photon_pt>200)>0 && (nFatJet)>0',
+    	'qcd': 'Sum$((Jet_pt>25 && abs(Jet_eta)<2.4 && (Jet_jetId & 2)) * Jet_pt)>800 && (nFatJet)>0',
    	 }
   
 
@@ -66,7 +66,12 @@ def main():
     basename = os.path.basename(args.outputdir) + '_' + channel + '_' + str(year)
     args.outputdir = os.path.join(os.path.dirname(args.outputdir), basename, 'data' if args.run_data else 'mc')
     args.jobdir = os.path.join('jobs_%s' % basename, 'data' if args.run_data else 'mc')
-    args.datasets = 'samples/%s_%d.conf' % (channel, year)
+ 
+    if(args.run_data):
+	 args.datasets = 'samples/%s_%d_DATA.yaml' % (channel, year)
+    else:
+         args.datasets = 'samples/%s_%d_MC.yaml' % (channel, year)
+
     print (args.datasets)
     args.cut = cut_dict[channel]
 

@@ -40,19 +40,20 @@ class MuonSampleProducer(HRTBaseProducer):
             return False
 
         ## muon selection
+          
         muSubJets = []
-        for j in Collection(event, "CustomAK4CHS"):
+        for j in Collection(event, "Jet"): #CustomAK4CHS Collection Before
             if j.pt > 30 and abs(j.eta) < 2.4:
                 muSubJets.append(j)
-
+        
         event._allMuons = Collection(event, "Muon")
         event.muons = []
         for muon in event._allMuons:
             if muon.pt > 55 and abs(muon.eta) < 2.4 and muon.tightId and abs(muon.dxy) < 0.2 and abs(muon.dz) < 0.5:
                 j, muon.drjet = closest(muon, muSubJets)
                 muon.ptrel = muon.p4().Perp(j.p4().Vect()) if j else 0
-#                 if muon.pfRelIso04_all < 0.15:
-                if muon.drjet > 0.4 or muon.ptrel > 25:
+                if muon.miniPFRelIso_all < 0.10:  
+                #if muon.drjet > 0.4 or muon.ptrel > 25: # replace with miniIso (official nanoAOD)
                     event.muons.append(muon)
         if len(event.muons) != 1:
             return False
@@ -85,7 +86,8 @@ class MuonSampleProducer(HRTBaseProducer):
 
         if len(event.ak8jets) < 1:
             return False
-
+        
+        ''' 
         # # selection on CA15 jets
         event.ca15jets = []
         for fj in event._allCA15jets:
@@ -108,9 +110,10 @@ class MuonSampleProducer(HRTBaseProducer):
                 continue
             if abs(deltaPhi(fj, event.muons[0])) > 2.0:
                 event.hotvrjets.append(fj)
-
+        
         ## return True if passes selection
         return True
+        '''
 
     def analyze(self, event):
         """process event, return True (go to next module) or False (fail, go to next event)"""
