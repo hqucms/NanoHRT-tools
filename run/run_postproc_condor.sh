@@ -1,7 +1,6 @@
 #!/bin/bash
 
 workdir=`pwd`
-export USER = $(whoami)
 
 echo `hostname`
 echo "workdir: $workdir"
@@ -51,7 +50,10 @@ echo "[$(date '+%F %T')] wrapper ready"
 
 ls -l
 
+export TMPDIR=`pwd`
 python processor.py $jobid
 status=$?
+
+ls -l
 
 exit $status

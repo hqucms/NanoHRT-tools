@@ -14,12 +14,6 @@ cmsenv
 git clone https://github.com/cms-nanoAOD/nanoAOD-tools.git PhysicsTools/NanoAODTools
 ```
 
-Enable `LZ4` compression algo by adding the following line after L47 of `$CMSSW_BASE/src/PhysicsTools/NanoAODTools/python/postprocessing/framework/postprocessor.py`:
-
-```python
-elif algo == "LZ4":  compressionAlgo  = ROOT.ROOT.kLZ4
-```
-
 ### Get customized NanoAOD tools for HeavyResTagging (NanoHRT-tools)
 
 ```bash
@@ -45,13 +39,13 @@ cd PhysicsTools/NanoHRTTools/run
  - To make trees for MC performance study:
 
 ```bash
-python runPostProcessing.py /path/of/input /path/to/output --friend -I PhysicsTools.NanoHRTTools.producers.hrtMCTreeProducer hrtMCTree
+python runPostProcessing.py -i /path/of/input -o /path/to/output --friend -I PhysicsTools.NanoHRTTools.producers.hrtMCTreeProducer hrtMCTree
 ```
 
  - To make trees for data/MC comparison and scale factor measurement:
 
 ```bash
-python runHRTTrees.py /eos/uscms/store/user/lpcjme/noreplica/NanoHRT/path/to/input /path/to/output --channel 
+python runHRTTrees.py -i /eos/uscms/store/user/lpcjme/noreplica/NanoHRT/path/to/input -o /path/to/output --channel 
 [muon|photon|qcd] --year [2016|2017|2018] -n 20 --batch
 ```
 
