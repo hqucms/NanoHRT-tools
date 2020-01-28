@@ -175,6 +175,8 @@ def parse_sample_xsec(cfgfile):
                 if samp in xsec_dict and xsec_dict[samp] != xsec:
                     raise RuntimeError('Inconsistent entries for sample %s' % samp)
                 xsec_dict[samp] = xsec
+                if 'PSweights_' in samp:
+                    xsec_dict[samp.replace('PSweights_', '')] = xsec
     return xsec_dict
 
 
@@ -282,7 +284,13 @@ def create_metadata(args):
         # use remote files
         for samp in samp_to_datasets:
             filelist = []
+            dataset0 = None
             for dataset in samp_to_datasets[samp]:
+                if dataset0 is None:
+                    dataset0 = dataset.split('/')[1]
+                else:
+                    if dataset0 != dataset.split('/')[1]:
+                        raise RuntimeError('Inconsistent dataset for samp `%s`: `%s` vs `%s`' % (samp, dataset0, dataset))
                 if select_sample(dataset):
                     filelist.extend(get_filenames(dataset))
             if len(filelist):
