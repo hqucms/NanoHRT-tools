@@ -104,4 +104,6 @@ class MuonSampleProducer(HRTBaseProducer):
 
 
 # define modules using the syntax 'name = lambda : constructor' to avoid having them loaded when not needed
-MuonTree = lambda: MuonSampleProducer()
+MuonTree_2016 = lambda: MuonSampleProducer(year=2016)
+MuonTree_2017 = lambda: MuonSampleProducer(year=2017)
+MuonTree_2018 = lambda: MuonSampleProducer(year=2018)

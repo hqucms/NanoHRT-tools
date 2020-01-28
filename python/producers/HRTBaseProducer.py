@@ -104,7 +104,7 @@ class HRTBaseProducer(Module, object):
 
         self.ak8Corr = JetMETCorrector(year,
                                        jetType="AK8PFPuppi",
-                                       jec=self._systOpt['jec'] or self._systOpt.get('data', False),  # FIXME: this is added due to L2L3Residual not applied on AK8 jets in the current Ntuples
+                                       jec=self._systOpt['jec'],
                                        jes=self._systOpt['jes'],
                                        jes_source=self._systOpt['jes_source'],
                                        jer=self._systOpt['jer'],
