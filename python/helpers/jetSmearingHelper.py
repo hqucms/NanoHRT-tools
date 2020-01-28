@@ -1,10 +1,22 @@
 import ROOT
-import os
+import os, tarfile, tempfile, shutil
 import numpy as np
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.tools import deltaR
+
+
+def find_and_extract_tarball(name, destination):
+    search_pathes = [os.path.abspath(__file__).split('/python/')[0] + '/data/jme',
+                     os.environ['CMSSW_BASE'] + '/src/PhysicsTools/NanoAODTools/data/jme/']
+    for p in search_pathes:
+        for ext in ['.tgz', '.tar.gz']:
+            fullpath = os.path.join(p, name + ext)
+            if os.path.exists(fullpath):
+                with tarfile.open(fullpath, "r:gz") as tar:
+                    tar.extractall(destination)
+                return fullpath
 
 
 def match(jet, genjets, resolution, coneSize=0.4):
@@ -28,18 +40,24 @@ def match(jet, genjets, resolution, coneSize=0.4):
 
 class jetSmearer(Module):
 
-    def __init__(self, globalTag, jetType="AK4PFchs", jerInputFileName="Spring16_25nsV10_MC_PtResolution_AK4PFchs.txt", jerUncertaintyInputFileName="Spring16_25nsV10_MC_SF_AK4PFchs.txt"):
+    def __init__(self, jerTag, jetType="AK4PFchs"):
 
-        #--------------------------------------------------------------------------------------------
-        # CV: globalTag and jetType not yet used, as there is no consistent set of txt files for
-        #     JES uncertainties and JER scale factors and uncertainties yet
-        #--------------------------------------------------------------------------------------------
+        self.jerTag = jerTag
+        self.jetType = jetType
+        if 'ak8' in jetType.lower():
+            self.coneSize = 0.8
+        elif 'ak4' in jetType.lower():
+            self.coneSize = 0.4
+        else:
+            raise RuntimeError('Jet type %s is not recognized!' % jetType)
 
+    def beginJob(self):
         # read jet energy resolution (JER) and JER scale factors and uncertainties
-        # (the txt files were downloaded from https://github.com/cms-jet/JRDatabase/tree/master/textFiles/Spring16_25nsV10_MC )
-        self.jerInputFilePath = os.environ['CMSSW_BASE'] + "/src/PhysicsTools/NanoAODTools/data/jme/"
-        self.jerInputFileName = jerInputFileName
-        self.jerUncertaintyInputFileName = jerUncertaintyInputFileName
+        # get latest version from: https://twiki.cern.ch/twiki/bin/view/CMS/JetResolution
+        self.jerInputFilePath = tempfile.mkdtemp()
+        find_and_extract_tarball(self.jerTag, self.jerInputFilePath)
+        self.jerInputFile = os.path.join(self.jerInputFilePath, '%s_PtResolution_%s.txt' % (self.jerTag, self.jetType))
+        self.jerUncertaintyInputFile = os.path.join(self.jerInputFilePath, '%s_SF_%s.txt' % (self.jerTag, self.jetType))
 
         self.params_sf_and_uncertainty = ROOT.PyJetParametersWrapper()
         self.params_resolution = ROOT.PyJetParametersWrapper()
@@ -48,51 +66,47 @@ class jetSmearer(Module):
         # (needed for jet pT smearing)
         self.rnd = ROOT.TRandom3(12345)
 
-        self.jet_size = 0.8 if 'ak8' in jetType.lower() else 0.4
-
         # load libraries for accessing JER scale factors and uncertainties from txt files
         for library in ["libCondFormatsJetMETObjects", "libPhysicsToolsNanoAODTools"]:
             if library not in ROOT.gSystem.GetLibraries():
                 print("Load Library '%s'" % library.replace("lib", ""))
                 ROOT.gSystem.Load(library)
 
-    def beginJob(self):
-
         # initialize JER scale factors and uncertainties
         # (cf. PhysicsTools/PatUtils/interface/SmearedJetProducerT.h )
-        print("Loading jet energy resolutions (JER) from file '%s'" % os.path.join(self.jerInputFilePath, self.jerInputFileName))
-        self.jer = ROOT.PyJetResolutionWrapper(os.path.join(self.jerInputFilePath, self.jerInputFileName))
-        print("Loading JER scale factors and uncertainties from file '%s'" % os.path.join(self.jerInputFilePath, self.jerUncertaintyInputFileName))
-        self.jerSF_and_Uncertainty = ROOT.PyJetResolutionScaleFactorWrapper(os.path.join(self.jerInputFilePath, self.jerUncertaintyInputFileName))
+        print("Loading jet energy resolutions (JER) from file '%s'" % self.jerInputFile)
+        self.jer = ROOT.PyJetResolutionWrapper(self.jerInputFile)
+        print("Loading JER scale factors and uncertainties from file '%s'" % self.jerUncertaintyInputFile)
+        self.jerSF_and_Uncertainty = ROOT.PyJetResolutionScaleFactorWrapper(self.jerUncertaintyInputFile)
 
     def endJob(self):
-        pass
+        shutil.rmtree(self.jerInputFilePath)
 
     def setSeed(self, seed):
         self.rnd.SetSeed(seed)
 
     def getSmearValsPt(self, jet, genjets, rho):
 
-        #--------------------------------------------------------------------------------------------
+        # --------------------------------------------------------------------------------------------
         # CV: Smear jet pT to account for measured difference in JER between data and simulation.
         #     The function computes the nominal smeared jet pT simultaneously with the JER up and down shifts,
         #     in order to use the same random number to smear all three (for consistency reasons).
         #
         #     The implementation of this function follows PhysicsTools/PatUtils/interface/SmearedJetProducerT.h
         #
-        #--------------------------------------------------------------------------------------------
+        # --------------------------------------------------------------------------------------------
 
         if not jet.pt > 0.:
             print("WARNING: jet pT = %1.1f !!" % jet.pt)
             return (1., 1., 1.)
 
-        #--------------------------------------------------------------------------------------------
+        # --------------------------------------------------------------------------------------------
         # CV: define enums needed to access JER scale factors and uncertainties
         #    (cf. CondFormats/JetMETObjects/interface/JetResolutionObject.h)
         enum_nominal         = 0
         enum_shift_up        = 2
         enum_shift_down      = 1
-        #--------------------------------------------------------------------------------------------
+        # --------------------------------------------------------------------------------------------
 
         self.params_resolution.setJetPt(jet.pt)
         self.params_resolution.setJetEta(jet.eta)
@@ -100,15 +114,15 @@ class jetSmearer(Module):
         jet_pt_resolution = self.jer.getResolution(self.params_resolution)
 
         jet_pt_sf_and_uncertainty = {}
-        for enum_central_or_shift in [ enum_nominal, enum_shift_up, enum_shift_down ]:
+        for enum_central_or_shift in [enum_nominal, enum_shift_up, enum_shift_down]:
             self.params_sf_and_uncertainty.setJetEta(jet.eta)
-            self.params_sf_and_uncertainty.setJetPt(jet.pt) # Added bc. of pt dependency in 2018
+            self.params_sf_and_uncertainty.setJetPt(jet.pt)
             jet_pt_sf_and_uncertainty[enum_central_or_shift] = self.jerSF_and_Uncertainty.getScaleFactor(self.params_sf_and_uncertainty, enum_central_or_shift)
 
-        matched_genjet = match(jet, genjets, jet_pt_resolution * jet.pt, coneSize=self.jet_size)
+        matched_genjet = match(jet, genjets, jet_pt_resolution * jet.pt, coneSize=self.coneSize)
 
         smear_vals = {}
-        for central_or_shift in [ enum_nominal, enum_shift_up, enum_shift_down ]:
+        for central_or_shift in [enum_nominal, enum_shift_up, enum_shift_down]:
 
             smearFactor = None
             if matched_genjet:
@@ -137,30 +151,30 @@ class jetSmearer(Module):
 
             smear_vals[central_or_shift] = smearFactor
 
-        return ( smear_vals[enum_nominal], smear_vals[enum_shift_up], smear_vals[enum_shift_down] )
+        return (smear_vals[enum_nominal], smear_vals[enum_shift_up], smear_vals[enum_shift_down])
 
     def getSmearValsM(self, jet, gensubjets):
 
-        #--------------------------------------------------------------------------------------------
+        # --------------------------------------------------------------------------------------------
         # CV: Smear jet m to account for measured difference in JER between data and simulation.
         #     The function computes the nominal smeared jet m simultaneously with the JER up and down shifts,
         #     in order to use the same random number to smear all three (for consistency reasons).
         #
         #     The implementation of this function follows PhysicsTools/PatUtils/interface/SmearedJetProducerT.h
         #
-        #--------------------------------------------------------------------------------------------
+        # --------------------------------------------------------------------------------------------
 
         if not hasattr(jet, 'subjets') or len(jet.subjets) != 2 or jet.mass <= 0:
-#             print("WARNING: jet does not have 2 subjets")
+        #    print("WARNING: jet does not have 2 subjets")
             return (1., 1., 1.)
 
-        #--------------------------------------------------------------------------------------------
+        # --------------------------------------------------------------------------------------------
         # CV: define enums needed to access JER scale factors and uncertainties
         #    (cf. CondFormats/JetMETObjects/interface/JetResolutionObject.h)
         enum_nominal = 0
         enum_shift_up = 2
         enum_shift_down = 1
-        #--------------------------------------------------------------------------------------------
+        # --------------------------------------------------------------------------------------------
 
         # from https://twiki.cern.ch/twiki/bin/viewauth/CMS/JetWtagging
         jet_m_resolution = 10.1
@@ -172,7 +186,7 @@ class jetSmearer(Module):
             gensdmass = (matched_genjets[0].p4() + matched_genjets[1].p4()).M()
 
         smear_vals = {}
-        for central_or_shift in [ enum_nominal, enum_shift_up, enum_shift_down ]:
+        for central_or_shift in [enum_nominal, enum_shift_up, enum_shift_down]:
 
             smearFactor = None
             if gensdmass is not None and abs(jet.mass - gensdmass) < 3 * jet_m_resolution:
