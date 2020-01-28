@@ -58,6 +58,12 @@ def main(args):
                 print("Loading %s from %s " % (name, mod))
                 modules.append(getattr(obj, name)())
 
+    # remove any existing root files
+    for f in os.listdir('.'):
+        if f.endswith('.root'):
+            print('Removing file %s' % f)
+            os.remove(f)
+
     # run postprocessor
     filepaths, allow_prefetch = xrd_prefix(md['jobs'][args.jobid]['inputfiles'])
     outputname = outputName(md, args.jobid)
