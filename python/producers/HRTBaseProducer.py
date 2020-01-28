@@ -154,18 +154,6 @@ class HRTBaseProducer(Module, object):
         self.out.branch("ak8_1_DeepAK8MD_WvsQCD", "F")
         self.out.branch("ak8_1_DeepAK8MD_ZvsQCD", "F")
         self.out.branch("ak8_1_DeepAK8MD_ZHbbvsQCD", "F")
-        ##Raw score
-        self.out.branch("ak8_1_DeepAK8_Top","F")
-        self.out.branch("ak8_1_DeepAK8_W","F")
-        self.out.branch("ak8_1_DeepAK8_Z","F")
-        self.out.branch("ak8_1_DeepAK8_Hbb","F")
-        self.out.branch("ak8_1_DeepAK8_QCD","F")
-        self.out.branch("ak8_1_DeepAK8MD_Top","F")
-        self.out.branch("ak8_1_DeepAK8MD_W","F")
-        self.out.branch("ak8_1_DeepAK8MD_Z","F")
-        self.out.branch("ak8_1_DeepAK8MD_Hbb","F")
-        self.out.branch("ak8_1_DeepAK8MD_QCD","F")
-        ########################
 
         # matching variables
         if self.isMC:
