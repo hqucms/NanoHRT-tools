@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(m
 hrt_cfgname = 'hrtSFTree_cfg.json'
 default_config = {'data': False, 'channel': None, 'year': None, 'jec': False, 'jes': None, 'jes_source': '', 'jer': 'nominal', 'jmr': None, 'met_unclustered': None}
 cut_dict = {
-    'muon': 'Sum$(Muon_pt>55 && Muon_tightId)>0 && nFatJet>0',
+    'muon': 'Sum$(Muon_pt>55 && abs(Muon_eta)<2.4 && Muon_tightId && Muon_miniPFRelIso_all<0.10)>0 && nFatJet>0 && Sum$(abs(Jet_eta)<2.4 && Jet_btagDeepB>{DeepCSV_WP_M})>0',
     'photon': 'Sum$(Photon_pt>200)>0 && nFatJet>0',
     'qcd': 'Sum$((Jet_pt>25 && abs(Jet_eta)<2.4 && (Jet_jetId & 2)) * Jet_pt)>800 && nFatJet>0',
     }
@@ -57,6 +57,8 @@ def main():
         # FIXME: Need to update JEC when running on NanoAODv5
         default_config['jec'] = True
 
+    year_dep_cuts = {'DeepCSV_WP_M': {2016:0.6321, 2017:0.4941, 2018:0.4184}[year]}
+
     if not (args.post or args.add_weight or args.merge):
         tar_cmssw()
 
@@ -70,7 +72,7 @@ def main():
     else:
         args.datasets = 'samples/%s_%d_MC.yaml' % (channel, year)
 
-    args.cut = cut_dict[channel]
+    args.cut = cut_dict[channel].format(**year_dep_cuts)
 
     args.imports = [('PhysicsTools.NanoHRTTools.producers.hrtSFTreeProducer', 'hrtSFTreeFromConfig')]
     if not args.run_data:

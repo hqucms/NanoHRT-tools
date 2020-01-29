@@ -83,7 +83,7 @@ class HRTBaseProducer(Module, object):
 
     def __init__(self, channel, **kwargs):
         self.year = int(kwargs['year'])
-        print ('Running on %d DATA/MC' %(year))
+        print ('Running on %d DATA/MC' % (self.year))
 
         self._channel = channel
         self._systOpt = {'jec':False, 'jes':None, 'jes_source':'', 'jer':'nominal', 'jmr':None, 'met_unclustered':None}
@@ -94,7 +94,7 @@ class HRTBaseProducer(Module, object):
 
         self.DeepCSV_WP_M = {2016:0.6321, 2017:0.4941, 2018:0.4184}[self.year]
 
-        self.jetmetCorr = JetMETCorrector(year,
+        self.jetmetCorr = JetMETCorrector(self.year,
                                           jetType="AK4PFchs",
                                           jec=self._systOpt['jec'],
                                           jes=self._systOpt['jes'],
@@ -102,7 +102,7 @@ class HRTBaseProducer(Module, object):
                                           jer=self._systOpt['jer'],
                                           met_unclustered=self._systOpt['met_unclustered'])
 
-        self.ak8Corr = JetMETCorrector(year,
+        self.ak8Corr = JetMETCorrector(self.year,
                                        jetType="AK8PFPuppi",
                                        jec=self._systOpt['jec'],
                                        jes=self._systOpt['jes'],
@@ -111,7 +111,7 @@ class HRTBaseProducer(Module, object):
                                        jmr=self._systOpt['jmr'],
                                        met_unclustered=self._systOpt['met_unclustered'])
 
-        self.ak8SubjetCorr = JetMETCorrector(year,
+        self.ak8SubjetCorr = JetMETCorrector(self.year,
                                              jetType="AK4PFPuppi",
                                              jec=self._systOpt['jec'],
                                              jes=self._systOpt['jes'],
@@ -176,6 +176,9 @@ class HRTBaseProducer(Module, object):
 
         event._allAK8jets = Collection(event, "FatJet")
         event.ak8Subjets = Collection(event, "SubJet")  # do not sort subjets after updating!!
+        # prevent JetReCalibrator from crashing by setting a dummy jetArea -- this is never used for Puppi jets!
+        for sj in event.ak8Subjets:
+            sj.area = 0.5
 
         if self.isMC or self._systOpt['jec']:
             rho = event.fixedGridRhoFastjetAll

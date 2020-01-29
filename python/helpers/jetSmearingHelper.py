@@ -16,6 +16,7 @@ def find_and_extract_tarball(name, destination):
             if os.path.exists(fullpath):
                 with tarfile.open(fullpath, "r:gz") as tar:
                     tar.extractall(destination)
+                print('... extracted %s to %s' % (fullpath, destination))
                 return fullpath
 
 

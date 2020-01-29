@@ -113,14 +113,15 @@ class JetMETCorrector(object):
                                                      calculateSeparateCorrections=False,
                                                      calculateType1METCorrection=False)
             self.jetReCalibratorsDATA = {}
-            for _, tag in self.dataTags:
+            for iov, tag in self.dataTags:
                 find_and_extract_tarball(tag, self.jesInputFilePath)
-                self.jetReCalibratorsDATA[tag] = JetReCalibrator(globalTag=tag,
-                                                                 jetFlavour=self.jetType,
-                                                                 doResidualJECs=True,
-                                                                 jecPath=self.jesInputFilePath,
-                                                                 calculateSeparateCorrections=False,
-                                                                 calculateType1METCorrection=False)
+                if iov > 0:
+                    self.jetReCalibratorsDATA[tag] = JetReCalibrator(globalTag=tag,
+                                                                     jetFlavour=self.jetType,
+                                                                     doResidualJECs=True,
+                                                                     jecPath=self.jesInputFilePath,
+                                                                     calculateSeparateCorrections=False,
+                                                                     calculateType1METCorrection=False)
 
         # JES uncertainty
         if self.jes in ['up', 'down']:

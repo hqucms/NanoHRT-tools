@@ -99,7 +99,7 @@ def main(args):
 
     # stage out
     if md['outputdir'].startswith('/eos'):
-        cmd = 'xrdcp -np {outputname} {outputdir}/{outputname}'.format(outputname=outputname, outputdir=xrd(md['outputdir']))
+        cmd = 'xrdcp -np {outputname} {outputdir}/{outputname}'.format(outputname=outputname, outputdir=xrd_prefix(md['outputdir']))
         success = False
         for count in range(args.max_retry):
             p = subprocess.Popen(cmd, shell=True)
