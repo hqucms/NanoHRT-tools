@@ -283,15 +283,18 @@ class HRTBaseProducer(Module, object):
         event.genparts = genparts
 
     def fillBaseEventInfo(self, event):
+
         met_filters = bool(
             event.Flag_goodVertices and
             event.Flag_globalSuperTightHalo2016Filter and
             event.Flag_HBHENoiseFilter and
             event.Flag_HBHENoiseIsoFilter and
             event.Flag_EcalDeadCellTriggerPrimitiveFilter and
-            event.Flag_BadPFMuonFilter and
-            event.Flag_BadChargedCandidateFilter
+            event.Flag_BadPFMuonFilter
+#             event.Flag_BadChargedCandidateFilter
             )
+        if self.year in (2017, 2018):
+            met_filters = met_filters and event.Flag_ecalBadCalibFilterV2
         if not self.isMC:
             met_filters = met_filters and event.Flag_eeBadScFilter
         self.out.fillBranch("passmetfilters", met_filters)
