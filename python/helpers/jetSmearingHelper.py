@@ -8,7 +8,7 @@ from PhysicsTools.NanoAODTools.postprocessing.tools import deltaR
 
 
 def find_and_extract_tarball(name, destination):
-    search_pathes = [os.path.abspath(__file__).split('/python/')[0] + '/data/jme',
+    search_pathes = [os.environ['CMSSW_BASE'] + '/src/PhysicsTools/NanoHRTTools/data/jme/',
                      os.environ['CMSSW_BASE'] + '/src/PhysicsTools/NanoAODTools/data/jme/']
     for p in search_pathes:
         for ext in ['.tgz', '.tar.gz']:
