@@ -15,6 +15,11 @@ cut_dict = {
     'qcd': 'Sum$((Jet_pt>25 && abs(Jet_eta)<2.4 && (Jet_jetId & 2)) * Jet_pt)>800 && nFatJet>0',
     }
 
+golden_json = {
+    2016: 'Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt',
+    2017: 'Cert_294927-306462_13TeV_EOY2017ReReco_Collisions17_JSON_v1.txt',
+    2018: 'Cert_314472-325175_13TeV_17SeptEarlyReReco2018ABC_PromptEraD_Collisions18_JSON.txt',
+    }
 
 def main():
     parser = get_arg_parser()
@@ -69,6 +74,7 @@ def main():
 
     if args.run_data:
         args.datasets = 'samples/%s_%d_DATA.yaml' % (channel, year)
+        args.json = os.path.expandvars('$CMSSW_BASE/src/PhysicsTools/NanoHRTTools/data/JSON/%s' % golden_json[year])
     else:
         args.datasets = 'samples/%s_%d_MC.yaml' % (channel, year)
 
