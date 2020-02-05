@@ -74,7 +74,8 @@ def main():
 
     if args.run_data:
         args.datasets = 'samples/%s_%d_DATA.yaml' % (channel, year)
-        args.json = os.path.expandvars('$CMSSW_BASE/src/PhysicsTools/NanoHRTTools/data/JSON/%s' % golden_json[year])
+        args.extra_transfer = os.path.expandvars('$CMSSW_BASE/src/PhysicsTools/NanoHRTTools/data/JSON/%s' % golden_json[year])
+        args.json = golden_json[year]
     else:
         args.datasets = 'samples/%s_%d_MC.yaml' % (channel, year)
 
