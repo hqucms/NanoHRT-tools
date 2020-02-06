@@ -22,7 +22,7 @@ class PhotonSampleProducer(HRTBaseProducer):
         super(PhotonSampleProducer, self).beginFile(inputFile, outputFile, inputTree, wrappedOutputTree)
 
         ## trigger variables
-        self.out.branch("passPhoton165_HE10", "O")
+        self.out.branch("passTrigPhoton", "O")
 
         ## event variables
         self.out.branch("ht", "F")
@@ -31,6 +31,7 @@ class PhotonSampleProducer(HRTBaseProducer):
         self.out.branch("nphotons", "I")
         self.out.branch("pho_1_pt", "F")
         self.out.branch("pho_1_eta", "F")
+        self.out.branch("pho_1_phi", "F")
 
     def prepareEvent(self, event):
 
@@ -60,30 +61,6 @@ class PhotonSampleProducer(HRTBaseProducer):
         if len(event.ak8jets) < 1:
             return False
 
-        ## selection on CA15 jets / drop if overlaps with a photon
-        event.ca15jets = []
-        for fj in event._allCA15jets:
-            if not (fj.pt > 200 and abs(fj.eta) < 2.4 and (fj.jetId & 2)):
-                continue
-            if deltaR(event.photons[0], fj) < 1.5:
-                continue
-            event.ca15jets.append(fj)
-
-        if len(event.ca15jets) < 1:
-            return False
-
-
-        ## require the leading ak8 & ca15 jets overlap
-        if deltaR(event.ak8jets[0], event.ca15jets[0]) > 0.8:
-            return False
-
-        # # selection on HOTVR jets
-        event.hotvrjets = []
-        for fj in event._allHOTVRjets:
-            if not (fj.pt > 200 and abs(fj.eta) < 2.4):
-                continue
-            event.hotvrjets.append(fj)
-
         ## ht selection
         event.ak4jets = []
         for j in event._allJets:
@@ -92,8 +69,6 @@ class PhotonSampleProducer(HRTBaseProducer):
             event.ak4jets.append(j)
 
         event.ht = sum([j.pt for j in event.ak4jets])
-        if event.ht < 200:
-            return False
 
         ## return True if passes selection
         return True
@@ -107,7 +82,10 @@ class PhotonSampleProducer(HRTBaseProducer):
             return False
 
         # fill
-        self.out.fillBranch("passPhoton165_HE10", event.HLT_Photon165_HE10)
+        if self.year == 2016:
+            self.out.fillBranch("passTrigPhoton", event.HLT_Photon175)
+        else:
+            self.out.fillBranch("passTrigPhoton", event.HLT_Photon200)
 
         ## event variables
         self.out.fillBranch("ht", event.ht)
@@ -116,6 +94,7 @@ class PhotonSampleProducer(HRTBaseProducer):
         self.out.fillBranch("nphotons", len(event.photons))
         self.out.fillBranch("pho_1_pt", event.photons[0].pt)
         self.out.fillBranch("pho_1_eta", event.photons[0].eta)
+        self.out.fillBranch("pho_1_phi", event.photons[0].phi)
 
         self.fillBaseEventInfo(event)
         self.fillFatJetInfo(event)
@@ -124,5 +103,7 @@ class PhotonSampleProducer(HRTBaseProducer):
 
 
 # define modules using the syntax 'name = lambda : constructor' to avoid having them loaded when not needed
-PhotonTree = lambda: PhotonSampleProducer()
+PhotonTree_2016 = lambda: PhotonSampleProducer(year=2016)
+PhotonTree_2017 = lambda: PhotonSampleProducer(year=2017)
+PhotonTree_2018 = lambda: PhotonSampleProducer(year=2018)
 
