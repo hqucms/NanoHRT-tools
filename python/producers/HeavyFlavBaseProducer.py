@@ -330,7 +330,7 @@ class HeavyFlavBaseProducer(Module, object):
                 self.out.fillBranch(prefix + "DeepAK8MD_ZHbbvsQCD", fj.deepTagMD_ZHbbvsQCD)
                 self.out.fillBranch(prefix + "DeepAK8MD_ZHccvsQCD", fj.deepTagMD_ZHccvsQCD)
                 self.out.fillBranch(prefix + "DeepAK8MD_bbVsLight", fj.deepTagMD_bbvsLight)
-                self.out.fillBranch(prefix + "DeepAK8MD_bbVsTop", -1)  # FIXME
+                self.out.fillBranch(prefix + "DeepAK8MD_bbVsTop", (1 / (1 + (fj.deepTagMD_TvsQCD / fj.deepTagMD_HbbvsQCD) * (1 - fj.deepTagMD_HbbvsQCD) / (1 - fj.deepTagMD_TvsQCD))))
             except RuntimeError:
                 self.out.fillBranch(prefix + "DeepAK8MD_ZHbbvsQCD", -1)
                 self.out.fillBranch(prefix + "DeepAK8MD_ZHccvsQCD", -1)
