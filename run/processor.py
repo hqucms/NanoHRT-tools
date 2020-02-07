@@ -13,6 +13,7 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import Pos
 import ROOT
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 
+
 def xrd_prefix(filepaths):
     prefix = ''
     allow_prefetch = False
@@ -58,6 +59,12 @@ def main(args):
                 print("Loading %s from %s " % (name, mod))
                 modules.append(getattr(obj, name)())
 
+    # remove any existing root files
+    for f in os.listdir('.'):
+        if f.endswith('.root'):
+            print('Removing file %s' % f)
+            os.remove(f)
+
     # run postprocessor
     filepaths, allow_prefetch = xrd_prefix(md['jobs'][args.jobid]['inputfiles'])
     outputname = outputName(md, args.jobid)
@@ -93,7 +100,7 @@ def main(args):
 
     # stage out
     if md['outputdir'].startswith('/eos'):
-        cmd = 'xrdcp -np {outputname} {outputdir}/{outputname}'.format(outputname=outputname, outputdir=xrd(md['outputdir']))
+        cmd = 'xrdcp -np {outputname} {outputdir}/{outputname}'.format(outputname=outputname, outputdir=xrd_prefix(md['outputdir'])[0][0])
         success = False
         for count in range(args.max_retry):
             p = subprocess.Popen(cmd, shell=True)

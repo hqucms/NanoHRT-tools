@@ -6,10 +6,10 @@ ROOT.PyConfig.IgnoreCommandLineOptions = True
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection, Object
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.tools import deltaPhi, deltaR, closest
-from PhysicsTools.NanoHRTTools.helpers.jetmetCorrector import JetMETCorrector
 
+from PhysicsTools.NanoHRTTools.helpers.jetmetCorrector import JetMETCorrector
+from PhysicsTools.NanoHRTTools.helpers.nnHelper import convert_prob
 from PhysicsTools.NanoHRTTools.helpers.ak8MassCorrectionHelper import get_corrected_sdmass
-from PhysicsTools.NanoHRTTools.helpers.deepAK8Helper import get_nominal_score, get_decorr_score
 from PhysicsTools.NanoHRTTools.helpers.n2DDTHelper import N2DDTHelper
 
 import logging
@@ -82,58 +82,43 @@ def rndSeed(event, jets, extra=0):
 class HRTBaseProducer(Module, object):
 
     def __init__(self, channel, **kwargs):
+        self.year = int(kwargs['year'])
+        print ('Running on %d DATA/MC' % (self.year))
+
         self._channel = channel
-        self._systOpt = {'jec':False, 'jes':None, 'jes_source':'', 'jer':'nominal', 'jmr':None, 'met_unclustered':None}
+        self._systOpt = {'jec': False, 'jes': None, 'jes_source': '', 'jer': 'nominal', 'jmr': None, 'met_unclustered': None}
         for k in kwargs:
             self._systOpt[k] = kwargs[k]
 
         logging.info('Running %s channel with systematics %s', self._channel, str(self._systOpt))
 
-        self.jetmetCorr = JetMETCorrector(jetType="AK4PFchs",
+        self.DeepCSV_WP_M = {2016: 0.6321, 2017: 0.4941, 2018: 0.4184}[self.year]
+
+        self.jetmetCorr = JetMETCorrector(self.year,
+                                          jetType="AK4PFchs",
                                           jec=self._systOpt['jec'],
                                           jes=self._systOpt['jes'],
                                           jes_source=self._systOpt['jes_source'],
                                           jer=self._systOpt['jer'],
                                           met_unclustered=self._systOpt['met_unclustered'])
 
-        self.ak8Corr = JetMETCorrector(jetType="AK8PFPuppi",
-                                          jec=self._systOpt['jec'] or self._systOpt.get('data', False),  # FIXME: this is added due to L2L3Residual not applied on AK8 jets in the current Ntuples
-                                          jes=self._systOpt['jes'],
-                                          jes_source=self._systOpt['jes_source'],
-                                          jer=self._systOpt['jer'],
-                                          jmr=self._systOpt['jmr'],
-                                          met_unclustered=self._systOpt['met_unclustered'])
+        self.ak8Corr = JetMETCorrector(self.year,
+                                       jetType="AK8PFPuppi",
+                                       jec=self._systOpt['jec'],
+                                       jes=self._systOpt['jes'],
+                                       jes_source=self._systOpt['jes_source'],
+                                       jer=self._systOpt['jer'],
+                                       jmr=self._systOpt['jmr'],
+                                       met_unclustered=self._systOpt['met_unclustered'])
 
-        self.ak8SubjetCorr = JetMETCorrector(jetType="AK4PFPuppi",
-                                          jec=self._systOpt['jec'],
-                                          jes=self._systOpt['jes'],
-                                          jes_source=self._systOpt['jes_source'],
-                                          jer=self._systOpt['jer'],
-                                          jmr=self._systOpt['jmr'],
-                                          met_unclustered=self._systOpt['met_unclustered'])
-
-        self.ca15Corr = JetMETCorrector(jetType="AK8PFPuppi",
-                                          jec=self._systOpt['jec'],
-                                          jes=self._systOpt['jes'],
-                                          jes_source=self._systOpt['jes_source'],
-                                          jer=self._systOpt['jer'],
-                                          jmr=self._systOpt['jmr'],
-                                          met_unclustered=self._systOpt['met_unclustered'])
-
-        self.ca15SubjetCorr = JetMETCorrector(jetType="AK4PFPuppi",
-                                          jec=self._systOpt['jec'],
-                                          jes=self._systOpt['jes'],
-                                          jes_source=self._systOpt['jes_source'],
-                                          jer=self._systOpt['jer'],
-                                          jmr=self._systOpt['jmr'],
-                                          met_unclustered=self._systOpt['met_unclustered'])
-
-        self.hotvrSubjetCorr = JetMETCorrector(jetType="AK4PFPuppi",
-                                          jec=self._systOpt['jec'],
-                                          jes=self._systOpt['jes'],
-                                          jes_source=self._systOpt['jes_source'],
-                                          jer=self._systOpt['jer'],
-                                          met_unclustered=self._systOpt['met_unclustered'])
+        self.ak8SubjetCorr = JetMETCorrector(self.year,
+                                             jetType="AK4PFPuppi",
+                                             jec=self._systOpt['jec'],
+                                             jes=self._systOpt['jes'],
+                                             jes_source=self._systOpt['jes_source'],
+                                             jer=self._systOpt['jer'],
+                                             jmr=self._systOpt['jmr'],
+                                             met_unclustered=self._systOpt['met_unclustered'])
 
         self._n2helper = N2DDTHelper(os.path.expandvars('$CMSSW_BASE/src/PhysicsTools/NanoHRTTools/data/N2DDT/OutputAK82016v13.root'))
 
@@ -141,20 +126,16 @@ class HRTBaseProducer(Module, object):
         self.jetmetCorr.beginJob()
         self.ak8Corr.beginJob()
         self.ak8SubjetCorr.beginJob()
-        self.ca15Corr.beginJob()
-        self.ca15SubjetCorr.beginJob()
-        self.hotvrSubjetCorr.beginJob()
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.isMC = bool(inputTree.GetBranch('genWeight'))
+        self.hasParticleNet = bool(inputTree.GetBranch('FatJet_ParticleNet_probQCDbb'))
         self.out = wrappedOutputTree
 
         self.out.branch("passmetfilters", "O")
 
         # Large-R jets
         self.out.branch("n_ak8", "I")
-        self.out.branch("n_ca15", "I")
-        self.out.branch("n_hotvr", "I")
 
         self.out.branch("ak8_1_pt", "F")
         self.out.branch("ak8_1_eta", "F")
@@ -167,41 +148,23 @@ class HRTBaseProducer(Module, object):
         self.out.branch("ak8_1_tau1", "F")
         self.out.branch("ak8_1_tau2", "F")
         self.out.branch("ak8_1_tau3", "F")
+        self.out.branch("ak8_1_DeepAK8_TvsQCD", "F")
         self.out.branch("ak8_1_DeepAK8_WvsQCD", "F")
         self.out.branch("ak8_1_DeepAK8_ZvsQCD", "F")
-        self.out.branch("ak8_1_DeepAK8_HvsQCD", "F")
-        self.out.branch("ak8_1_DeepAK8_TvsQCD", "F")
+        self.out.branch("ak8_1_DeepAK8MD_TvsQCD", "F")
         self.out.branch("ak8_1_DeepAK8MD_WvsQCD", "F")
         self.out.branch("ak8_1_DeepAK8MD_ZvsQCD", "F")
-        self.out.branch("ak8_1_DeepAK8MD_HvsQCD", "F")
-        self.out.branch("ak8_1_DeepAK8MD_TvsQCD", "F")
-        self.out.branch("ak8_1_best_WvsQCD", "F")
-        self.out.branch("ak8_1_best_ZvsQCD", "F")
-        self.out.branch("ak8_1_best_HvsQCD", "F")
-        self.out.branch("ak8_1_best_TvsQCD", "F")
-        self.out.branch("ak8_1_image_top", "F")
-        self.out.branch("ak8_1_image_top_md", "F")
-        self.out.branch("ak8_1_btagCSVV2", "F")
-        self.out.branch("ak8_1_btagHbb", "F")
-        self.out.branch("ak8_1_sj1_btagCSVV2", "F")
-        self.out.branch("ak8_1_sj2_btagCSVV2", "F")
+        self.out.branch("ak8_1_DeepAK8MD_ZHbbvsQCD", "F")
 
-        self.out.branch("ca15_1_pt", "F")
-        self.out.branch("ca15_1_eta", "F")
-        self.out.branch("ca15_1_phi", "F")
-        self.out.branch("ca15_1_mass", "F")
-        self.out.branch("ca15_1_ecfTopTagBDT", "F")
-        self.out.branch("ca15_1_httFRec", "F")
-        self.out.branch("ca15_1_tau32sd", "F")
-
-        self.out.branch("hotvr_1_pt", "F")
-        self.out.branch("hotvr_1_eta", "F")
-        self.out.branch("hotvr_1_phi", "F")
-        self.out.branch("hotvr_1_mass", "F")
-        self.out.branch("hotvr_1_tau32", "F")
-        self.out.branch("hotvr_1_fpt", "F")
-        self.out.branch("hotvr_1_mmin", "F")
-        self.out.branch("hotvr_1_nsubjets", "F")
+        if self.hasParticleNet:
+            self.out.branch("ak8_1_ParticleNet_TvsQCD", "F")
+            self.out.branch("ak8_1_ParticleNet_WvsQCD", "F")
+            self.out.branch("ak8_1_ParticleNet_ZvsQCD", "F")
+            self.out.branch("ak8_1_ParticleNetMD_Xbb", "F")
+            self.out.branch("ak8_1_ParticleNetMD_Xcc", "F")
+            self.out.branch("ak8_1_ParticleNetMD_Xqq", "F")
+            self.out.branch("ak8_1_ParticleNetMD_QCD", "F")
+            self.out.branch("ak8_1_ParticleNetMD_WvsQCD", "F")
 
         # matching variables
         if self.isMC:
@@ -209,27 +172,16 @@ class HRTBaseProducer(Module, object):
             self.out.branch("ak8_1_dr_fj_top_wqmax", "F")
             self.out.branch("ak8_1_dr_fj_top_wqmin", "F")
 
-            self.out.branch("ca15_1_dr_fj_top_b", "F")
-            self.out.branch("ca15_1_dr_fj_top_wqmax", "F")
-            self.out.branch("ca15_1_dr_fj_top_wqmin", "F")
-
-            self.out.branch("hotvr_1_dr_fj_top_b", "F")
-            self.out.branch("hotvr_1_dr_fj_top_wqmax", "F")
-            self.out.branch("hotvr_1_dr_fj_top_wqmin", "F")
-
     def correctJetsAndMET(self, event):
         # correct Jets and MET
         event._allJets = Collection(event, "Jet")
-        event.met = METObject(event, "MET")
+        event.met = METObject(event, "METFixEE2017") if self.year == 2017 else METObject(event, "MET")
 
-        event._allAK8jets = Collection(event, "CustomAK8Puppi")
-        event.ak8Subjets = Collection(event, "CustomAK8PuppiSubJet")  # do not sort subjets after updating!!
-
-        event._allCA15jets = Collection(event, "CA15Puppi")
-        event.ca15Subjets = Collection(event, "CA15PuppiSubJet")  # do not sort subjets after updating!!
-
-        event._allHOTVRjets = Collection(event, "HOTVRPuppi")
-        event.hotvrSubjets = Collection(event, "HOTVRPuppiSubJet")  # do not sort subjets after updating!!
+        event._allAK8jets = Collection(event, "FatJet")
+        event.ak8Subjets = Collection(event, "SubJet")  # do not sort subjets after updating!!
+        # prevent JetReCalibrator from crashing by setting a dummy jetArea -- this is never used for Puppi jets!
+        for sj in event.ak8Subjets:
+            sj.area = 0.5
 
         if self.isMC or self._systOpt['jec']:
             rho = event.fixedGridRhoFastjetAll
@@ -238,43 +190,18 @@ class HRTBaseProducer(Module, object):
             self.jetmetCorr.correctJetAndMET(jets=event._allJets, met=event.met, rho=rho,
                                              genjets=Collection(event, 'GenJet') if self.isMC else None,
                                              isMC=self.isMC, runNumber=event.run)
-            event._allJets = sorted(event._allJets, key=lambda x : x.pt, reverse=True)  # sort by pt after updating
+            event._allJets = sorted(event._allJets, key=lambda x: x.pt, reverse=True)  # sort by pt after updating
 
             # correct AK8 fatjets
             self.ak8Corr.setSeed(rndSeed(event, event._allAK8jets))
             self.ak8Corr.correctJetAndMET(jets=event._allAK8jets, met=None, rho=rho,
-                                             genjets=Collection(event, 'CustomGenJetAK8') if self.isMC else None,
-                                             isMC=self.isMC, runNumber=event.run)
+                                          genjets=Collection(event, 'GenJetAK8') if self.isMC else None,
+                                          isMC=self.isMC, runNumber=event.run)
             # correct AK8 subjets
             self.ak8SubjetCorr.setSeed(rndSeed(event, event.ak8Subjets))
             self.ak8SubjetCorr.correctJetAndMET(jets=event.ak8Subjets, met=None, rho=rho,
-                                             genjets=Collection(event, 'CustomGenSubJetAK8') if self.isMC else None,
-                                             isMC=self.isMC, runNumber=event.run)
-
-            # correct AK8 fatjets
-            self.ca15Corr.setSeed(rndSeed(event, event._allCA15jets))
-            self.ca15Corr.correctJetAndMET(jets=event._allCA15jets, met=None, rho=rho,
-                                             genjets=Collection(event, 'GenJetCA15') if self.isMC else None,
-                                             isMC=self.isMC, runNumber=event.run)
-            # correct AK8 subjets
-            self.ca15SubjetCorr.setSeed(rndSeed(event, event.ca15Subjets))
-            self.ca15SubjetCorr.correctJetAndMET(jets=event.ca15Subjets, met=None, rho=rho,
-                                             genjets=Collection(event, 'GenSubJetCA15') if self.isMC else None,
-                                             isMC=self.isMC, runNumber=event.run)
-
-            # correct HOTVR subjets
-            self.hotvrSubjetCorr.setSeed(rndSeed(event, event.hotvrSubjets))
-            self.hotvrSubjetCorr.correctJetAndMET(jets=event.hotvrSubjets, met=None, rho=rho,
-                                             genjets=Collection(event, 'GenJet') if self.isMC else None,
-                                             isMC=self.isMC, runNumber=event.run)
-
-        # FIXME: this is added due to L2L3Residual not applied on AK8 jets in the current Ntuples
-        if self._systOpt.get('data', False):
-            logging.debug('Re-correcting AK8Puppi jets on data to apply missing L2L3Residual...')
-            rho = event.fixedGridRhoFastjetAll
-            # correct AK8 fatjets
-            self.ak8Corr.setSeed(rndSeed(event, event._allAK8jets))
-            self.ak8Corr.correctJetAndMET(jets=event._allAK8jets, met=None, rho=rho, genjets=None, isMC=False, runNumber=event.run)
+                                                genjets=Collection(event, 'SubGenJetAK8') if self.isMC else None,
+                                                isMC=self.isMC, runNumber=event.run)
 
         # jet mass resolution smearing
         if self.isMC and self._systOpt['jmr']:
@@ -286,19 +213,30 @@ class HRTBaseProducer(Module, object):
             fj.msoftdrop = get_sdmass(fj.subjets)
             fj.corr_sdmass = get_corrected_sdmass(fj, fj.subjets)
             fj.n2b1ddt = self._n2helper.transform(fj.n2b1, pt=fj.pt, msd=fj.corr_sdmass)
-        event._allAK8jets = sorted(event._allAK8jets, key=lambda x : x.pt, reverse=True)  # sort by pt
+        event._allAK8jets = sorted(event._allAK8jets, key=lambda x: x.pt, reverse=True)  # sort by pt
 
-        for fj in event._allCA15jets:
-            fj.subjets = get_subjets(fj, event.ca15Subjets, ('subJetIdx1', 'subJetIdx2'))
-            fj.msoftdrop = get_sdmass(fj.subjets)
-        event._allCA15jets = sorted(event._allCA15jets, key=lambda x : x.pt, reverse=True)  # sort by pt
+    def selectLeptons(self, event):
+        # do lepton selection
+        event.preselLeptons = []  # used for jet lepton cleaning
+        event.looseLeptons = []  # used for lepton counting
 
-        # for HOTVR we use the sum of subjets p4
-        for fj in event._allHOTVRjets:
-            fj.subjets = get_subjets(fj, event.hotvrSubjets, ('subJetIdx1', 'subJetIdx2', 'subJetIdx3'))
-            newP4 = sum([sj.p4() for sj in fj.subjets], ROOT.TLorentzVector())
-            fj.pt, fj.eta, fj.phi, fj.mass = newP4.Pt(), newP4.Eta(), newP4.Phi(), newP4.M()
-        event._allHOTVRjets = sorted(event._allHOTVRjets, key=lambda x : x.pt, reverse=True)  # sort by pt
+        electrons = Collection(event, "Electron")
+        for el in electrons:
+            el.etaSC = el.eta + el.deltaEtaSC
+            if el.pt > 7 and abs(el.eta) < 2.4 and abs(el.dxy) < 0.05 and abs(el.dz) < 0.2 and el.pfRelIso03_all < 0.4:
+                event.preselLeptons.append(el)
+                if el.mvaFall17V2noIso_WP90:
+                    event.looseLeptons.append(el)
+
+        muons = Collection(event, "Muon")
+        for mu in muons:
+            if mu.pt > 5 and abs(mu.eta) < 2.4 and abs(mu.dxy) < 0.5 and abs(mu.dz) < 1.0 and mu.pfRelIso04_all < 0.4:
+                event.preselLeptons.append(mu)
+                if mu.looseId:
+                    event.looseLeptons.append(mu)
+
+        event.preselLeptons.sort(key=lambda x: x.pt, reverse=True)
+        event.looseLeptons.sort(key=lambda x: x.pt, reverse=True)
 
     def loadGenHistory(self, event):
         # gen matching
@@ -371,15 +309,18 @@ class HRTBaseProducer(Module, object):
         event.genparts = genparts
 
     def fillBaseEventInfo(self, event):
+
         met_filters = bool(
             event.Flag_goodVertices and
             event.Flag_globalSuperTightHalo2016Filter and
             event.Flag_HBHENoiseFilter and
             event.Flag_HBHENoiseIsoFilter and
             event.Flag_EcalDeadCellTriggerPrimitiveFilter and
-            event.Flag_BadPFMuonFilter and
-            event.Flag_BadChargedCandidateFilter
+            event.Flag_BadPFMuonFilter
+#             event.Flag_BadChargedCandidateFilter
             )
+        if self.year in (2017, 2018):
+            met_filters = met_filters and event.Flag_ecalBadCalibFilterV2
         if not self.isMC:
             met_filters = met_filters and event.Flag_eeBadScFilter
         self.out.fillBranch("passmetfilters", met_filters)
@@ -407,49 +348,23 @@ class HRTBaseProducer(Module, object):
         fillBranchAK8("ak8_1_tau1", ak8.tau1)
         fillBranchAK8("ak8_1_tau2", ak8.tau2)
         fillBranchAK8("ak8_1_tau3", ak8.tau3)
-        fillBranchAK8("ak8_1_DeepAK8_TvsQCD", get_nominal_score(ak8, 'TvsQCD'))
-        fillBranchAK8("ak8_1_DeepAK8_WvsQCD", get_nominal_score(ak8, 'WvsQCD'))
-        fillBranchAK8("ak8_1_DeepAK8_ZvsQCD", get_nominal_score(ak8, 'ZvsQCD'))
-        fillBranchAK8("ak8_1_DeepAK8_HvsQCD", get_nominal_score(ak8, 'HbbvsQCD'))
-        fillBranchAK8("ak8_1_DeepAK8MD_TvsQCD", get_decorr_score(ak8, 'TvsQCD'))
-        fillBranchAK8("ak8_1_DeepAK8MD_WvsQCD", get_decorr_score(ak8, 'WvsQCD'))
-        fillBranchAK8("ak8_1_DeepAK8MD_ZvsQCD", get_decorr_score(ak8, 'ZvsQCD'))
-        fillBranchAK8("ak8_1_DeepAK8MD_HvsQCD", get_decorr_score(ak8, 'ZHbbvsQCD'))
-        fillBranchAK8("ak8_1_best_WvsQCD", ak8.bestW / (ak8.bestW + ak8.bestQCD + ak8.bestB) if ak8 and ak8.bestQCD > 0 else -1)
-        fillBranchAK8("ak8_1_best_ZvsQCD", ak8.bestZ / (ak8.bestZ + ak8.bestQCD + ak8.bestB) if ak8 and ak8.bestQCD > 0 else -1)
-        fillBranchAK8("ak8_1_best_HvsQCD", ak8.bestH / (ak8.bestH + ak8.bestQCD + ak8.bestB) if ak8 and ak8.bestQCD > 0 else -1)
-        fillBranchAK8("ak8_1_best_TvsQCD", ak8.bestT / (ak8.bestT + ak8.bestQCD + ak8.bestB) if ak8 and ak8.bestQCD > 0 else -1)
-        fillBranchAK8("ak8_1_image_top", ak8.itop)
-        fillBranchAK8("ak8_1_image_top_md", ak8.iMDtop)
-        fillBranchAK8("ak8_1_btagCSVV2", ak8.btagCSVV2)
-        fillBranchAK8("ak8_1_btagHbb", ak8.btagHbb)
-        fillBranchAK8("ak8_1_sj1_btagCSVV2", ak8.subjets[0].btagCSVV2 if ak8 and len(ak8.subjets) > 0 else -9)
-        fillBranchAK8("ak8_1_sj2_btagCSVV2", ak8.subjets[1].btagCSVV2 if ak8 and len(ak8.subjets) > 1 else -9)
+        fillBranchAK8("ak8_1_DeepAK8_TvsQCD", ak8.deepTag_TvsQCD)
+        fillBranchAK8("ak8_1_DeepAK8_WvsQCD", ak8.deepTag_WvsQCD)
+        fillBranchAK8("ak8_1_DeepAK8_ZvsQCD", ak8.deepTag_ZvsQCD)
+        fillBranchAK8("ak8_1_DeepAK8MD_TvsQCD", ak8.deepTagMD_TvsQCD)
+        fillBranchAK8("ak8_1_DeepAK8MD_WvsQCD", ak8.deepTagMD_WvsQCD)
+        fillBranchAK8("ak8_1_DeepAK8MD_ZvsQCD", ak8.deepTagMD_ZvsQCD)
+        fillBranchAK8("ak8_1_DeepAK8MD_ZHbbvsQCD", ak8.deepTagMD_ZHbbvsQCD)
 
-        # fill CA15
-        self.out.fillBranch("n_ca15", len(event.ca15jets))
-        ca15 = event.ca15jets[0] if len(event.ca15jets) > 0 else _NullObject()
-        fillBranchCA15 = self._get_filler(ca15)  # wrapper, fill default value if ca15=None
-        fillBranchCA15("ca15_1_pt", ca15.pt)
-        fillBranchCA15("ca15_1_eta", ca15.eta)
-        fillBranchCA15("ca15_1_phi", ca15.phi)
-        fillBranchCA15("ca15_1_mass", ca15.msoftdrop)
-        fillBranchCA15("ca15_1_ecfTopTagBDT", ca15.ecfTopTagBDT)
-        fillBranchCA15("ca15_1_httFRec", ca15.httFRec)
-        fillBranchCA15("ca15_1_tau32sd", ca15.tau32sd)
-
-        # fill HOTVR
-        self.out.fillBranch("n_hotvr", len(event.hotvrjets))
-        hotvr = event.hotvrjets[0] if len(event.hotvrjets) > 0 else _NullObject()
-        fillBranchHOTVR = self._get_filler(hotvr)  # wrapper, fill default value if hotvr=None
-        fillBranchHOTVR("hotvr_1_pt", hotvr.pt)
-        fillBranchHOTVR("hotvr_1_eta", hotvr.eta)
-        fillBranchHOTVR("hotvr_1_phi", hotvr.phi)
-        fillBranchHOTVR("hotvr_1_mass", hotvr.mass)
-        fillBranchHOTVR("hotvr_1_tau32", hotvr.tau3 / hotvr.tau2 if hotvr.tau2 > 0 else 99, 99)
-        fillBranchHOTVR("hotvr_1_fpt", hotvr.fpt)
-        fillBranchHOTVR("hotvr_1_mmin", hotvr.mmin)
-        fillBranchHOTVR("hotvr_1_nsubjets", hotvr.nsubjets)
+        if self.hasParticleNet:
+            fillBranchAK8("ak8_1_ParticleNet_TvsQCD", convert_prob(ak8, ['Tbcq', 'Tbqq'], prefix='ParticleNet_prob'))
+            fillBranchAK8("ak8_1_ParticleNet_WvsQCD", convert_prob(ak8, ['Wcq', 'Wqq'], prefix='ParticleNet_prob'))
+            fillBranchAK8("ak8_1_ParticleNet_ZvsQCD", convert_prob(ak8, ['Zbb', 'Zcc', 'Zqq'], prefix='ParticleNet_prob'))
+            fillBranchAK8("ak8_1_ParticleNetMD_Xbb", ak8.ParticleNetMD_probXbb)
+            fillBranchAK8("ak8_1_ParticleNetMD_Xcc", ak8.ParticleNetMD_probXcc)
+            fillBranchAK8("ak8_1_ParticleNetMD_Xqq", ak8.ParticleNetMD_probXqq)
+            fillBranchAK8("ak8_1_ParticleNetMD_QCD", convert_prob(ak8, None, prefix='ParticleNetMD_prob'))
+            fillBranchAK8("ak8_1_ParticleNetMD_WvsQCD", convert_prob(ak8, ['Xcc', 'Xqq'], prefix='ParticleNetMD_prob'))
 
         def drmatch(event, jet):
             dr_b, dr_wq1, dr_wq2 = 999, 999, 999
@@ -465,20 +380,9 @@ class HRTBaseProducer(Module, object):
                         dr_wq1 = deltaR(jet, event.genparts[w.dauIdx[0]])
                         dr_wq2 = deltaR(jet, event.genparts[w.dauIdx[1]])
             return dr_b, max(dr_wq1, dr_wq2), min(dr_wq1, dr_wq2)
-        
+
         if self.isMC and fillGenMatching:
             drak8 = drmatch(event, ak8)
             self.out.fillBranch("ak8_1_dr_fj_top_b", drak8[0])
             self.out.fillBranch("ak8_1_dr_fj_top_wqmax", drak8[1])
             self.out.fillBranch("ak8_1_dr_fj_top_wqmin", drak8[2])
-
-            drca15 = drmatch(event, ca15)
-            self.out.fillBranch("ca15_1_dr_fj_top_b", drca15[0])
-            self.out.fillBranch("ca15_1_dr_fj_top_wqmax", drca15[1])
-            self.out.fillBranch("ca15_1_dr_fj_top_wqmin", drca15[2])
-
-            drhotvr = drmatch(event, hotvr)
-            self.out.fillBranch("hotvr_1_dr_fj_top_b", drhotvr[0])
-            self.out.fillBranch("hotvr_1_dr_fj_top_wqmax", drhotvr[1])
-            self.out.fillBranch("hotvr_1_dr_fj_top_wqmin", drhotvr[2])
-

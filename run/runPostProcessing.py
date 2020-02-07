@@ -35,6 +35,8 @@ def get_filenames(dataset, retry=3):
     import subprocess
     import time
     query = 'file dataset=%s' % dataset
+    if dataset.endswith('/USER'):
+        query += ' instance=prod/phys03'
     cmd = ['dasgoclient', '-query', query, '-json']
     retry_count = 0
     while True:
@@ -144,7 +146,7 @@ def parse_sample_xsec(cfgfile):
     with open(cfgfile) as f:
         for l in f:
             l = l.strip()
-            if l.startswith('#'):
+            if not l or l.startswith('#'):
                 continue
             pieces = l.split()
             samp = None
@@ -170,7 +172,11 @@ def parse_sample_xsec(cfgfile):
             elif not isData and xsec is None:
                 logging.error('Cannot find cross section:\n%s' % l)
             else:
+                if samp in xsec_dict and xsec_dict[samp] != xsec:
+                    raise RuntimeError('Inconsistent entries for sample %s' % samp)
                 xsec_dict[samp] = xsec
+                if 'PSweights_' in samp:
+                    xsec_dict[samp.replace('PSweights_', '')] = xsec
     return xsec_dict
 
 
@@ -278,7 +284,13 @@ def create_metadata(args):
         # use remote files
         for samp in samp_to_datasets:
             filelist = []
+            dataset0 = None
             for dataset in samp_to_datasets[samp]:
+                if dataset0 is None:
+                    dataset0 = dataset.split('/')[1]
+                else:
+                    if dataset0 != dataset.split('/')[1]:
+                        raise RuntimeError('Inconsistent dataset for samp `%s`: `%s` vs `%s`' % (samp, dataset0, dataset))
                 if select_sample(dataset):
                     filelist.extend(get_filenames(dataset))
             if len(filelist):
@@ -305,6 +317,48 @@ def load_metadata(args):
     with open(metadatafile) as f:
         md = json.load(f)
     return md
+
+
+def check_job_status(args):
+    metadatafile = os.path.join(args.jobdir, args.metadata)
+    with open(metadatafile) as f:
+        md = json.load(f)
+    njobs = len(md['jobs'])
+    jobids = {'running': [], 'failed': [], 'completed': []}
+    for jobid in range(njobs):
+        logpath = os.path.join(args.jobdir, '%d.log' % jobid)
+        if not os.path.exists(logpath):
+            logging.debug('Cannot find log file %s' % logpath)
+            jobids['failed'].append(str(jobid))
+            continue
+        with open(logpath) as logfile:
+            errormsg = None
+            finished = False
+            for line in reversed(logfile.readlines()):
+                if 'Job removed' in line or 'aborted' in line:
+                    errormsg = line
+                if 'Job submitted from host' in line:
+                    # if seeing this first: the job has been resubmited
+                    break
+                if 'return value' in line:
+                    if 'return value 0' in line:
+                        finished = True
+                    else:
+                        errormsg = line
+                    break
+            if errormsg:
+                logging.debug(logpath + '\n   ' + errormsg)
+                jobids['failed'].append(str(jobid))
+            else:
+                if finished:
+                    jobids['completed'].append(str(jobid))
+                else:
+                    jobids['running'].append(str(jobid))
+    assert sum(len(jobids[k]) for k in jobids) == njobs
+    all_completed = len(jobids['completed']) == njobs
+    info = {k: len(jobids[k]) for k in jobids if len(jobids[k])}
+    logging.info('Job %s status: ' % args.jobdir + str(info))
+    return all_completed, jobids
 
 
 def submit(args, configs):
@@ -366,32 +420,8 @@ def submit(args, configs):
 
     else:
         # resubmit
-        with open(metadatafile) as f:
-            md = json.load(f)
-        njobs = len(md['jobs'])
-        jobids = []
+        jobids = check_job_status(args)[1]['failed']
         jobids_file = os.path.join(args.jobdir, 'resubmit.txt')
-        for jobid in range(njobs):
-            logpath = os.path.join(args.jobdir, '%d.log' % jobid)
-            if not os.path.exists(logpath):
-                logging.debug('Cannot find log file %s' % logpath)
-                jobids.append(str(jobid))
-                continue
-            with open(logpath) as logfile:
-                errormsg = None
-                for line in reversed(logfile.readlines()):
-                    if 'Job removed' in line or 'aborted' in line:
-                        errormsg = line
-                    if 'Job submitted from host' in line:
-                        # if seeing this first: the job has been resubmited
-                        break
-                    if 'return value' in line:
-                        if 'return value 0' not in line:
-                            errormsg = line
-                        break
-                if errormsg:
-                    logging.debug(logpath + '\n   ' + errormsg)
-                    jobids.append(str(jobid))
 
     with open(jobids_file, 'w') as f:
         f.write('\n'.join(jobids))
@@ -453,6 +483,9 @@ def run_add_weight(args):
     import subprocess
     md = load_metadata(args)
     parts_dir = os.path.join(args.outputdir, 'parts')
+    status_file = os.path.join(parts_dir, '.success')
+    if os.path.exists(status_file):
+        return
     if not os.path.exists(parts_dir):
         os.makedirs(parts_dir)
     for samp in md['samples']:
@@ -480,10 +513,16 @@ def run_add_weight(args):
                     logging.info('Not adding weight to sample %s' % samp)
                 else:
                     raise e
+    with open(status_file, 'w'):
+        pass
 
 
 def run_merge(args):
     import subprocess
+
+    status_file = os.path.join(args.outputdir, '.success')
+    if os.path.exists(status_file):
+        return
 
     parts_dir = os.path.join(args.outputdir, 'parts')
     allfiles = [f for f in os.listdir(parts_dir) if f.endswith('.root')]
@@ -520,6 +559,9 @@ def run_merge(args):
             log_lower = log.lower()
             if 'error' in log_lower or 'fail' in log_lower:
                 logging.error(log)
+
+    with open(status_file, 'w'):
+        pass
 
 
 def run_all(args):
@@ -564,7 +606,7 @@ def get_arg_parser():
         default='jobs',
         help='Directory for job files. [Default: %(default)s]'
     )
-    parser.add_argument('-d', '--datasets', required=True,
+    parser.add_argument('-d', '--datasets', required=False,
         default='',
         help='Path to the dataset list file. [Default: %(default)s]'
     )
@@ -638,6 +680,11 @@ def run(args, configs=None):
         args.merge = True
 
     if args.add_weight:
+        all_completed, _ = check_job_status(args)
+        if not all_completed:
+            ans = raw_input('Warning! There are jobs failed or still running. Continue adding weights? [yn] ')
+            if ans.lower()[0] != 'y':
+                return
         run_add_weight(args)
 
     if args.merge:

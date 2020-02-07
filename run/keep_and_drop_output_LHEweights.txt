@@ -1,5 +1,6 @@
 # this is a comment
-drop *
+dropmatch n?[A-Z][a-zA-Z0-9]{1,}.+
+drop btagWeight_*
 # event info
 keep run
 keep luminosityBlock
@@ -7,15 +8,16 @@ keep event
 keep PV_npvs
 # triggers
 keep HLT_Iso*Mu24
+keep HLT_IsoMu27
 keep HLT_Ele27_WPTight_Gsf
-keep HLT_Mu17*Mu8*
-keep HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL*
-keep HLT_Photon165*
-keep HLT_Photon175*
-keep HLT_CaloJet500_NoJetID
-keep HLT_PFMET*
+keep HLT_Ele32_WPTight_Gsf
+keep HLT_Ele32_WPTight_Gsf_L1DoubleEG
+keep HLT_Ele35_WPTight_Gsf
+keep HLT_PFMET*_PFMHT*_IDTight*
 keep HLT_PFHT*
 # genweight
 keep genWeight
+keep LHE_Vpt
 # PDF/Scale weights
 keep *LHE*Weight
+keep *PSWeight
