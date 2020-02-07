@@ -483,6 +483,9 @@ def run_add_weight(args):
     import subprocess
     md = load_metadata(args)
     parts_dir = os.path.join(args.outputdir, 'parts')
+    status_file = os.path.join(parts_dir, '.success')
+    if os.path.exists(status_file):
+        return
     if not os.path.exists(parts_dir):
         os.makedirs(parts_dir)
     for samp in md['samples']:
@@ -510,10 +513,16 @@ def run_add_weight(args):
                     logging.info('Not adding weight to sample %s' % samp)
                 else:
                     raise e
+    with open(status_file, 'w'):
+        pass
 
 
 def run_merge(args):
     import subprocess
+
+    status_file = os.path.join(args.outputdir, '.success')
+    if os.path.exists(status_file):
+        return
 
     parts_dir = os.path.join(args.outputdir, 'parts')
     allfiles = [f for f in os.listdir(parts_dir) if f.endswith('.root')]
@@ -550,6 +559,9 @@ def run_merge(args):
             log_lower = log.lower()
             if 'error' in log_lower or 'fail' in log_lower:
                 logging.error(log)
+
+    with open(status_file, 'w'):
+        pass
 
 
 def run_all(args):
@@ -672,7 +684,7 @@ def run(args, configs=None):
         if not all_completed:
             ans = raw_input('Warning! There are jobs failed or still running. Continue adding weights? [yn] ')
             if ans.lower()[0] != 'y':
-                sys.exit()
+                return
         run_add_weight(args)
 
     if args.merge:
