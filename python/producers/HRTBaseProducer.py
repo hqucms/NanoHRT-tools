@@ -360,9 +360,9 @@ class HRTBaseProducer(Module, object):
             fillBranchAK8("ak8_1_ParticleNet_TvsQCD", convert_prob(ak8, ['Tbcq', 'Tbqq'], prefix='ParticleNet_prob'))
             fillBranchAK8("ak8_1_ParticleNet_WvsQCD", convert_prob(ak8, ['Wcq', 'Wqq'], prefix='ParticleNet_prob'))
             fillBranchAK8("ak8_1_ParticleNet_ZvsQCD", convert_prob(ak8, ['Zbb', 'Zcc', 'Zqq'], prefix='ParticleNet_prob'))
-            fillBranchAK8("ak8_1_ParticleNetMD_Xbb", ak8.ParticleNetMD_Xbb)
-            fillBranchAK8("ak8_1_ParticleNetMD_Xcc", ak8.ParticleNetMD_Xcc)
-            fillBranchAK8("ak8_1_ParticleNetMD_Xqq", ak8.ParticleNetMD_Xqq)
+            fillBranchAK8("ak8_1_ParticleNetMD_Xbb", ak8.ParticleNetMD_probXbb)
+            fillBranchAK8("ak8_1_ParticleNetMD_Xcc", ak8.ParticleNetMD_probXcc)
+            fillBranchAK8("ak8_1_ParticleNetMD_Xqq", ak8.ParticleNetMD_probXqq)
             fillBranchAK8("ak8_1_ParticleNetMD_QCD", convert_prob(ak8, None, prefix='ParticleNetMD_prob'))
             fillBranchAK8("ak8_1_ParticleNetMD_WvsQCD", convert_prob(ak8, ['Xcc', 'Xqq'], prefix='ParticleNetMD_prob'))
 

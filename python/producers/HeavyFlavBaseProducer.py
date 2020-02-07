@@ -338,9 +338,9 @@ class HeavyFlavBaseProducer(Module, object):
                 self.out.fillBranch(prefix + "DeepAK8MD_bbVsTop", -1)
 
             try:
-                self.out.fillBranch(prefix + "ParticleNetMD_Xbb", fj.ParticleNetMD_prob_Xbb)
-                self.out.fillBranch(prefix + "ParticleNetMD_Xcc", fj.ParticleNetMD_prob_Xcc)
-                self.out.fillBranch(prefix + "ParticleNetMD_Xqq", fj.ParticleNetMD_prob_Xqq)
+                self.out.fillBranch(prefix + "ParticleNetMD_Xbb", fj.ParticleNetMD_probXbb)
+                self.out.fillBranch(prefix + "ParticleNetMD_Xcc", fj.ParticleNetMD_probXcc)
+                self.out.fillBranch(prefix + "ParticleNetMD_Xqq", fj.ParticleNetMD_probXqq)
                 self.out.fillBranch(prefix + "ParticleNetMD_QCD", convert_prob(jet, None, prefix='ParticleNetMD_prob'))
                 self.out.fillBranch(prefix + "ParticleNetMD_XbbVsQCD", convert_prob(fj, ['Xbb'], prefix='ParticleNetMD_prob'))
                 self.out.fillBranch(prefix + "ParticleNetMD_XccVsQCD", convert_prob(fj, ['Xcc'], prefix='ParticleNetMD_prob'))
