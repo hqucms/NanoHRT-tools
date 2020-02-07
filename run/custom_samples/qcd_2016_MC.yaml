@@ -1,0 +1,21 @@
+qcd-mg:
+ - QCD_HT200to300_TuneCUETP8M1_13TeV-madgraphMLM-pythia8
+ - QCD_HT300to500_TuneCUETP8M1_13TeV-madgraphMLM-pythia8
+ - QCD_HT500to700_TuneCUETP8M1_13TeV-madgraphMLM-pythia8
+ - QCD_HT700to1000_TuneCUETP8M1_13TeV-madgraphMLM-pythia8
+ - QCD_HT1000to1500_TuneCUETP8M1_13TeV-madgraphMLM-pythia8
+ - QCD_HT1500to2000_TuneCUETP8M1_13TeV-madgraphMLM-pythia8
+ - QCD_HT2000toInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8
+
+qcd-herwig:
+ - QCD_Pt-15to7000_TuneCUETHS1_FlatP6_13TeV_herwigpp
+
+top:
+ - TTJets_TuneCUETP8M2T4_13TeV-amcatnloFXFX-pythia8
+
+v-qq:
+ - WJetsToQQ_HT180_13TeV-madgraphMLM-pythia8
+ - DYJetsToQQ_HT180_13TeV-madgraphMLM-pythia8
+
+ggH-bb:
+ - GluGluHToBB_M125_13TeV_powheg_pythia8

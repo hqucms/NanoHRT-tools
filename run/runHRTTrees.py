@@ -48,6 +48,12 @@ def main():
                         help='Year: 2016, 2017, 2018'
                         )
 
+    parser.add_argument('--sample-dir',
+                        type=str,
+                        default='samples',
+                        help='Directory of the sample list files. Default: %(default)s'
+                        )
+
     args = parser.parse_args()
 
     channel = args.channel
@@ -74,11 +80,11 @@ def main():
     args.jobdir = os.path.join('jobs_%s' % basename, 'data' if args.run_data else 'mc')
 
     if args.run_data:
-        args.datasets = 'samples/%s_%d_DATA.yaml' % (channel, year)
+        args.datasets = '%s/%s_%d_DATA.yaml' % (args.sample_dir, channel, year)
         args.extra_transfer = os.path.expandvars('$CMSSW_BASE/src/PhysicsTools/NanoHRTTools/data/JSON/%s' % golden_json[year])
         args.json = golden_json[year]
     else:
-        args.datasets = 'samples/%s_%d_MC.yaml' % (channel, year)
+        args.datasets = '%s/%s_%d_MC.yaml' % (args.sample_dir, channel, year)
 
     args.cut = cut_dict[channel].format(**year_dep_cuts)
 
