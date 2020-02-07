@@ -22,40 +22,7 @@ golden_json = {
     }
 
 
-def main():
-    parser = get_arg_parser()
-
-    parser.add_argument('--channel',
-                        choices=['muon', 'photon', 'qcd'],
-                        required=True,
-                        help='Channel: muon, photon, qcd'
-                        )
-
-    parser.add_argument('--run-syst',
-                        action='store_true', default=False,
-                        help='Run all the systematic trees. Default: %(default)s'
-                        )
-
-    parser.add_argument('--run-data',
-                        action='store_true', default=False,
-                        help='Run over data. Default: %(default)s'
-                        )
-
-    parser.add_argument('--year',
-                        type=int,
-                        choices=[2016, 2017, 2018],
-                        required=True,
-                        help='Year: 2016, 2017, 2018'
-                        )
-
-    parser.add_argument('--sample-dir',
-                        type=str,
-                        default='samples',
-                        help='Directory of the sample list files. Default: %(default)s'
-                        )
-
-    args = parser.parse_args()
-
+def _process(args):
     channel = args.channel
     default_config['channel'] = channel
 
@@ -70,9 +37,6 @@ def main():
         default_config['jec'] = True
 
     year_dep_cuts = {'DeepCSV_WP_M': {2016: 0.6321, 2017: 0.4941, 2018: 0.4184}[year]}
-
-    if not (args.post or args.add_weight or args.merge):
-        tar_cmssw()
 
 #     args.batch = True
     basename = os.path.basename(args.outputdir) + '_' + channel + '_' + str(year)
@@ -149,6 +113,58 @@ def main():
             opts.outputdir = os.path.join(os.path.dirname(opts.outputdir), syst_name)
             opts.jobdir = os.path.join(os.path.dirname(opts.jobdir), syst_name)
             run(opts, configs={hrt_cfgname: cfg})
+
+
+def main():
+    parser = get_arg_parser()
+
+    parser.add_argument('--channel',
+                        choices=['muon', 'photon', 'qcd'],
+                        required=True,
+                        help='Channel: muon, photon, qcd'
+                        )
+
+    parser.add_argument('--run-syst',
+                        action='store_true', default=False,
+                        help='Run all the systematic trees. Default: %(default)s'
+                        )
+
+    parser.add_argument('--run-data',
+                        action='store_true', default=False,
+                        help='Run over data. Default: %(default)s'
+                        )
+
+    parser.add_argument('--year',
+                        type=str,
+                        required=True,
+                        help='Year: 2016, 2017, 2018, or comma separated list e.g., `2016,2017,2018`'
+                        )
+
+    parser.add_argument('--sample-dir',
+                        type=str,
+                        default='samples',
+                        help='Directory of the sample list files. Default: %(default)s'
+                        )
+
+    args = parser.parse_args()
+
+    if not (args.post or args.add_weight or args.merge):
+        tar_cmssw()
+
+    years = [int(y) for y in args.year.split(',')]
+
+    for year in years:
+        for cat in ['data', 'mc']:
+            opts = copy.deepcopy(args)
+            if cat == 'data':
+                if args.run_syst:
+                    continue
+                opts.run_data = True
+                opts.nfiles_per_job *= 2
+            opts.inputdir = os.path.join(opts.inputdir.replace('_YEAR_', year), cat)
+            opts.year = year
+            print(opts.inputdir, opts.year, opts.channel, 'data' if opts.run_data else 'mc', 'syst' if opts.run_syst else '')
+            _process(opts)
 
 
 if __name__ == '__main__':
