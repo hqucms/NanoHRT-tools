@@ -222,7 +222,7 @@ class HeavyFlavBaseProducer(Module, object):
     def correctJetsAndMET(self, event):
         # correct Jets and MET
         event._allJets = Collection(event, "Jet")
-        event.met = METObject(event, "MET")
+        event.met = METObject(event, "METFixEE2017") if self.year == 2017 else METObject(event, "MET")
 
         event._allFatJets = Collection(event, self._fj_name)
         event.subjets = Collection(event, self._sj_name)  # do not sort subjets after updating!!

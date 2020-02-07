@@ -175,7 +175,7 @@ class HRTBaseProducer(Module, object):
     def correctJetsAndMET(self, event):
         # correct Jets and MET
         event._allJets = Collection(event, "Jet")
-        event.met = METObject(event, "MET")
+        event.met = METObject(event, "METFixEE2017") if self.year == 2017 else METObject(event, "MET")
 
         event._allAK8jets = Collection(event, "FatJet")
         event.ak8Subjets = Collection(event, "SubJet")  # do not sort subjets after updating!!

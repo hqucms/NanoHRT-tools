@@ -104,15 +104,16 @@ def _process(args):
             run(opts, configs={hrt_cfgname: cfg})
 
         # MET unclustEn up/down
-        for variation in ['up', 'down']:
-            syst_name = 'met_%s' % variation
-            logging.info('Start making %s trees...' % syst_name)
-            opts = copy.deepcopy(args)
-            cfg = copy.deepcopy(default_config)
-            cfg['met_unclustered'] = variation
-            opts.outputdir = os.path.join(os.path.dirname(opts.outputdir), syst_name)
-            opts.jobdir = os.path.join(os.path.dirname(opts.jobdir), syst_name)
-            run(opts, configs={hrt_cfgname: cfg})
+        if args.channel == 'muon':
+            for variation in ['up', 'down']:
+                syst_name = 'met_%s' % variation
+                logging.info('Start making %s trees...' % syst_name)
+                opts = copy.deepcopy(args)
+                cfg = copy.deepcopy(default_config)
+                cfg['met_unclustered'] = variation
+                opts.outputdir = os.path.join(os.path.dirname(opts.outputdir), syst_name)
+                opts.jobdir = os.path.join(os.path.dirname(opts.jobdir), syst_name)
+                run(opts, configs={hrt_cfgname: cfg})
 
 
 def main():
