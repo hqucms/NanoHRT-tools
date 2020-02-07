@@ -13,6 +13,7 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import Pos
 import ROOT
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 
+
 def xrd_prefix(filepaths):
     prefix = ''
     allow_prefetch = False

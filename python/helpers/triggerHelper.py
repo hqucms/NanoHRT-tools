@@ -3,9 +3,10 @@ def _pass_trig(event, trig):
     try:
         if getattr(event, trig):
             return True
-    except:
+    except RuntimeError:
         pass
     return False
+
 
 def passTrigger(event, trig_names):
     if not isinstance(trig_names, (list, tuple)):

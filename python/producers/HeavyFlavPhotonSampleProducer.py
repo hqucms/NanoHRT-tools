@@ -4,13 +4,13 @@ ROOT.PyConfig.IgnoreCommandLineOptions = True
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 from PhysicsTools.NanoAODTools.postprocessing.tools import deltaPhi, deltaR, closest
 
-from PhysicsTools.NanoHRTTools.producers.HRTBaseProducer import HRTBaseProducer
+from PhysicsTools.NanoHRTTools.producers.HeavyFlavBaseProducer import HeavyFlavBaseProducer
 
 import logging
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
 
 
-class PhotonSampleProducer(HRTBaseProducer):
+class PhotonSampleProducer(HeavyFlavBaseProducer):
 
     def __init__(self, **kwargs):
         super(PhotonSampleProducer, self).__init__(channel='photon', **kwargs)
@@ -50,8 +50,8 @@ class PhotonSampleProducer(HRTBaseProducer):
             return False
 
         ## selection on AK8 jets / drop if overlaps with a photon
-        event.ak8jets = []
-        for fj in event._allAK8jets:
+        event.fatjets = []
+        for fj in event._allFatJets:
             if not (fj.pt > 200 and abs(fj.eta) < 2.4 and (fj.jetId & 2)):
                 continue
             # require jet and photon to be back-to-back
@@ -59,8 +59,30 @@ class PhotonSampleProducer(HRTBaseProducer):
                 continue
 #             if deltaR(event.photons[0], fj) < self._jetConeSize:
 #                 continue
-            event.ak8jets.append(fj)
-        if len(event.ak8jets) < 1:
+            event.fatjets.append(fj)
+        if len(event.fatjets) < 1:
+            return False
+
+        ## selection on SV
+        event._sv = Collection(event, "SV")
+        event.secondary_vertices = []
+        for sv in event.secondary_vertices:
+#             if sv.ntracks > 2 and abs(sv.dxy) < 3. and sv.dlenSig > 4:
+#             if sv.dlenSig > 4:
+            if True:
+                event.secondary_vertices.append(sv)
+        if len(event.secondary_vertices) < 2:
+            return False
+        event.secondary_vertices = sorted(event.secondary_vertices, key=lambda x: x.pt, reverse=True)  # sort by pt
+#         event.secondary_vertices = sorted(event.secondary_vertices, key=lambda x : x.dxySig, reverse=True)  # sort by dxysig
+
+        # selection on the probe jet (sub-leading in pT)
+        probe_fj = event.fatjets[0]
+        if not (probe_fj.pt > 200 and probe_fj.msoftdrop > 50 and probe_fj.msoftdrop < 200):
+            return False
+        # require at least 1 SV matched to each subjet
+        self.matchSVToSubjets(event, probe_fj)
+        if len(probe_fj.subjets[0].sv_list) == 0 or len(probe_fj.subjets[1].sv_list) == 0:
             return False
 
         ## ht

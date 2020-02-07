@@ -13,12 +13,16 @@ from PhysicsTools.NanoHRTTools.helpers.n2DDTHelper import N2DDTHelper
 
 class _NullObject:
     '''An null object which does not store anything, and does not raise exception.'''
+
     def __bool__(self):
         return False
+
     def __nonzero__(self):
         return False
+
     def __getattr__(self, name):
         pass
+
     def __setattr__(self, name, value):
         pass
 
@@ -106,8 +110,8 @@ class HRTMCTreeProducer(Module):
         self.out.fillBranch("npv", event.PV_npvs)
         self.out.fillBranch("genweight", event.genWeight)
 
-        pdgid2type = {24:1, 6:2, 23:3, 25:4,
-                      1:0, 2:0, 3:0, 4:0, 5:0, 21:0}
+        pdgid2type = {24: 1, 6: 2, 23: 3, 25: 4,
+                      1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 21: 0}
         self.out.fillBranch("i_parton", i_parton)
         self.out.fillBranch("type", pdgid2type[abs(parton.pdgId)])
         self.out.fillBranch("gen_pt", parton.pt)
@@ -312,4 +316,4 @@ class HRTMCTreeProducer(Module):
 
 
 # define modules using the syntax 'name = lambda : constructor' to avoid having them loaded when not needed
-hrtMCTree = lambda : HRTMCTreeProducer()
+hrtMCTree = lambda: HRTMCTreeProducer()

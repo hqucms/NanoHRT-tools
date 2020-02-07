@@ -324,7 +324,7 @@ def check_job_status(args):
     with open(metadatafile) as f:
         md = json.load(f)
     njobs = len(md['jobs'])
-    jobids = {'running':[], 'failed':[], 'completed':[]}
+    jobids = {'running': [], 'failed': [], 'completed': []}
     for jobid in range(njobs):
         logpath = os.path.join(args.jobdir, '%d.log' % jobid)
         if not os.path.exists(logpath):
@@ -356,7 +356,7 @@ def check_job_status(args):
                     jobids['running'].append(str(jobid))
     assert sum(len(jobids[k]) for k in jobids) == njobs
     all_completed = len(jobids['completed']) == njobs
-    info = {k:len(jobids[k]) for k in jobids if len(jobids[k])}
+    info = {k: len(jobids[k]) for k in jobids if len(jobids[k])}
     logging.info('Job %s status: ' % args.jobdir + str(info))
     return all_completed, jobids
 

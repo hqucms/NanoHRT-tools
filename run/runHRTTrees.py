@@ -21,6 +21,7 @@ golden_json = {
     2018: 'Cert_314472-325175_13TeV_17SeptEarlyReReco2018ABC_PromptEraD_Collisions18_JSON.txt',
     }
 
+
 def main():
     parser = get_arg_parser()
 
@@ -62,7 +63,7 @@ def main():
         # FIXME: Need to update JEC when running on NanoAODv5
         default_config['jec'] = True
 
-    year_dep_cuts = {'DeepCSV_WP_M': {2016:0.6321, 2017:0.4941, 2018:0.4184}[year]}
+    year_dep_cuts = {'DeepCSV_WP_M': {2016: 0.6321, 2017: 0.4941, 2018: 0.4184}[year]}
 
     if not (args.post or args.add_weight or args.merge):
         tar_cmssw()

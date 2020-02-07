@@ -7,16 +7,32 @@ from runPostProcessing import get_arg_parser, run, tar_cmssw
 import logging
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
 
-hrt_cfgname = 'hrtSFTree_cfg.json'
-default_config = {'data': False, 'channel': None, 'year': None, 'jec': False, 'jes': None, 'jes_source': '', 'jer': 'nominal', 'jmr': None, 'met_unclustered': None}
-cut_dict = {
-    'photon': 'Sum$(Photon_pt>200)>0 && nFatJet>0',
-    'qcd': 'Sum$((Jet_pt>25 && abs(Jet_eta)<2.4 && (Jet_jetId & 2)) * Jet_pt)>800 && nFatJet>0',
+hrt_cfgname = 'heavyFlavSFTree_cfg.json'
+default_config = {'data': False, 'jetType': None, 'channel': None, 'year': None, 'jec': False, 'jes': None, 'jes_source': '', 'jer': 'nominal', 'jmr': None, 'met_unclustered': None}
+cut_dict_ak8 = {
+    'photon': 'Sum$(Photon_pt>200)>0 && Sum$(FatJet_msoftdrop>10)>0',
+    'qcd': 'Sum$((Jet_pt>25 && abs(Jet_eta)<2.4 && (Jet_jetId & 2)) * Jet_pt)>800 && Sum$(FatJet_msoftdrop>10)>0',
+    }
+cut_dict_ak15 = {
+    'photon': 'Sum$(Photon_pt>200)>0 && Sum$(AK15Puppi_msoftdrop>10)>0',
+    'qcd': 'Sum$((Jet_pt>25 && abs(Jet_eta)<2.4 && (Jet_jetId & 2)) * Jet_pt)>800 && Sum$(AK15Puppi_msoftdrop>10)>0',
+    }
+
+golden_json = {
+    2016: 'Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt',
+    2017: 'Cert_294927-306462_13TeV_EOY2017ReReco_Collisions17_JSON_v1.txt',
+    2018: 'Cert_314472-325175_13TeV_17SeptEarlyReReco2018ABC_PromptEraD_Collisions18_JSON.txt',
     }
 
 
 def main():
     parser = get_arg_parser()
+
+    parser.add_argument('--jet-type',
+                        choices=['ak8', 'ak15'],
+                        required=True,
+                        help='Jet type: ak8, ak15'
+                        )
 
     parser.add_argument('--channel',
                         choices=['photon', 'qcd'],
@@ -43,6 +59,8 @@ def main():
 
     args = parser.parse_args()
 
+    default_config['jetType'] = args.jet_type
+
     channel = args.channel
     default_config['channel'] = channel
 
@@ -66,12 +84,17 @@ def main():
 
     if args.run_data:
         args.datasets = 'samples/%s_%d_DATA.yaml' % (channel, year)
+        args.extra_transfer = os.path.expandvars('$CMSSW_BASE/src/PhysicsTools/NanoHRTTools/data/JSON/%s' % golden_json[year])
+        args.json = golden_json[year]
     else:
         args.datasets = 'samples/%s_%d_MC.yaml' % (channel, year)
 
-    args.cut = cut_dict[channel]
+    if args.jet_type == 'ak15':
+        args.cut = cut_dict_ak15[channel]
+    else:
+        args.cut = cut_dict_ak8[channel]
 
-    args.imports = [('PhysicsTools.NanoHRTTools.producers.hrtSFTreeProducer_BTV', 'hrtSFTreeFromConfig')]
+    args.imports = [('PhysicsTools.NanoHRTTools.producers.HeavyFlavSFTreeProducer', 'heavyFlavSFTreeFromConfig')]
     if not args.run_data:
         args.imports.extend([
             ('PhysicsTools.NanoAODTools.postprocessing.modules.common.puWeightProducer', 'puAutoWeight_2017' if year == 2017 else 'puWeight_%d' % year),

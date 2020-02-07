@@ -44,7 +44,7 @@ class MuonSampleProducer(HRTBaseProducer):
         event.muons = []
         for muon in event._allMuons:
             if muon.pt > 55 and abs(muon.eta) < 2.4 and muon.tightId and abs(muon.dxy) < 0.2 and abs(muon.dz) < 0.5:
-                if muon.miniPFRelIso_all < 0.10:  
+                if muon.miniPFRelIso_all < 0.10:
                     event.muons.append(muon)
         if len(event.muons) != 1:
             return False

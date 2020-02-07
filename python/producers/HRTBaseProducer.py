@@ -6,10 +6,10 @@ ROOT.PyConfig.IgnoreCommandLineOptions = True
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection, Object
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.tools import deltaPhi, deltaR, closest
-from PhysicsTools.NanoHRTTools.helpers.jetmetCorrector import JetMETCorrector
 
+from PhysicsTools.NanoHRTTools.helpers.jetmetCorrector import JetMETCorrector
+from PhysicsTools.NanoHRTTools.helpers.nnHelper import convert_prob
 from PhysicsTools.NanoHRTTools.helpers.ak8MassCorrectionHelper import get_corrected_sdmass
-from PhysicsTools.NanoHRTTools.helpers.deepAK8Helper import get_nominal_score, get_decorr_score, get_nominal_raw_score, get_decorr_raw_score
 from PhysicsTools.NanoHRTTools.helpers.n2DDTHelper import N2DDTHelper
 
 import logging
@@ -86,13 +86,13 @@ class HRTBaseProducer(Module, object):
         print ('Running on %d DATA/MC' % (self.year))
 
         self._channel = channel
-        self._systOpt = {'jec':False, 'jes':None, 'jes_source':'', 'jer':'nominal', 'jmr':None, 'met_unclustered':None}
+        self._systOpt = {'jec': False, 'jes': None, 'jes_source': '', 'jer': 'nominal', 'jmr': None, 'met_unclustered': None}
         for k in kwargs:
             self._systOpt[k] = kwargs[k]
 
         logging.info('Running %s channel with systematics %s', self._channel, str(self._systOpt))
 
-        self.DeepCSV_WP_M = {2016:0.6321, 2017:0.4941, 2018:0.4184}[self.year]
+        self.DeepCSV_WP_M = {2016: 0.6321, 2017: 0.4941, 2018: 0.4184}[self.year]
 
         self.jetmetCorr = JetMETCorrector(self.year,
                                           jetType="AK4PFchs",
@@ -161,14 +161,6 @@ class HRTBaseProducer(Module, object):
             self.out.branch("ak8_1_dr_fj_top_wqmax", "F")
             self.out.branch("ak8_1_dr_fj_top_wqmin", "F")
 
-            self.out.branch("ca15_1_dr_fj_top_b", "F")
-            self.out.branch("ca15_1_dr_fj_top_wqmax", "F")
-            self.out.branch("ca15_1_dr_fj_top_wqmin", "F")
-
-            self.out.branch("hotvr_1_dr_fj_top_b", "F")
-            self.out.branch("hotvr_1_dr_fj_top_wqmax", "F")
-            self.out.branch("hotvr_1_dr_fj_top_wqmin", "F")
-
     def correctJetsAndMET(self, event):
         # correct Jets and MET
         event._allJets = Collection(event, "Jet")
@@ -187,19 +179,19 @@ class HRTBaseProducer(Module, object):
             self.jetmetCorr.correctJetAndMET(jets=event._allJets, met=event.met, rho=rho,
                                              genjets=Collection(event, 'GenJet') if self.isMC else None,
                                              isMC=self.isMC, runNumber=event.run)
-            event._allJets = sorted(event._allJets, key=lambda x : x.pt, reverse=True)  # sort by pt after updating
+            event._allJets = sorted(event._allJets, key=lambda x: x.pt, reverse=True)  # sort by pt after updating
 
             # correct AK8 fatjets
             self.ak8Corr.setSeed(rndSeed(event, event._allAK8jets))
             self.ak8Corr.correctJetAndMET(jets=event._allAK8jets, met=None, rho=rho,
-                                             genjets=Collection(event, 'GenJetAK8') if self.isMC else None,
-                                             isMC=self.isMC, runNumber=event.run)
+                                          genjets=Collection(event, 'GenJetAK8') if self.isMC else None,
+                                          isMC=self.isMC, runNumber=event.run)
             # correct AK8 subjets
             self.ak8SubjetCorr.setSeed(rndSeed(event, event.ak8Subjets))
             self.ak8SubjetCorr.correctJetAndMET(jets=event.ak8Subjets, met=None, rho=rho,
-                                             genjets=Collection(event, 'SubGenJetAK8') if self.isMC else None,
-                                             isMC=self.isMC, runNumber=event.run)
- 
+                                                genjets=Collection(event, 'SubGenJetAK8') if self.isMC else None,
+                                                isMC=self.isMC, runNumber=event.run)
+
         # jet mass resolution smearing
         if self.isMC and self._systOpt['jmr']:
             raise NotImplemented
@@ -210,8 +202,31 @@ class HRTBaseProducer(Module, object):
             fj.msoftdrop = get_sdmass(fj.subjets)
             fj.corr_sdmass = get_corrected_sdmass(fj, fj.subjets)
             fj.n2b1ddt = self._n2helper.transform(fj.n2b1, pt=fj.pt, msd=fj.corr_sdmass)
-        event._allAK8jets = sorted(event._allAK8jets, key=lambda x : x.pt, reverse=True)  # sort by pt
-         
+        event._allAK8jets = sorted(event._allAK8jets, key=lambda x: x.pt, reverse=True)  # sort by pt
+
+    def selectLeptons(self, event):
+        # do lepton selection
+        event.preselLeptons = []  # used for jet lepton cleaning
+        event.looseLeptons = []  # used for lepton counting
+
+        electrons = Collection(event, "Electron")
+        for el in electrons:
+            el.etaSC = el.eta + el.deltaEtaSC
+            if el.pt > 7 and abs(el.eta) < 2.4 and abs(el.dxy) < 0.05 and abs(el.dz) < 0.2 and el.pfRelIso03_all < 0.4:
+                event.preselLeptons.append(el)
+                if el.mvaFall17V2noIso_WP90:
+                    event.looseLeptons.append(el)
+
+        muons = Collection(event, "Muon")
+        for mu in muons:
+            if mu.pt > 5 and abs(mu.eta) < 2.4 and abs(mu.dxy) < 0.5 and abs(mu.dz) < 1.0 and mu.pfRelIso04_all < 0.4:
+                event.preselLeptons.append(mu)
+                if mu.looseId:
+                    event.looseLeptons.append(mu)
+
+        event.preselLeptons.sort(key=lambda x: x.pt, reverse=True)
+        event.looseLeptons.sort(key=lambda x: x.pt, reverse=True)
+
     def loadGenHistory(self, event):
         # gen matching
         if not self.isMC:
@@ -329,7 +344,7 @@ class HRTBaseProducer(Module, object):
         fillBranchAK8("ak8_1_DeepAK8MD_WvsQCD", ak8.deepTagMD_WvsQCD)
         fillBranchAK8("ak8_1_DeepAK8MD_ZvsQCD", ak8.deepTagMD_ZvsQCD)
         fillBranchAK8("ak8_1_DeepAK8MD_ZHbbvsQCD", ak8.deepTagMD_ZHbbvsQCD)
- 
+
         def drmatch(event, jet):
             dr_b, dr_wq1, dr_wq2 = 999, 999, 999
             if jet:
@@ -344,10 +359,9 @@ class HRTBaseProducer(Module, object):
                         dr_wq1 = deltaR(jet, event.genparts[w.dauIdx[0]])
                         dr_wq2 = deltaR(jet, event.genparts[w.dauIdx[1]])
             return dr_b, max(dr_wq1, dr_wq2), min(dr_wq1, dr_wq2)
-        
+
         if self.isMC and fillGenMatching:
             drak8 = drmatch(event, ak8)
             self.out.fillBranch("ak8_1_dr_fj_top_b", drak8[0])
             self.out.fillBranch("ak8_1_dr_fj_top_wqmax", drak8[1])
             self.out.fillBranch("ak8_1_dr_fj_top_wqmin", drak8[2])
- 
