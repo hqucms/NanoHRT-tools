@@ -4,7 +4,7 @@ from PhysicsTools.NanoHRTTools.producers.HeavyFlavQCDSampleProducer import QCDSa
 
 def heavyFlavSFTreeFromConfig():
     import yaml
-    with open('hrtSFTree_cfg.json') as f:
+    with open('heavyFlavSFTree_cfg.json') as f:
         cfg = yaml.safe_load(f)
         channel = cfg['channel']
         del cfg['channel']

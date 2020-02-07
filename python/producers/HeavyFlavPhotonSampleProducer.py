@@ -64,9 +64,9 @@ class PhotonSampleProducer(HeavyFlavBaseProducer):
             return False
 
         ## selection on SV
-        event._sv = Collection(event, "SV")
+        event._allSV = Collection(event, "SV")
         event.secondary_vertices = []
-        for sv in event.secondary_vertices:
+        for sv in event._allSV:
 #             if sv.ntracks > 2 and abs(sv.dxy) < 3. and sv.dlenSig > 4:
 #             if sv.dlenSig > 4:
             if True:

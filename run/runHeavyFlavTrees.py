@@ -84,7 +84,7 @@ def main():
         tar_cmssw()
 
 #     args.batch = True
-    basename = os.path.basename(args.outputdir) + '_' + channel + '_' + str(year)
+    basename = os.path.basename(args.outputdir) + '_' + args.jet_type + '_' + channel + '_' + str(year)
     args.outputdir = os.path.join(os.path.dirname(args.outputdir), basename, 'data' if args.run_data else 'mc')
     args.jobdir = os.path.join('jobs_%s' % basename, 'data' if args.run_data else 'mc')
 

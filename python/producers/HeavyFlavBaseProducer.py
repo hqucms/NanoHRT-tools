@@ -145,6 +145,7 @@ class HeavyFlavBaseProducer(Module, object):
         self.isMC = bool(inputTree.GetBranch('genWeight'))
         self.out = wrappedOutputTree
 
+        self.out.branch("jetR", "F")
         self.out.branch("passmetfilters", "O")
 
         # Large-R jets
@@ -281,6 +282,8 @@ class HeavyFlavBaseProducer(Module, object):
 
     def fillBaseEventInfo(self, event):
 
+        self.out.fillBranch("jetR", self._jetConeSize)
+
         met_filters = bool(
             event.Flag_goodVertices and
             event.Flag_globalSuperTightHalo2016Filter and
@@ -319,10 +322,17 @@ class HeavyFlavBaseProducer(Module, object):
             prefix = 'fj_%d_' % idx
             fj = event.fatjets[idx - 1]
 
-            self.out.fillBranch(prefix + "DeepAK8MD_ZHbbvsQCD", fj.deepTagMD_ZHbbvsQCD)
-            self.out.fillBranch(prefix + "DeepAK8MD_ZHccvsQCD", fj.deepTagMD_ZHccvsQCD)
-            self.out.fillBranch(prefix + "DeepAK8MD_bbVsLight", fj.deepTagMD_bbvsLight)
-            self.out.fillBranch(prefix + "DeepAK8MD_bbVsTop", -1)  # FIXME
+            try:
+                self.out.fillBranch(prefix + "DeepAK8MD_ZHbbvsQCD", fj.deepTagMD_ZHbbvsQCD)
+                self.out.fillBranch(prefix + "DeepAK8MD_ZHccvsQCD", fj.deepTagMD_ZHccvsQCD)
+                self.out.fillBranch(prefix + "DeepAK8MD_bbVsLight", fj.deepTagMD_bbvsLight)
+                self.out.fillBranch(prefix + "DeepAK8MD_bbVsTop", -1)  # FIXME
+            except RuntimeError:
+                self.out.fillBranch(prefix + "DeepAK8MD_ZHbbvsQCD", -1)
+                self.out.fillBranch(prefix + "DeepAK8MD_ZHccvsQCD", -1)
+                self.out.fillBranch(prefix + "DeepAK8MD_bbVsLight", -1)
+                self.out.fillBranch(prefix + "DeepAK8MD_bbVsTop", -1)
+
             try:
                 self.out.fillBranch(prefix + "ParticleNetMD_HbbVsQCD", convert_prob(fj, ['Xbb'], prefix='ParticleNetMD_prob'))
                 self.out.fillBranch(prefix + "ParticleNetMD_HccVsQCD", convert_prob(fj, ['Xcc'], prefix='ParticleNetMD_prob'))
@@ -344,7 +354,7 @@ class HeavyFlavBaseProducer(Module, object):
 
             assert(len(fj.subjets) == 2)
             for idx_sj, sj in enumerate(fj.subjets):
-                prefix_sj = prefix + 'sj%d_' % idx_sj
+                prefix_sj = prefix + 'sj%d_' % (idx_sj + 1)
                 self.out.fillBranch(prefix_sj + "pt", sj.pt)
                 self.out.fillBranch(prefix_sj + "eta", sj.eta)
                 self.out.fillBranch(prefix_sj + "phi", sj.phi)
@@ -359,11 +369,11 @@ class HeavyFlavBaseProducer(Module, object):
                     self.out.fillBranch(prefix_sj + "btagjp", -1)
 
                 self.out.fillBranch(prefix_sj + "nsv", len(sj.sv_list))
-                sv = sj.sv_list[0] if len(sj.sv_list) else _NullObject
+                sv = sj.sv_list[0] if len(sj.sv_list) else _NullObject()
                 fill_sv = self._get_filler(sv)  # wrapper, fill default value if sv=None
                 fill_sv(prefix_sj + "sv1_pt", sv.pt)
                 fill_sv(prefix_sj + "sv1_mass", sv.mass)
-                fill_sv(prefix_sj + "sv1_masscor", corrected_svmass(sv))
+                fill_sv(prefix_sj + "sv1_masscor", corrected_svmass(sv) if sv else 0)
                 fill_sv(prefix_sj + "sv1_ntracks", sv.ntracks)
                 fill_sv(prefix_sj + "sv1_dxy", sv.dxy)
                 fill_sv(prefix_sj + "sv1_dxysig", sv.dxySig)
@@ -376,7 +386,7 @@ class HeavyFlavBaseProducer(Module, object):
             try:
                 sv1, sv2 = sj1.sv_list[0], sj2.sv_list[0]
                 sv = sv1 if sv1.dxySig > sv2.dxySig else sv2
-                self.out.fillBranch(prefix + "sj12_masscor_dxysig", corrected_svmass(sv))
+                self.out.fillBranch(prefix + "sj12_masscor_dxysig", corrected_svmass(sv) if sv else 0)
             except IndexError:
                 # if len(sv_list) == 0
                 self.out.fillBranch(prefix + "sj12_masscor_dxysig", 0)
