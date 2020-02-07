@@ -129,6 +129,7 @@ class HRTBaseProducer(Module, object):
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.isMC = bool(inputTree.GetBranch('genWeight'))
+        self.hasParticleNet = bool(inputTree.GetBranch('FatJet_ParticleNet_probQCDbb'))
         self.out = wrappedOutputTree
 
         self.out.branch("passmetfilters", "O")
@@ -154,6 +155,16 @@ class HRTBaseProducer(Module, object):
         self.out.branch("ak8_1_DeepAK8MD_WvsQCD", "F")
         self.out.branch("ak8_1_DeepAK8MD_ZvsQCD", "F")
         self.out.branch("ak8_1_DeepAK8MD_ZHbbvsQCD", "F")
+
+        if self.hasParticleNet:
+            self.out.branch("ak8_1_ParticleNet_TvsQCD", "F")
+            self.out.branch("ak8_1_ParticleNet_WvsQCD", "F")
+            self.out.branch("ak8_1_ParticleNet_ZvsQCD", "F")
+            self.out.branch("ak8_1_ParticleNetMD_Xbb", "F")
+            self.out.branch("ak8_1_ParticleNetMD_Xcc", "F")
+            self.out.branch("ak8_1_ParticleNetMD_Xqq", "F")
+            self.out.branch("ak8_1_ParticleNetMD_QCD", "F")
+            self.out.branch("ak8_1_ParticleNetMD_WvsQCD", "F")
 
         # matching variables
         if self.isMC:
@@ -344,6 +355,16 @@ class HRTBaseProducer(Module, object):
         fillBranchAK8("ak8_1_DeepAK8MD_WvsQCD", ak8.deepTagMD_WvsQCD)
         fillBranchAK8("ak8_1_DeepAK8MD_ZvsQCD", ak8.deepTagMD_ZvsQCD)
         fillBranchAK8("ak8_1_DeepAK8MD_ZHbbvsQCD", ak8.deepTagMD_ZHbbvsQCD)
+
+        if self.hasParticleNet:
+            fillBranchAK8("ak8_1_ParticleNet_TvsQCD", convert_prob(ak8, ['Tbcq', 'Tbqq'], prefix='ParticleNet_prob'))
+            fillBranchAK8("ak8_1_ParticleNet_WvsQCD", convert_prob(ak8, ['Wcq', 'Wqq'], prefix='ParticleNet_prob'))
+            fillBranchAK8("ak8_1_ParticleNet_ZvsQCD", convert_prob(ak8, ['Zbb', 'Zcc', 'Zqq'], prefix='ParticleNet_prob'))
+            fillBranchAK8("ak8_1_ParticleNetMD_Xbb", ak8.ParticleNetMD_Xbb)
+            fillBranchAK8("ak8_1_ParticleNetMD_Xcc", ak8.ParticleNetMD_Xcc)
+            fillBranchAK8("ak8_1_ParticleNetMD_Xqq", ak8.ParticleNetMD_Xqq)
+            fillBranchAK8("ak8_1_ParticleNetMD_QCD", convert_prob(ak8, None, prefix='ParticleNetMD_prob'))
+            fillBranchAK8("ak8_1_ParticleNetMD_WvsQCD", convert_prob(ak8, ['Xcc', 'Xqq'], prefix='ParticleNetMD_prob'))
 
         def drmatch(event, jet):
             dr_b, dr_wq1, dr_wq2 = 999, 999, 999

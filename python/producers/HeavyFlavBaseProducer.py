@@ -158,8 +158,12 @@ class HeavyFlavBaseProducer(Module, object):
             self.out.branch(prefix + "DeepAK8MD_ZHccvsQCD", "F")
             self.out.branch(prefix + "DeepAK8MD_bbVsLight", "F")
             self.out.branch(prefix + "DeepAK8MD_bbVsTop", "F")
-            self.out.branch(prefix + "ParticleNetMD_HbbVsQCD", "F")
-            self.out.branch(prefix + "ParticleNetMD_HccVsQCD", "F")
+            self.out.branch(prefix + "ParticleNetMD_Xbb", "F")
+            self.out.branch(prefix + "ParticleNetMD_Xcc", "F")
+            self.out.branch(prefix + "ParticleNetMD_Xqq", "F")
+            self.out.branch(prefix + "ParticleNetMD_QCD", "F")
+            self.out.branch(prefix + "ParticleNetMD_XbbVsQCD", "F")
+            self.out.branch(prefix + "ParticleNetMD_XccVsQCD", "F")
             # fatjet
             self.out.branch(prefix + "is_lep_overlap", "O")
             self.out.branch(prefix + "pt", "F")
@@ -334,8 +338,12 @@ class HeavyFlavBaseProducer(Module, object):
                 self.out.fillBranch(prefix + "DeepAK8MD_bbVsTop", -1)
 
             try:
-                self.out.fillBranch(prefix + "ParticleNetMD_HbbVsQCD", convert_prob(fj, ['Xbb'], prefix='ParticleNetMD_prob'))
-                self.out.fillBranch(prefix + "ParticleNetMD_HccVsQCD", convert_prob(fj, ['Xcc'], prefix='ParticleNetMD_prob'))
+                self.out.fillBranch(prefix + "ParticleNetMD_Xbb", fj.ParticleNetMD_prob_Xbb)
+                self.out.fillBranch(prefix + "ParticleNetMD_Xcc", fj.ParticleNetMD_prob_Xcc)
+                self.out.fillBranch(prefix + "ParticleNetMD_Xqq", fj.ParticleNetMD_prob_Xqq)
+                self.out.fillBranch(prefix + "ParticleNetMD_QCD", convert_prob(jet, None, prefix='ParticleNetMD_prob'))
+                self.out.fillBranch(prefix + "ParticleNetMD_XbbVsQCD", convert_prob(fj, ['Xbb'], prefix='ParticleNetMD_prob'))
+                self.out.fillBranch(prefix + "ParticleNetMD_XccVsQCD", convert_prob(fj, ['Xcc'], prefix='ParticleNetMD_prob'))
             except RuntimeError:
                 self.out.fillBranch(prefix + "ParticleNetMD_HbbVsQCD", -1)
                 self.out.fillBranch(prefix + "ParticleNetMD_HccVsQCD", -1)
