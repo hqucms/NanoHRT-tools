@@ -152,20 +152,22 @@ def main():
     if not (args.post or args.add_weight or args.merge):
         tar_cmssw()
 
-    years = [int(y) for y in args.year.split(',')]
-
-    for year in years:
-        for cat in ['data', 'mc']:
-            opts = copy.deepcopy(args)
-            if cat == 'data':
-                if args.run_syst:
-                    continue
-                opts.run_data = True
-                opts.nfiles_per_job *= 2
-            opts.inputdir = os.path.join(opts.inputdir.replace('_YEAR_', str(year)), cat)
-            opts.year = year
-            print(opts.inputdir, opts.year, opts.channel, 'data' if opts.run_data else 'mc', 'syst' if opts.run_syst else '')
-            _process(opts)
+    if ',' in args.year:
+        years = [int(y) for y in args.year.split(',') if y]
+        for year in years:
+            for cat in ['data', 'mc']:
+                opts = copy.deepcopy(args)
+                if cat == 'data':
+                    if args.run_syst:
+                        continue
+                    opts.run_data = True
+                    opts.nfiles_per_job *= 2
+                opts.inputdir = os.path.join(opts.inputdir.replace('_YEAR_', str(year)), cat)
+                opts.year = year
+                print(opts.inputdir, opts.year, opts.channel, 'data' if opts.run_data else 'mc', 'syst' if opts.run_syst else '')
+                _process(opts)
+    else:
+        _process(args)
 
 
 if __name__ == '__main__':

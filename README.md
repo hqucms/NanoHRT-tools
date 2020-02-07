@@ -52,6 +52,7 @@ python runHRTTrees.py -i /eos/uscms/store/user/lpcjme/noreplica/NanoHRT/path/to/
   - the preselection for each channel is coded in `runHRTTrees.py`
   - add `--run-data` to make data trees
   - add `--run-syst` to make the systematic trees
+  - can run data & MC for multiple years together w/ e.g., `--year 2016,2017,2018`. The `--run-data` option will be ignored in this case. Add also `--run-syst` to make the systematic trees.
   - the `--batch` option will submit jobs to condor automatically wihtout confirmation
   - remove `-i` to run over remote files (e.g., official NanoAOD, or private NanoAOD published on DAS); consider adding `--prefetch` to copy files first before running
 
