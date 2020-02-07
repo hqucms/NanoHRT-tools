@@ -171,7 +171,7 @@ def main():
                     continue
                 opts.run_data = True
                 opts.nfiles_per_job *= 2
-            opts.inputdir = os.path.join(opts.inputdir.replace('_YEAR_', year), cat)
+            opts.inputdir = os.path.join(opts.inputdir.replace('_YEAR_', str(year)), cat)
             opts.year = year
             print(opts.inputdir, opts.year, opts.channel, 'data' if opts.run_data else 'mc', 'syst' if opts.run_syst else '')
             _process(opts)
