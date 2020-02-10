@@ -31,7 +31,7 @@ def _process(args):
     channel = args.channel
     default_config['channel'] = channel
 
-    year = args.year
+    year = int(args.year)
     default_config['year'] = year
 
     if year in (2017, 2018):
@@ -73,7 +73,7 @@ def _process(args):
         return
 
     # MC for syst.
-    if args.run_syst:
+    if args.run_syst and not args.run_data:
 
         # nominal w/ PDF/Scale wegihts
         logging.info('Start making nominal trees with PDF/scale weights...')
@@ -167,8 +167,6 @@ def main():
             for cat in ['data', 'mc']:
                 opts = copy.deepcopy(args)
                 if cat == 'data':
-                    if args.run_syst:
-                        continue
                     opts.run_data = True
                     opts.nfiles_per_job *= 2
                 opts.inputdir = os.path.join(opts.inputdir.replace('_YEAR_', str(year)), cat)
