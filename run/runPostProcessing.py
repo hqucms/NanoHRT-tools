@@ -435,6 +435,9 @@ def submit(args, configs):
     if args.extra_transfer:
         files_to_transfer += args.extra_transfer.split(',')
     files_to_transfer = [os.path.abspath(f) for f in files_to_transfer]
+    # copy these files to jobdir so that one can run local tests
+    for f in files_to_transfer:
+        shutil.copy2(f, args.jobdir)
 
     condordesc = '''\
 universe              = vanilla
