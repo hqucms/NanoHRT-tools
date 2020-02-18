@@ -67,7 +67,7 @@ class QCDSampleProducer(HeavyFlavBaseProducer):
 
         # selection on the probe jet (sub-leading in pT)
         probe_fj = event.fatjets[1]
-        if not (probe_fj.pt > 200 and probe_fj.msoftdrop > 50 and probe_fj.msoftdrop < 200):
+        if not (probe_fj.pt > 200 and len(probe_fj.subjets) == 2 and probe_fj.msoftdrop > 50 and probe_fj.msoftdrop < 200):
             return False
         # require at least 1 SV matched to each subjet
         self.matchSVToSubjets(event, probe_fj)
