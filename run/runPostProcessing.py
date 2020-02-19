@@ -430,14 +430,15 @@ def submit(args, configs):
     files_to_transfer = [os.path.expandvars('$CMSSW_BASE/../CMSSW.tar.gz'), macrofile, metadatafile] + configfiles
     if args.branchsel_in:
         files_to_transfer.append(args.branchsel_in)
+        shutil.copy2(args.branchsel_in, args.jobdir)
     if args.branchsel_out:
         files_to_transfer.append(args.branchsel_out)
+        shutil.copy2(args.branchsel_out, args.jobdir)
     if args.extra_transfer:
-        files_to_transfer += args.extra_transfer.split(',')
+        for f in args.extra_transfer.split(','):
+            files_to_transfer.append(f)
+            shutil.copy2(f, args.jobdir)
     files_to_transfer = [os.path.abspath(f) for f in files_to_transfer]
-    # copy these files to jobdir so that one can run local tests
-    for f in files_to_transfer:
-        shutil.copy2(f, args.jobdir)
 
     condordesc = '''\
 universe              = vanilla
