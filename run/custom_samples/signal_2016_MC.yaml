@@ -1,0 +1,20 @@
+ggH-bb:
+ - GluGluHToBB_M125_13TeV_powheg_pythia8
+vhtocc:
+ - ZH_HToCC_ZToNuNu_M125_13TeV_powheg_pythia8
+vhtobb:
+ - ZH_HToBB_ZToNuNu_M125_13TeV_powheg_pythia8
+znunu:
+ - ZJetsToNuNu_HT-100To200_13TeV-madgraph 
+ - ZJetsToNuNu_HT-200To400_13TeV-madgraph  
+ - ZJetsToNuNu_HT-400To600_13TeV-madgraph
+ - ZJetsToNuNu_HT-800To1200_13TeV-madgraph
+ - ZJetsToNuNu_HT-1200To2500_13TeV-madgraph
+ - ZJetsToNuNu_HT-2500ToInf_13TeV-madgraph 
+ - ZJetsToNuNu_HT-600To800_13TeV-madgraph
+dytonunu:
+ - DYJetsToNuNu_PtZ-100To250_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8
+ - DYJetsToNuNu_PtZ-400To650_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8
+ - DYJetsToNuNu_PtZ-650ToInf_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8
+ - DYJetsToNuNu_PtZ-250To400_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8
+ - DYJetsToNuNu_PtZ-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8

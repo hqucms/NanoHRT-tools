@@ -144,15 +144,15 @@ class HeavyFlavBaseProducer(Module, object):
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.isMC = bool(inputTree.GetBranch('genWeight'))
         self.out = wrappedOutputTree
-
         self.out.branch("jetR", "F")
         self.out.branch("passmetfilters", "O")
-
+        
+        
         # Large-R jets
         self.out.branch("n_fatjet", "I")
         for idx in ([1, 2] if self._channel == 'qcd' else [1]):
             prefix = 'fj_%d_' % idx
-
+        
             # tagger
             self.out.branch(prefix + "DeepAK8MD_ZHbbvsQCD", "F")
             self.out.branch(prefix + "DeepAK8MD_ZHccvsQCD", "F")
@@ -164,22 +164,38 @@ class HeavyFlavBaseProducer(Module, object):
             self.out.branch(prefix + "ParticleNetMD_QCD", "F")
             self.out.branch(prefix + "ParticleNetMD_XbbVsQCD", "F")
             self.out.branch(prefix + "ParticleNetMD_XccVsQCD", "F")
+            self.out.branch(prefix + "ParticleNetMD_bbVsLight", "F")
+            self.out.branch(prefix + "ParticleNetMD_ccVsLight", "F")
             # fatjet
+            self.out.branch(prefix + "isH", "F")
+            self.out.branch(prefix + "isZ", "F")
             self.out.branch(prefix + "is_lep_overlap", "O")
             self.out.branch(prefix + "pt", "F")
             self.out.branch(prefix + "eta", "F")
             self.out.branch(prefix + "phi", "F")
+            self.out.branch(prefix + "energy", "F")
+            self.out.branch(prefix + "rawmass", "F")
             self.out.branch(prefix + "sdmass", "F")
             self.out.branch(prefix + "tau21", "F")
             self.out.branch(prefix + "btagcsvv2", "F")
+            self.out.branch(prefix + "btagcmva", "F")
             self.out.branch(prefix + "btagjp", "F")
+            self.out.branch(prefix + "nsv", "I")
+            self.out.branch(prefix + "nsv_ptgt25", "I")
+            self.out.branch(prefix + "nsv_ptgt50", "I")
+            self.out.branch(prefix + "ntracks", "I")
+            self.out.branch(prefix + "ntracks_sv12", "I")
             # subjet #1
             self.out.branch(prefix + "sj1_pt", "F")
             self.out.branch(prefix + "sj1_eta", "F")
             self.out.branch(prefix + "sj1_phi", "F")
+            self.out.branch(prefix + "sj1_rawmass", "F")
+            self.out.branch(prefix + "sj1_energy", "F")
+            self.out.branch(prefix + "sj1_sdmass", "F")
             self.out.branch(prefix + "sj1_btagdeepcsv", "F")
             self.out.branch(prefix + "sj1_btagcsvv2", "F")
             self.out.branch(prefix + "sj1_btagjp", "F")
+            self.out.branch(prefix + "sj1_ntracks", "I")
             self.out.branch(prefix + "sj1_nsv", "I")
             self.out.branch(prefix + "sj1_sv1_pt", "F")
             self.out.branch(prefix + "sj1_sv1_mass", "F")
@@ -195,9 +211,13 @@ class HeavyFlavBaseProducer(Module, object):
             self.out.branch(prefix + "sj2_pt", "F")
             self.out.branch(prefix + "sj2_eta", "F")
             self.out.branch(prefix + "sj2_phi", "F")
+            self.out.branch(prefix + "sj2_rawmass", "F")
+            self.out.branch(prefix + "sj2_energy", "F")
+            self.out.branch(prefix + "sj2_sdmass", "F")
             self.out.branch(prefix + "sj2_btagdeepcsv", "F")
             self.out.branch(prefix + "sj2_btagcsvv2", "F")
             self.out.branch(prefix + "sj2_btagjp", "F")
+            self.out.branch(prefix + "sj2_ntracks", "I")
             self.out.branch(prefix + "sj2_nsv", "I")
             self.out.branch(prefix + "sj2_sv1_pt", "F")
             self.out.branch(prefix + "sj2_sv1_mass", "F")
@@ -214,10 +234,14 @@ class HeavyFlavBaseProducer(Module, object):
             if self.isMC:
                 self.out.branch(prefix + "nbhadrons", "I")
                 self.out.branch(prefix + "nchadrons", "I")
+                self.out.branch(prefix + "partonflavour", "I")
                 self.out.branch(prefix + "sj1_nbhadrons", "I")
                 self.out.branch(prefix + "sj1_nchadrons", "I")
+                self.out.branch(prefix + "sj1_partonflavour", "I")
                 self.out.branch(prefix + "sj2_nbhadrons", "I")
                 self.out.branch(prefix + "sj2_nchadrons", "I")
+                self.out.branch(prefix + "sj2_partonflavour", "I")
+
 
     def correctJetsAndMET(self, event):
         # correct Jets and MET
@@ -284,8 +308,78 @@ class HeavyFlavBaseProducer(Module, object):
         event.preselLeptons.sort(key=lambda x: x.pt, reverse=True)
         event.looseLeptons.sort(key=lambda x: x.pt, reverse=True)
 
-    def fillBaseEventInfo(self, event):
+    def loadGenHistory(self, event):
+        # gen matching
+        if not self.isMC:
+            return
 
+        genparts = Collection(event, "GenPart")
+        for idx, gp in enumerate(genparts):
+            if not hasattr(gp, 'dauIdx'):
+                gp.dauIdx = []
+            if gp.genPartIdxMother >= 0:
+                mom = genparts[gp.genPartIdxMother]
+                if not hasattr(mom, 'dauIdx'):
+                    mom.dauIdx = [idx]
+                else:
+                    mom.dauIdx.append(idx)
+
+        def isHadronic(gp):
+            if len(gp.dauIdx) == 0:
+                raise ValueError('Particle has no daughters!')
+            for idx in gp.dauIdx:
+                if abs(genparts[idx].pdgId) < 6:
+                    return True
+            return False
+
+        def getFinal(gp):
+            for idx in gp.dauIdx:
+                dau = genparts[idx]
+                if dau.pdgId == gp.pdgId:
+                    return getFinal(dau)
+            return gp
+
+        event.nGenTops = 0
+        event.nGenWs = 0
+        event.nGenZs = 0
+        event.nGenHs = 0
+
+        event.hadGenTops = []
+        event.hadGenWs = []
+        event.hadGenZs = []
+        event.hadGenHs = []
+
+        for gp in genparts:
+            if gp.statusFlags & (1 << 13) == 0:
+                continue
+            if abs(gp.pdgId) == 6:
+                event.nGenTops += 1
+                for idx in gp.dauIdx:
+                    dau = genparts[idx]
+                    if abs(dau.pdgId) == 24:
+                        genW = getFinal(dau)
+                        gp.genW = genW
+                        if isHadronic(genW):
+                            event.hadGenTops.append(gp)
+                    elif abs(dau.pdgId) in (1, 3, 5):
+                        gp.genB = dau
+            elif abs(gp.pdgId) == 24:
+                event.nGenWs += 1
+                if isHadronic(gp):
+                    event.hadGenWs.append(gp)
+            elif abs(gp.pdgId) == 23:
+                event.nGenZs += 1
+                if isHadronic(gp):
+                    event.hadGenZs.append(gp)
+            elif abs(gp.pdgId) == 25:
+                event.nGenHs += 1
+                if isHadronic(gp):
+                    event.hadGenHs.append(gp)
+
+        event.genparts = genparts
+
+
+    def fillBaseEventInfo(self, event):
         self.out.fillBranch("jetR", self._jetConeSize)
 
         met_filters = bool(
@@ -319,13 +413,23 @@ class HeavyFlavBaseProducer(Module, object):
                 if deltaR(sv, sj) < drcut:
                     sj.sv_list.append(sv)
 
-    def fillFatJetInfo(self, event):
-        self.out.fillBranch("n_fatjet", len(event.fatjets))
 
+    def matchSVToJets(self, event, fj):
+        drcut = 0.8
+        for ifj in fj:
+            ifj.sv_list = []
+            for sv in event.secondary_vertices:
+                if deltaR(sv, ifj) < drcut:
+                    ifj.sv_list.append(sv)
+
+
+    def fillFatJetInfo(self, event, isSignal=False):
+        self.out.fillBranch("n_fatjet", len(event.fatjets))
+        
         for idx in ([1, 2] if self._channel == 'qcd' else [1]):
             prefix = 'fj_%d_' % idx
             fj = event.fatjets[idx - 1]
-
+        
             try:
                 self.out.fillBranch(prefix + "DeepAK8MD_ZHbbvsQCD", fj.deepTagMD_ZHbbvsQCD)
                 self.out.fillBranch(prefix + "DeepAK8MD_ZHccvsQCD", fj.deepTagMD_ZHccvsQCD)
@@ -344,21 +448,60 @@ class HeavyFlavBaseProducer(Module, object):
                 self.out.fillBranch(prefix + "ParticleNetMD_QCD", convert_prob(fj, None, prefix='ParticleNetMD_prob'))
                 self.out.fillBranch(prefix + "ParticleNetMD_XbbVsQCD", convert_prob(fj, ['Xbb'], prefix='ParticleNetMD_prob'))
                 self.out.fillBranch(prefix + "ParticleNetMD_XccVsQCD", convert_prob(fj, ['Xcc'], prefix='ParticleNetMD_prob'))
+                self.out.fillBranch(prefix + "ParticleNetMD_bbVsLight" , convert_prob(fj, ['Xbb','QCDbb'] , ['QCDb','QCDcc','QCDc','QCDothers',] , prefix='ParticleNetMD_prob')) 
+                self.out.fillBranch(prefix + "ParticleNetMD_ccVsLight" , convert_prob(fj, ['Xcc','QCDcc'] , ['QCDc','QCDbb','QCDb','QCDothers',] , prefix='ParticleNetMD_prob'))
             except RuntimeError:
                 self.out.fillBranch(prefix + "ParticleNetMD_HbbVsQCD", -1)
                 self.out.fillBranch(prefix + "ParticleNetMD_HccVsQCD", -1)
+
+            if self.isMC and isSignal:
+                h, _ = closest(fj, event.hadGenHs)
+                z, _ = closest(fj, event.hadGenZs)
+                dr_h, dr_z = 999., 999.;
+                if h:
+                    dr_h = deltaR(fj, h)
+                if z:
+                    dr_z = deltaR(fj, z)
+                self.out.fillBranch(prefix + "isH", dr_h)
+                self.out.fillBranch(prefix + "isZ", dr_z)
 
             self.out.fillBranch(prefix + "is_lep_overlap", closest(fj, event.preselLeptons)[1] < self._jetConeSize)
             self.out.fillBranch(prefix + "pt", fj.pt)
             self.out.fillBranch(prefix + "eta", fj.eta)
             self.out.fillBranch(prefix + "phi", fj.phi)
+            fj_theta = 2.*math.atan(math.exp(-1.*fj.eta))
+            fj_p = (fj.pt)/(math.sin(fj_theta))
+            fj_e = math.sqrt((fj.mass*fj.mass) + (fj_p*fj_p))
+            self.out.fillBranch(prefix + "energy", fj_e)
+            self.out.fillBranch(prefix + "rawmass", fj.mass)
             self.out.fillBranch(prefix + "sdmass", fj.msoftdrop)
             self.out.fillBranch(prefix + "tau21", fj.tau2 / fj.tau1 if fj.tau1 > 0 else 99)
             self.out.fillBranch(prefix + "btagcsvv2", fj.btagCSVV2)
+            self.out.fillBranch(prefix + "btagcmva", fj.btagCMVA)
             try:
                 self.out.fillBranch(prefix + "btagjp", fj.btagJP)
             except RuntimeError:
                 self.out.fillBranch(prefix + "btagjp", -1)
+
+            self.out.fillBranch(prefix + "nsv", len(fj.sv_list))
+
+            nsv_ptgt25_   = 0
+            nsv_ptgt50_   = 0
+            ntracks_      = 0
+            ntracks_sv12_ = 0
+            for isv, sv in enumerate(fj.sv_list):
+                ntracks_ += sv.ntracks
+                if isv<3:
+                    ntracks_sv12_ += sv.ntracks
+                if sv.pt>25.:
+                    nsv_ptgt25_ += 1
+                if sv.pt>50.:
+                    nsv_ptgt50_ += 1 
+
+            self.out.fillBranch(prefix + "nsv_ptgt25"   , nsv_ptgt25_)
+            self.out.fillBranch(prefix + "nsv_ptgt50"   , nsv_ptgt50_)
+            self.out.fillBranch(prefix + "ntracks"      , ntracks_)
+            self.out.fillBranch(prefix + "ntracks_sv12" , ntracks_sv12_)
 
             assert(len(fj.subjets) == 2)
             for idx_sj, sj in enumerate(fj.subjets):
@@ -366,6 +509,11 @@ class HeavyFlavBaseProducer(Module, object):
                 self.out.fillBranch(prefix_sj + "pt", sj.pt)
                 self.out.fillBranch(prefix_sj + "eta", sj.eta)
                 self.out.fillBranch(prefix_sj + "phi", sj.phi)
+                sj_theta = 2.*math.atan(math.exp(-1.*sj.eta))
+                sj_p = (sj.pt)/(math.sin(sj_theta))
+                sj_e = math.sqrt((sj.mass*sj.mass) + (sj_p*sj_p))
+                self.out.fillBranch(prefix_sj + "energy", sj_e)
+                self.out.fillBranch(prefix_sj + "rawmass", sj.mass)
                 self.out.fillBranch(prefix_sj + "btagcsvv2", sj.btagCSVV2)
                 try:
                     self.out.fillBranch(prefix_sj + "btagdeepcsv", sj.btagDeepB)
@@ -376,6 +524,11 @@ class HeavyFlavBaseProducer(Module, object):
                 except RuntimeError:
                     self.out.fillBranch(prefix_sj + "btagjp", -1)
 
+                ntracks_sj_ = 0
+                for isjsv, sj_sv in enumerate(sj.sv_list):
+                    ntracks_sj_ += sj_sv.ntracks
+
+                self.out.fillBranch(prefix_sj + "ntracks" , ntracks_sj_)
                 self.out.fillBranch(prefix_sj + "nsv", len(sj.sv_list))
                 sv = sj.sv_list[0] if len(sj.sv_list) else _NullObject()
                 fill_sv = self._get_filler(sv)  # wrapper, fill default value if sv=None
@@ -401,9 +554,12 @@ class HeavyFlavBaseProducer(Module, object):
 
             # matching variables
             if self.isMC:
-                self.out.fillBranch(prefix + "nbhadrons", fj.nBHadrons)
-                self.out.fillBranch(prefix + "nchadrons", fj.nCHadrons)
-                self.out.fillBranch(prefix + "sj1_nbhadrons", sj1.nBHadrons)
-                self.out.fillBranch(prefix + "sj1_nchadrons", sj1.nCHadrons)
-                self.out.fillBranch(prefix + "sj2_nbhadrons", sj2.nBHadrons)
-                self.out.fillBranch(prefix + "sj2_nchadrons", sj2.nCHadrons)
+                self.out.fillBranch(prefix + "nbhadrons",      fj.nBHadrons)
+                self.out.fillBranch(prefix + "nchadrons",      fj.nCHadrons)
+                self.out.fillBranch(prefix + "partonflavour", fj.partonFlavour)
+                self.out.fillBranch(prefix + "sj1_nbhadrons",     sj1.nBHadrons)
+                self.out.fillBranch(prefix + "sj1_nchadrons",     sj1.nCHadrons)
+                self.out.fillBranch(prefix + "sj1_partonflavour", sj1.partonFlavour)
+                self.out.fillBranch(prefix + "sj2_nbhadrons",     sj2.nBHadrons)
+                self.out.fillBranch(prefix + "sj2_nchadrons",     sj2.nCHadrons)
+                self.out.fillBranch(prefix + "sj2_partonflavour", sj2.partonFlavour)
