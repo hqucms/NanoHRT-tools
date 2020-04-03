@@ -11,7 +11,7 @@ qcd-herwig:
  - QCD_Pt-15to7000_TuneCUETHS1_Flat_13TeV_herwigpp
 
 top:
- - TTToHadronic_TuneCP5_13TeV-powheg-pythia8
+ - TT_TuneCUETP8M2T4_PSweights_13TeV-powheg-pythia8
 
 v-qq:
  - WJetsToQQ_HT400to600_qc19_3j_TuneCP5_13TeV-madgraphMLM-pythia8

@@ -39,8 +39,12 @@ cd PhysicsTools/NanoHRTTools/run
 ##### Make trees for MC performance study:
 
 ```bash
-python runPostProcessing.py -i /path/of/input -o /path/to/output --friend -I PhysicsTools.NanoHRTTools.producers.hrtMCTreeProducer hrtMCTree
+python runPostProcessing.py [-i /path/of/input] -o /path/to/output -d datasets.yaml --friend 
+-I PhysicsTools.NanoHRTTools.producers.hrtMCTreeProducer hrtMCTree -n 1
 ```
+
+To merge the trees, run the same command but add `--post -w ''` (i.e., set `-w` to an empty string (`''`) -- we do not add the cross sections, but simply reweight signals to match the QCD spectrum afterwards).
+
 
 ##### Make trees for Top/W tagging data/MC comparison and scale factor measurement:
 
