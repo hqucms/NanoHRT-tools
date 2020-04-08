@@ -99,6 +99,7 @@ class MuonSampleProducer(HRTBaseProducer):
 
         self.fillBaseEventInfo(event)
         self.fillFatJetInfo(event, fillGenMatching=True)
+        self.fillHadGenWsAndTops(event, fillGenMatching=True)
 
         return True
 
