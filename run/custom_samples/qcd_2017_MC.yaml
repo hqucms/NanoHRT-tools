@@ -8,10 +8,14 @@ qcd-mg:
  - QCD_HT2000toInf_TuneCP5_13TeV-madgraph-pythia8
 
 qcd-herwig:
- - QCD_Pt-15to7000_TuneCUETHS1_Flat_13TeV_herwigpp
+ - QCD_Pt-15to7000_TuneCH3_Flat_13TeV_herwig7
 
 top:
  - TT_TuneCUETP8M2T4_PSweights_13TeV-powheg-pythia8
+ - [ST_tW_antitop_5f_inclusiveDecays_TuneCP5_PSweights_13TeV-powheg-pythia8, ST_tW_antitop_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8]
+ - [ST_tW_top_5f_inclusiveDecays_TuneCP5_PSweights_13TeV-powheg-pythia8, ST_tW_top_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8]
+ - ST_t-channel_antitop_4f_InclusiveDecays_TuneCP5_PSweights_13TeV-powheg-pythia8
+ - ST_t-channel_top_4f_InclusiveDecays_TuneCP5_PSweights_13TeV-powheg-pythia8
 
 v-qq:
  - WJetsToQQ_HT400to600_qc19_3j_TuneCP5_13TeV-madgraphMLM-pythia8

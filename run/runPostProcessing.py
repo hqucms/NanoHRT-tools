@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
+from six.moves import input
 
 import os
 import sys
@@ -186,7 +187,7 @@ def tar_cmssw(tarball_suffix, batchMode=False):
     if os.path.exists(cmsswtar):
         if batchMode:
             return
-        ans = raw_input('CMSSW tarball %s already exists, remove? [yn] ' % cmsswtar)
+        ans = input('CMSSW tarball %s already exists, remove? [yn] ' % cmsswtar)
         if ans.lower()[0] == 'y':
             os.remove(cmsswtar)
         else:
@@ -384,7 +385,7 @@ def submit(args, configs):
             if args.batch:
                 logging.warning('jobdir %s already exists! Will not submit new jobs!' % args.jobdir)
                 return
-            ans = raw_input('jobdir %s already exists, remove? [yn] ' % args.jobdir)
+            ans = input('jobdir %s already exists, remove? [yn] ' % args.jobdir)
             if ans.lower()[0] == 'y':
                 shutil.rmtree(args.jobdir)
             else:
@@ -394,7 +395,7 @@ def submit(args, configs):
         # create outputdir
         if os.path.exists(joboutputdir):
             if not args.batch:
-                ans = raw_input('outputdir %s already exists, continue? [yn] ' % joboutputdir)
+                ans = input('outputdir %s already exists, continue? [yn] ' % joboutputdir)
                 if ans.lower()[0] == 'n':
                     sys.exit(1)
         else:
@@ -463,6 +464,7 @@ on_exit_hold          = ( (ExitBySignal == True) || (ExitCode != 0) )
 on_exit_hold_reason   = strcat("Job held by ON_EXIT_HOLD due to ", ifThenElse((ExitBySignal == True), "exit by signal", strcat("exit code ",ExitCode)), ".")
 periodic_release      = (NumJobStarts < 3) && ((CurrentTime - EnteredCurrentStatus) > 10*60)
 {site}
+{maxruntime}
 
 queue jobid from {jobids_file}
 '''.format(scriptfile=os.path.abspath(scriptfile),
@@ -471,6 +473,7 @@ queue jobid from {jobids_file}
            outputdir=joboutputdir,
            jobids_file=os.path.abspath(jobids_file),
            site='+DESIRED_Sites = "%s"' % args.site if args.site else '',
+           maxruntime='+MaxRuntime = %s' % args.max_runtime if args.max_runtime else '',
     )
     condorfile = os.path.join(args.jobdir, 'submit.cmd')
     with open(condorfile, 'w') as f:
@@ -645,6 +648,10 @@ def get_arg_parser():
         default='',
         help='Specify sites for condor submission. Default: %(default)s'
     )
+    parser.add_argument('--max-runtime',
+        default='24*60*60',
+        help='Max runtime, in seconds. Default: %(default)s'
+    )
     parser.add_argument('--add-weight',
         action='store_true', default=False,
         help='Merge output files of the same dataset and add cross section weight using the file specified in --weight-file. Default: %(default)s'
@@ -693,7 +700,7 @@ def run(args, configs=None):
     if args.add_weight:
         all_completed, _ = check_job_status(args)
         if not all_completed:
-            ans = raw_input('Warning! There are jobs failed or still running. Continue adding weights? [yn] ')
+            ans = input('Warning! There are jobs failed or still running. Continue adding weights? [yn] ')
             if ans.lower()[0] != 'y':
                 return
         run_add_weight(args)

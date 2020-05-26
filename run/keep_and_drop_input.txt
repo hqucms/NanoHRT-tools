@@ -1,3 +1,6 @@
+# PFCands
+dropmatch n?PFCands_.+
+
 # AK4 jets
 dropmatch Jet_(b|c)Reg(Corr|res)
 drop Jet_*EF
