@@ -447,12 +447,13 @@ class HeavyFlavBaseProducer(Module, object):
             prefix = 'fj_%d_' % idx
             fj = event.fatjets[idx - 1]
 
-            h, dr_h = closest(fj, event.hadGenHs)
-            z, dr_z = closest(fj, event.hadGenZs)
-            self.out.fillBranch(prefix + "dr_H", dr_h)
-            self.out.fillBranch(prefix + "H_dau_pdgid", abs(h.daughters[0].pdgId) if h else 0)
-            self.out.fillBranch(prefix + "dr_Z", dr_z)
-            self.out.fillBranch(prefix + "Z_dau_pdgid", abs(z.daughters[0].pdgId) if z else 0)
+            if self.isMC:
+                h, dr_h = closest(fj, event.hadGenHs)
+                z, dr_z = closest(fj, event.hadGenZs)
+                self.out.fillBranch(prefix + "dr_H", dr_h)
+                self.out.fillBranch(prefix + "H_dau_pdgid", abs(h.daughters[0].pdgId) if h else 0)
+                self.out.fillBranch(prefix + "dr_Z", dr_z)
+                self.out.fillBranch(prefix + "Z_dau_pdgid", abs(z.daughters[0].pdgId) if z else 0)
 
             try:
                 self.out.fillBranch(prefix + "DeepAK8MD_ZHbbvsQCD", fj.deepTagMD_ZHbbvsQCD)
