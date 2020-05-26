@@ -1,4 +1,5 @@
 import math
+import itertools
 import numpy as np
 import ROOT
 ROOT.PyConfig.IgnoreCommandLineOptions = True
@@ -182,13 +183,13 @@ class HeavyFlavBaseProducer(Module, object):
             self.out.branch(prefix + "sdmass", "F")
             self.out.branch(prefix + "tau21", "F")
             self.out.branch(prefix + "btagcsvv2", "F")
-            self.out.branch(prefix + "btagcmva", "F")
             self.out.branch(prefix + "btagjp", "F")
             self.out.branch(prefix + "nsv", "I")
             self.out.branch(prefix + "nsv_ptgt25", "I")
             self.out.branch(prefix + "nsv_ptgt50", "I")
             self.out.branch(prefix + "ntracks", "I")
             self.out.branch(prefix + "ntracks_sv12", "I")
+            self.out.branch(prefix + "deltaR_sj12", "F")
             # subjet #1
             self.out.branch(prefix + "sj1_pt", "F")
             self.out.branch(prefix + "sj1_eta", "F")
@@ -345,7 +346,6 @@ class HeavyFlavBaseProducer(Module, object):
                 parton.daughters = (parton.genB, genparts[parton.genW.dauIdx[0]], genparts[parton.genW.dauIdx[1]])
             elif abs(parton.pdgId) in (23, 24, 25):
                 parton.daughters = (genparts[parton.dauIdx[0]], genparts[parton.dauIdx[1]])
-            return parton
 
         event.nGenTops = 0
         event.nGenWs = 0
@@ -368,21 +368,24 @@ class HeavyFlavBaseProducer(Module, object):
                         genW = getFinal(dau)
                         gp.genW = genW
                         if isHadronic(genW):
-                            event.hadGenTops.append(addDaughters(gp))
+                            event.hadGenTops.append(gp)
                     elif abs(dau.pdgId) in (1, 3, 5):
                         gp.genB = dau
             elif abs(gp.pdgId) == 24:
                 event.nGenWs += 1
                 if isHadronic(gp):
-                    event.hadGenWs.append(addDaughters(gp))
+                    event.hadGenWs.append(gp)
             elif abs(gp.pdgId) == 23:
                 event.nGenZs += 1
                 if isHadronic(gp):
-                    event.hadGenZs.append(addDaughters(gp))
+                    event.hadGenZs.append(gp)
             elif abs(gp.pdgId) == 25:
                 event.nGenHs += 1
                 if isHadronic(gp):
-                    event.hadGenHs.append(addDaughters(gp))
+                    event.hadGenHs.append(gp)
+
+        for gp in itertools.chain(event.hadGenTops, event.hadGenWs, event.hadGenZs, event.hadGenHs):
+            addDaughters(gp)
 
     def fillBaseEventInfo(self, event):
 
@@ -404,7 +407,7 @@ class HeavyFlavBaseProducer(Module, object):
         self.out.fillBranch("passmetfilters", met_filters)
 
         # L1 prefire weights
-        if self._year == 2016 or self._year == 2017:
+        if self.year == 2016 or self.year == 2017:
             self.out.fillBranch("l1PreFiringWeight", event.L1PreFiringWeight_Nom)
             self.out.fillBranch("l1PreFiringWeightUp", event.L1PreFiringWeight_Up)
             self.out.fillBranch("l1PreFiringWeightDown", event.L1PreFiringWeight_Dn)
@@ -491,7 +494,6 @@ class HeavyFlavBaseProducer(Module, object):
             self.out.fillBranch(prefix + "sdmass", fj.msoftdrop)
             self.out.fillBranch(prefix + "tau21", fj.tau2 / fj.tau1 if fj.tau1 > 0 else 99)
             self.out.fillBranch(prefix + "btagcsvv2", fj.btagCSVV2)
-            self.out.fillBranch(prefix + "btagcmva", fj.btagCMVA)
             try:
                 self.out.fillBranch(prefix + "btagjp", fj.btagJP)
             except RuntimeError:
@@ -517,6 +519,7 @@ class HeavyFlavBaseProducer(Module, object):
             self.out.fillBranch(prefix + "ntracks_sv12" , ntracks_sv12_)
 
             assert(len(fj.subjets) == 2)
+            self.out.fillBranch(prefix + "deltaR_sj12", deltaR(*fj.subjets[:2]))
             for idx_sj, sj in enumerate(fj.subjets):
                 prefix_sj = prefix + 'sj%d_' % (idx_sj + 1)
                 self.out.fillBranch(prefix_sj + "pt", sj.pt)
@@ -562,10 +565,15 @@ class HeavyFlavBaseProducer(Module, object):
             if self.isMC:
                 self.out.fillBranch(prefix + "nbhadrons", fj.nBHadrons)
                 self.out.fillBranch(prefix + "nchadrons", fj.nCHadrons)
-                self.out.fillBranch(prefix + "partonflavour", fj.partonFlavour)
                 self.out.fillBranch(prefix + "sj1_nbhadrons", sj1.nBHadrons)
                 self.out.fillBranch(prefix + "sj1_nchadrons", sj1.nCHadrons)
-                self.out.fillBranch(prefix + "sj1_partonflavour", sj1.partonFlavour)
                 self.out.fillBranch(prefix + "sj2_nbhadrons", sj2.nBHadrons)
                 self.out.fillBranch(prefix + "sj2_nchadrons", sj2.nCHadrons)
-                self.out.fillBranch(prefix + "sj2_partonflavour", sj2.partonFlavour)
+                try:
+                    self.out.fillBranch(prefix + "partonflavour", fj.partonFlavour)
+                    self.out.fillBranch(prefix + "sj1_partonflavour", sj1.partonFlavour)
+                    self.out.fillBranch(prefix + "sj2_partonflavour", sj2.partonFlavour)
+                except:
+                    self.out.fillBranch(prefix + "partonflavour", -1)
+                    self.out.fillBranch(prefix + "sj1_partonflavour", -1)
+                    self.out.fillBranch(prefix + "sj2_partonflavour", -1)
