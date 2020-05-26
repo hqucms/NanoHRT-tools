@@ -93,6 +93,9 @@ class PhotonSampleProducer(HeavyFlavBaseProducer):
             event.ak4jets.append(j)
         event.ht = sum([j.pt for j in event.ak4jets])
 
+        # load gen
+        self.loadGenHistory(event)
+
         ## return True if passes selection
         return True
 
