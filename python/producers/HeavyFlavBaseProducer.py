@@ -143,10 +143,14 @@ class HeavyFlavBaseProducer(Module, object):
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.isMC = bool(inputTree.GetBranch('genWeight'))
+        self.isParticleNetV01 = bool(inputTree.GetBranch(self._fj_name + '_ParticleNetMD_probQCD'))
         self.out = wrappedOutputTree
 
         self.out.branch("jetR", "F")
         self.out.branch("passmetfilters", "O")
+        self.out.branch("l1PreFiringWeight", "F")
+        self.out.branch("l1PreFiringWeightUp", "F")
+        self.out.branch("l1PreFiringWeightDown", "F")
 
         # Large-R jets
         self.out.branch("n_fatjet", "I")
@@ -399,6 +403,16 @@ class HeavyFlavBaseProducer(Module, object):
             met_filters = met_filters and event.Flag_eeBadScFilter
         self.out.fillBranch("passmetfilters", met_filters)
 
+        # L1 prefire weights
+        if self._year == 2016 or self._year == 2017:
+            self.out.fillBranch("l1PreFiringWeight", event.L1PreFiringWeight_Nom)
+            self.out.fillBranch("l1PreFiringWeightUp", event.L1PreFiringWeight_Up)
+            self.out.fillBranch("l1PreFiringWeightDown", event.L1PreFiringWeight_Dn)
+        else:
+            self.out.fillBranch("l1PreFiringWeight", 1.0)
+            self.out.fillBranch("l1PreFiringWeightUp", 1.0)
+            self.out.fillBranch("l1PreFiringWeightDown", 1.0)
+
     def _get_filler(self, obj):
 
         def filler(branch, value, default=0):
@@ -452,10 +466,19 @@ class HeavyFlavBaseProducer(Module, object):
                 self.out.fillBranch(prefix + "ParticleNetMD_Xbb", fj.ParticleNetMD_probXbb)
                 self.out.fillBranch(prefix + "ParticleNetMD_Xcc", fj.ParticleNetMD_probXcc)
                 self.out.fillBranch(prefix + "ParticleNetMD_Xqq", fj.ParticleNetMD_probXqq)
-                self.out.fillBranch(prefix + "ParticleNetMD_QCD", convert_prob(fj, None, prefix='ParticleNetMD_prob'))
-                self.out.fillBranch(prefix + "ParticleNetMD_XbbVsQCD", convert_prob(fj, ['Xbb'], prefix='ParticleNetMD_prob'))
-                self.out.fillBranch(prefix + "ParticleNetMD_XccVsQCD", convert_prob(fj, ['Xcc'], prefix='ParticleNetMD_prob'))
+                if self.isParticleNetV01:
+                    self.out.fillBranch(prefix + "ParticleNetMD_QCD", fj.ParticleNetMD_probQCD)
+                    self.out.fillBranch(prefix + "ParticleNetMD_XbbVsQCD", convert_prob(fj, ['Xbb'], ['QCD'], prefix='ParticleNetMD_prob'))
+                    self.out.fillBranch(prefix + "ParticleNetMD_XccVsQCD", convert_prob(fj, ['Xcc'], ['QCD'], prefix='ParticleNetMD_prob'))
+                else:
+                    self.out.fillBranch(prefix + "ParticleNetMD_QCD", convert_prob(fj, None, prefix='ParticleNetMD_prob'))
+                    self.out.fillBranch(prefix + "ParticleNetMD_XbbVsQCD", convert_prob(fj, ['Xbb'], prefix='ParticleNetMD_prob'))
+                    self.out.fillBranch(prefix + "ParticleNetMD_XccVsQCD", convert_prob(fj, ['Xcc'], prefix='ParticleNetMD_prob'))
             except RuntimeError:
+                self.out.fillBranch(prefix + "ParticleNetMD_Xbb", -1)
+                self.out.fillBranch(prefix + "ParticleNetMD_Xcc", -1)
+                self.out.fillBranch(prefix + "ParticleNetMD_Xqq", -1)
+                self.out.fillBranch(prefix + "ParticleNetMD_QCD", -1)
                 self.out.fillBranch(prefix + "ParticleNetMD_HbbVsQCD", -1)
                 self.out.fillBranch(prefix + "ParticleNetMD_HccVsQCD", -1)
 
