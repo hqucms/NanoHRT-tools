@@ -180,9 +180,9 @@ def parse_sample_xsec(cfgfile):
     return xsec_dict
 
 
-def tar_cmssw(batchMode=False):
+def tar_cmssw(tarball_suffix, batchMode=False):
     cmsswdir = os.environ['CMSSW_BASE']
-    cmsswtar = os.path.abspath(os.path.expandvars('$CMSSW_BASE/../CMSSW.tar.gz'))
+    cmsswtar = os.path.abspath(os.path.expandvars('$CMSSW_BASE/../CMSSW%s.tar.gz' % tarball_suffix))
     if os.path.exists(cmsswtar):
         if batchMode:
             return
@@ -278,6 +278,7 @@ def create_metadata(args):
                                 continue
                         filelist.append(os.path.join(dp, f))
             if len(filelist):
+                filelist = sorted(filelist)
                 md['samples'].append(samp)
                 md['inputfiles'][samp] = filelist
     else:
@@ -294,6 +295,7 @@ def create_metadata(args):
                 if select_sample(dataset):
                     filelist.extend(get_filenames(dataset))
             if len(filelist):
+                filelist = sorted(filelist)
                 md['samples'].append(samp)
                 md['inputfiles'][samp] = filelist
 
@@ -412,7 +414,7 @@ def submit(args, configs):
         shutil.copy2(metadatafile, joboutputdir)
 
         # create CMSSW tarball
-        tar_cmssw(args.batch)
+        tar_cmssw(args.tarball_suffix, args.batch)
 
         njobs = len(md['jobs'])
         jobids = [str(jobid) for jobid in range(njobs)]
@@ -427,7 +429,7 @@ def submit(args, configs):
         f.write('\n'.join(jobids))
 
     # prepare the list of files to transfer
-    files_to_transfer = [os.path.expandvars('$CMSSW_BASE/../CMSSW.tar.gz'), macrofile, metadatafile] + configfiles
+    files_to_transfer = [os.path.expandvars('$CMSSW_BASE/../CMSSW%s.tar.gz' % args.tarball_suffix), macrofile, metadatafile] + configfiles
     if args.branchsel_in:
         files_to_transfer.append(args.branchsel_in)
         shutil.copy2(args.branchsel_in, args.jobdir)
@@ -438,6 +440,7 @@ def submit(args, configs):
         for f in args.extra_transfer.split(','):
             files_to_transfer.append(f)
             shutil.copy2(f, args.jobdir)
+    shutil.copy2(macrofile, args.jobdir)
     files_to_transfer = [os.path.abspath(f) for f in files_to_transfer]
 
     condordesc = '''\
@@ -597,6 +600,10 @@ def get_arg_parser():
     parser.add_argument('--extra-transfer',
         default=None,
         help='Extra files to transfer, common separated list. Default: %(default)s'
+    )
+    parser.add_argument('--tarball-suffix',
+        default='',
+        help='Suffix of the CMSSW tarball. Default: %(default)s'
     )
     parser.add_argument('-t', '--submittype',
         default='condor', choices=['interactive', 'condor'],

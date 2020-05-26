@@ -10,7 +10,7 @@ ls -l
 jobid=$1
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
-tar -xf CMSSW.tar.gz --warning=no-timestamp
+tar -xf CMSSW*.tar.gz --warning=no-timestamp
 
 ### --------------------------------###
 #Keep track of release sandbox version
