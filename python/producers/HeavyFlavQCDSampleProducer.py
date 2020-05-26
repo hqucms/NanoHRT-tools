@@ -78,6 +78,9 @@ class QCDSampleProducer(HeavyFlavBaseProducer):
             return False
         self.matchSVToSubjets(event, event.fatjets[0])
 
+        # load gen
+        self.loadGenHistory(event)
+
         ## return True if passes selection
         return True
 

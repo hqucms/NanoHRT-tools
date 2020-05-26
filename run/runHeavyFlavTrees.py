@@ -161,7 +161,7 @@ def main():
     args = parser.parse_args()
 
     if not (args.post or args.add_weight or args.merge):
-        tar_cmssw()
+        tar_cmssw(args.tarball_suffix)
 
     if ',' in args.year:
         years = [int(y) for y in args.year.split(',') if y]

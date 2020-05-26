@@ -29,7 +29,6 @@ class SignalSampleProducer(HeavyFlavBaseProducer):
 
         logging.debug('processing event %d' % event.event)
 
-
         ## selection on AK8 jets / drop if overlaps with a photon
         event.fatjets = []
         for fj in event._allFatJets:
@@ -52,8 +51,6 @@ class SignalSampleProducer(HeavyFlavBaseProducer):
         event.secondary_vertices = sorted(event.secondary_vertices, key=lambda x: x.pt, reverse=True)  # sort by pt
 #         event.secondary_vertices = sorted(event.secondary_vertices, key=lambda x : x.dxySig, reverse=True)  # sort by dxysig
 
-        self.matchSVToJets(event, event.fatjets)
-
         # selection on the probe jet (sub-leading in pT)
         probe_fj = event.fatjets[0]
         if not (probe_fj.pt > 200 and len(probe_fj.subjets) == 2 and probe_fj.msoftdrop > 50 and probe_fj.msoftdrop < 200):
@@ -71,6 +68,9 @@ class SignalSampleProducer(HeavyFlavBaseProducer):
             event.ak4jets.append(j)
         event.ht = sum([j.pt for j in event.ak4jets])
 
+        # load gen
+        self.loadGenHistory(event)
+
         ## return True if passes selection
         return True
 
@@ -83,13 +83,11 @@ class SignalSampleProducer(HeavyFlavBaseProducer):
         if self.prepareEvent(event) is False:
             return False
 
-        self.loadGenHistory(event)
-
         ## event variables
         self.out.fillBranch("ht", event.ht)
         self.out.fillBranch("nlep", len(event.looseLeptons))
         self.fillBaseEventInfo(event)
-        self.fillFatJetInfo(event,True)
+        self.fillFatJetInfo(event)
 
         return True
 
