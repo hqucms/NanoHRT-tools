@@ -410,6 +410,7 @@ def submit(args, configs):
 
         # create metadata file
         md = create_metadata(args)
+        md['joboutputdir'] = joboutputdir
         with open(metadatafile, 'w') as f:
             json.dump(md, f, ensure_ascii=True, indent=2, sort_keys=True)
         shutil.copy2(metadatafile, joboutputdir)
@@ -456,13 +457,14 @@ error                 = {jobdir}/$(jobid).err
 log                   = {jobdir}/$(jobid).log
 use_x509userproxy     = true
 Should_Transfer_Files = YES
-initialdir            = {outputdir}
+initialdir            = {initialdir}
 WhenToTransferOutput  = ON_EXIT
 want_graceful_removal = true
 on_exit_remove        = (ExitBySignal == False) && (ExitCode == 0)
 on_exit_hold          = ( (ExitBySignal == True) || (ExitCode != 0) )
 on_exit_hold_reason   = strcat("Job held by ON_EXIT_HOLD due to ", ifThenElse((ExitBySignal == True), "exit by signal", strcat("exit code ",ExitCode)), ".")
 periodic_release      = (NumJobStarts < 3) && ((CurrentTime - EnteredCurrentStatus) > 10*60)
+{transfer_output}
 {site}
 {maxruntime}
 
@@ -470,7 +472,9 @@ queue jobid from {jobids_file}
 '''.format(scriptfile=os.path.abspath(scriptfile),
            files_to_transfer=','.join(files_to_transfer),
            jobdir=os.path.abspath(args.jobdir),
-           outputdir=joboutputdir,
+           # when outputdir is on EOS, disable file transfer as file is manually copied to EOS in processor.py
+           initialdir=os.path.abspath(args.jobdir) if joboutputdir.startswith('/eos') else joboutputdir,
+           transfer_output='transfer_output_files = ""' if joboutputdir.startswith('/eos') else '',
            jobids_file=os.path.abspath(jobids_file),
            site='+DESIRED_Sites = "%s"' % args.site if args.site else '',
            maxruntime='+MaxRuntime = %s' % args.max_runtime if args.max_runtime else '',

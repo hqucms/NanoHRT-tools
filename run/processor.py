@@ -17,6 +17,8 @@ ROOT.PyConfig.IgnoreCommandLineOptions = True
 def xrd_prefix(filepaths):
     prefix = ''
     allow_prefetch = False
+    if not isinstance(filepaths, (list, tuple)):
+        filepaths = [filepaths]
     filepath = filepaths[0]
     if filepath.startswith('/eos/cms'):
         prefix = 'root://eoscms.cern.ch/'
@@ -100,23 +102,24 @@ def main(args):
         if f.endswith('.root') and f != outputname:
             os.remove(f)
 
-#     # stage out
-#     if md['outputdir'].startswith('/eos'):
-#         cmd = 'xrdcp -np {outputname} {outputdir}/{outputname}'.format(outputname=outputname, outputdir=xrd_prefix(md['outputdir'])[0][0])
-#         success = False
-#         for count in range(args.max_retry):
-#             p = subprocess.Popen(cmd, shell=True)
-#             p.communicate()
-#             if p.returncode == 0:
-#                 success = True
-#                 break
-#             else:
-#                 time.sleep(args.sleep)
-#         if not success:
-#             raise RuntimeError("Stage out FAILED!")
-#
-#         # clean up
-#         os.remove(outputname)
+    # stage out
+    if md['outputdir'].startswith('/eos'):
+        cmd = 'xrdcp --silent -p {outputname} {outputdir}/{outputname}'.format(outputname=outputname, outputdir=xrd_prefix(md['joboutputdir'])[0][0])
+        print(cmd)
+        success = False
+        for count in range(args.max_retry):
+            p = subprocess.Popen(cmd, shell=True)
+            p.communicate()
+            if p.returncode == 0:
+                success = True
+                break
+            else:
+                time.sleep(args.sleep)
+        if not success:
+            raise RuntimeError("Stage out FAILED!")
+
+        # clean up
+        os.remove(outputname)
 
 
 if __name__ == "__main__":
