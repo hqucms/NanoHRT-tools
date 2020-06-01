@@ -22,6 +22,8 @@ def xrd_prefix(filepaths):
     filepath = filepaths[0]
     if filepath.startswith('/eos/cms'):
         prefix = 'root://eoscms.cern.ch/'
+    elif filepath.startswith('/eos/user'):
+        prefix = 'root://eosuser.cern.ch/'
     elif filepath.startswith('/eos/uscms'):
         prefix = 'root://cmseos.fnal.gov/'
     elif filepath.startswith('/store/'):
