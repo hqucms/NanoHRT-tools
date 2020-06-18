@@ -23,6 +23,7 @@ class ParticleNetJetTagsProducer(object):
         self.debug = debug
         with open(preprocess_path) as fp:
             self.prep_params = json.load(fp)
+        print('Loading model %s' % model_path)
         self.sess = onnxruntime.InferenceSession(model_path)
 
     def _preprocess(self, taginfo, eval_flags=None):
