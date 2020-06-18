@@ -50,6 +50,7 @@ echo "[$(date '+%F %T')] wrapper ready"
 
 ls -l
 
+export MLAS_DYNAMIC_CPU_ARCH=99
 export TMPDIR=`pwd`
 python processor.py $jobid
 status=$?

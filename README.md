@@ -1,23 +1,21 @@
 # NanoHRT-tools
 
-### Set up CMSSW
+### Set up CMSSW and offcial NanoAOD-tools
+
+**Alternatively, set up CMSSW and offcial NanoAOD-tools with Python3 support. This is needed to re-run the taggers w/ `ONNXRuntime`.**
 
 ```bash
-cmsrel CMSSW_10_2_18
-cd CMSSW_10_2_18/src
+cmsrel CMSSW_11_1_0_pre5_PY3
+cd CMSSW_11_1_0_pre5_PY3/src
 cmsenv
-```
 
-### Set up official NanoAOD-tools
-
-```bash
-git clone https://github.com/cms-nanoAOD/nanoAOD-tools.git PhysicsTools/NanoAODTools
+git clone https://github.com/hqucms/nanoAOD-tools.git PhysicsTools/NanoAODTools -b py3
 ```
 
 ### Get customized NanoAOD tools for HeavyResTagging (NanoHRT-tools)
 
 ```bash
-git clone https://github.com/hqucms/NanoHRT-tools.git PhysicsTools/NanoHRTTools
+git clone https://github.com/hqucms/NanoHRT-tools.git PhysicsTools/NanoHRTTools -b dev/tagger-ul
 ```
 
 ### Compile

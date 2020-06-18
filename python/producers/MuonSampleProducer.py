@@ -52,7 +52,7 @@ class MuonSampleProducer(HRTBaseProducer):
         # #leptonic W pt cut
         event.mu = event.muons[0]
         event.leptonicW = event.mu.p4() + event.met.p4()
-        if event.leptonicW.Pt() < 250.0:
+        if event.leptonicW.Pt() < 150.0:
             return False
 
         ## b-tag AK4 jet selection
@@ -99,6 +99,9 @@ class MuonSampleProducer(HRTBaseProducer):
 
         self.fillBaseEventInfo(event)
         self.fillFatJetInfo(event, fillGenMatching=True)
+
+        if self._run_tagger:
+            self.runParticleNet(event)
 
         return True
 

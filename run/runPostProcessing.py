@@ -83,7 +83,7 @@ def add_weight_branch(file, xsec, lumi=1000., treename='Events', wgtbranch='xsec
             b = tree.Branch(branch_name, buff, branch_name + '/F')
 
         b.SetBasketSize(tree.GetEntries() * 2)  # be sure we do not trigger flushing
-        for i in xrange(tree.GetEntries()):
+        for i in range(tree.GetEntries()):
             if lenVar is not None:
                 b_lenVar.GetEntry(i)
             b.Fill()
@@ -106,14 +106,14 @@ def add_weight_branch(file, xsec, lumi=1000., treename='Events', wgtbranch='xsec
     if tree.GetBranch('LHEScaleWeight'):
         run_tree.GetEntry(0)
         nScaleWeights = run_tree.nLHEScaleSumw
-        scale_weight_norm_buff = array('f', [sumwgts / _get_sum(run_tree, 'LHEScaleSumw[%d]*genEventSumw' % i) for i in xrange(nScaleWeights)])
+        scale_weight_norm_buff = array('f', [sumwgts / _get_sum(run_tree, 'LHEScaleSumw[%d]*genEventSumw' % i) for i in range(nScaleWeights)])
         logging.info('LHEScaleWeightNorm: ' + str(scale_weight_norm_buff))
         _fill_const_branch(tree, 'LHEScaleWeightNorm', scale_weight_norm_buff, lenVar='nLHEScaleWeight')
 
     if tree.GetBranch('LHEPdfWeight'):
         run_tree.GetEntry(0)
         nPdfWeights = run_tree.nLHEPdfSumw
-        pdf_weight_norm_buff = array('f', [sumwgts / _get_sum(run_tree, 'LHEPdfSumw[%d]*genEventSumw' % i) for i in xrange(nPdfWeights)])
+        pdf_weight_norm_buff = array('f', [sumwgts / _get_sum(run_tree, 'LHEPdfSumw[%d]*genEventSumw' % i) for i in range(nPdfWeights)])
         logging.info('LHEPdfWeightNorm: ' + str(pdf_weight_norm_buff))
         _fill_const_branch(tree, 'LHEPdfWeightNorm', pdf_weight_norm_buff, lenVar='nLHEPdfWeight')
 
@@ -448,6 +448,7 @@ def submit(args, configs):
     condordesc = '''\
 universe              = vanilla
 requirements          = (Arch == "X86_64") && (OpSys == "LINUX")
+request_memory        = {request_memory}
 request_disk          = 10000000
 executable            = {scriptfile}
 arguments             = $(jobid)
@@ -478,6 +479,7 @@ queue jobid from {jobids_file}
            jobids_file=os.path.abspath(jobids_file),
            site='+DESIRED_Sites = "%s"' % args.site if args.site else '',
            maxruntime='+MaxRuntime = %s' % args.max_runtime if args.max_runtime else '',
+           request_memory=args.request_memory,
     )
     condorfile = os.path.join(args.jobdir, 'submit.cmd')
     with open(condorfile, 'w') as f:
@@ -508,7 +510,7 @@ def run_add_weight(args):
         logging.debug('...' + cmd)
         p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         log = p.communicate()[0]
-        log_lower = log.lower()
+        log_lower = log.lower().decode('utf-8')
         if 'error' in log_lower or 'fail' in log_lower:
             logging.error(log)
         if p.returncode != 0:
@@ -570,7 +572,7 @@ def run_merge(args):
             log = p.communicate()[0]
             if p.returncode != 0:
                 raise RuntimeError('Hadd failed on %s!' % outname)
-            log_lower = log.lower()
+            log_lower = log.lower().decode('utf-8')
             if 'error' in log_lower or 'fail' in log_lower:
                 logging.error(log)
 
@@ -655,6 +657,10 @@ def get_arg_parser():
     parser.add_argument('--max-runtime',
         default='24*60*60',
         help='Max runtime, in seconds. Default: %(default)s'
+    )
+    parser.add_argument('--request-memory',
+        default='2000',
+        help='Request memory, in MB. Default: %(default)s'
     )
     parser.add_argument('--add-weight',
         action='store_true', default=False,

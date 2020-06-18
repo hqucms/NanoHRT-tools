@@ -8,11 +8,11 @@ import logging
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
 
 hrt_cfgname = 'hrtSFTree_cfg.json'
-default_config = {'data': False, 'channel': None, 'year': None, 'jec': False, 'jes': None, 'jes_source': '', 'jer': 'nominal', 'jmr': None, 'met_unclustered': None}
+default_config = {'data': False, 'channel': None, 'year': None, 'jec': False, 'jes': None, 'jes_source': '', 'jer': None, 'jmr': None, 'met_unclustered': None}
 cut_dict = {
-    'muon': 'Sum$(Muon_pt>55 && abs(Muon_eta)<2.4 && Muon_tightId && Muon_miniPFRelIso_all<0.10)>0 && nFatJet>0 && Sum$(abs(Jet_eta)<2.4 && Jet_btagDeepB>{DeepCSV_WP_M})>0',
-    'photon': 'Sum$(Photon_pt>200 && (Photon_cutBasedBitmap & 2) && Photon_electronVeto)>0 && nFatJet>0',
-    'qcd': 'Sum$((Jet_pt>25 && abs(Jet_eta)<2.4 && (Jet_jetId & 2)) * Jet_pt)>800 && nFatJet>0',
+    'muon': 'Sum$(Muon_pt>55 && abs(Muon_eta)<2.4 && Muon_tightId && Muon_miniPFRelIso_all<0.10)>0 && nCustomAK8Puppi>0 && Sum$(abs(Jet_eta)<2.4 && Jet_btagDeepB>{DeepCSV_WP_M})>0',
+    'photon': 'Sum$(Photon_pt>200 && (Photon_cutBasedBitmap & 2) && Photon_electronVeto)>0 && nCustomAK8Puppi>0',
+    'qcd': 'Sum$((Jet_pt>25 && abs(Jet_eta)<2.4 && (Jet_jetId & 2)) * Jet_pt)>800 && nCustomAK8Puppi>0',
     }
 
 golden_json = {
@@ -45,8 +45,8 @@ def _process(args):
 
     if args.run_data:
         args.datasets = '%s/%s_%d_DATA.yaml' % (args.sample_dir, channel, year)
-        args.extra_transfer = os.path.expandvars('$CMSSW_BASE/src/PhysicsTools/NanoHRTTools/data/JSON/%s' % golden_json[year])
-        args.json = golden_json[year]
+#         args.extra_transfer = os.path.expandvars('$CMSSW_BASE/src/PhysicsTools/NanoHRTTools/data/JSON/%s' % golden_json[year])
+#         args.json = golden_json[year]
     else:
         args.datasets = '%s/%s_%d_MC.yaml' % (args.sample_dir, channel, year)
 

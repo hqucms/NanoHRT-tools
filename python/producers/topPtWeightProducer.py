@@ -33,16 +33,20 @@ class TopPtWeightProducer(Module):
         if not self.isMC:
             return True
 
-        genparts = Collection(event, "GenPart")
-        for idx, gp in enumerate(genparts):
-            if not hasattr(gp, 'dauIdx'):
-                gp.dauIdx = []
-            if gp.genPartIdxMother >= 0:
-                mom = genparts[gp.genPartIdxMother]
-                if not hasattr(mom, 'dauIdx'):
-                    mom.dauIdx = [idx]
-                else:
-                    mom.dauIdx.append(idx)
+        try:
+            genparts = event.genparts
+        except RuntimeError as e:
+            genparts = Collection(event, "GenPart")
+            for idx, gp in enumerate(genparts):
+                if 'dauIdx' not in gp.__dict__:
+                    gp.dauIdx = []
+                if gp.genPartIdxMother >= 0:
+                    mom = genparts[gp.genPartIdxMother]
+                    if 'dauIdx' not in mom.__dict__:
+                        mom.dauIdx = [idx]
+                    else:
+                        mom.dauIdx.append(idx)
+            event.genparts = genparts
 
         genTops = []
         for gp in genparts:
