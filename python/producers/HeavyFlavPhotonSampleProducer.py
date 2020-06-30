@@ -42,7 +42,7 @@ class PhotonSampleProducer(HeavyFlavBaseProducer):
         event._allPhotons = Collection(event, "Photon")
         event.photons = []
         for pho in event._allPhotons:
-            if not (pho.pt > 200 and abs(pho.eta) < 2.4 and (pho.cutBasedBitmap & 2) and pho.electronVeto):  # medium ID
+            if not (pho.pt > 200 and abs(pho.eta) < 2.4 and pho.cutBased >= 2 and pho.electronVeto):  # medium ID
                 continue
             event.photons.append(pho)
 
