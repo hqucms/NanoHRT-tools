@@ -1,3 +1,4 @@
+import os
 import math
 import itertools
 import numpy as np
@@ -10,6 +11,7 @@ from PhysicsTools.NanoAODTools.postprocessing.tools import deltaPhi, deltaR, clo
 
 from PhysicsTools.NanoHRTTools.helpers.jetmetCorrector import JetMETCorrector
 from PhysicsTools.NanoHRTTools.helpers.nnHelper import convert_prob
+from PhysicsTools.NanoHRTTools.helpers.xgbHelper import XGBEnsemble
 
 import logging
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
@@ -94,12 +96,17 @@ class HeavyFlavBaseProducer(Module, object):
             self._sj_name = 'SubJet'
             self._fj_gen_name = 'GenJetAK8'
             self._sj_gen_name = 'SubGenJetAK8'
+            # self._sfbdt_files = [os.path.expandvars('$CMSSW_BASE/src/PhysicsTools/NanoHRTTools/data/sfBDT/ak8/xgb_train_qcd.model.%d' % idx) for idx in range(10)]
+            self._sfbdt_files = [os.path.expandvars('$CMSSW_BASE/src/PhysicsTools/NanoHRTTools/data/sfBDT/ak15/xgb_train_qcd.model.%d' % idx) for idx in range(10)] # FIXME: update to AK8 training
+            self._sfbdt_vars = ['fj_2_tau21', 'fj_2_sj1_rawmass', 'fj_2_sj2_rawmass', 'fj_2_ntracks_sv12', 'fj_2_sj1_sv1_pt', 'fj_2_sj2_sv1_pt']
         elif self.jetType == 'ak15':
             self._jetConeSize = 1.5
             self._fj_name = 'AK15Puppi'
             self._sj_name = 'AK15PuppiSubJet'
             self._fj_gen_name = 'GenJetAK15'
             self._sj_gen_name = 'GenSubJetAK15'
+            self._sfbdt_files = [os.path.expandvars('$CMSSW_BASE/src/PhysicsTools/NanoHRTTools/data/sfBDT/ak15/xgb_train_qcd.model.%d' % idx) for idx in range(10)]
+            self._sfbdt_vars = ['fj_2_tau21', 'fj_2_sj1_rawmass', 'fj_2_sj2_rawmass', 'fj_2_ntracks_sv12', 'fj_2_sj1_sv1_pt', 'fj_2_sj2_sv1_pt']
         else:
             raise RuntimeError('Jet type %s is not recognized!' % self.jetType)
         print ('Running on %d DATA/MC for %s jets' % (self.year, self.jetType))
@@ -141,6 +148,7 @@ class HeavyFlavBaseProducer(Module, object):
         self.jetmetCorr.beginJob()
         self.fatjetCorr.beginJob()
         self.subjetCorr.beginJob()
+        self.xgb = XGBEnsemble(self._sfbdt_files, self._sfbdt_vars)
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.isMC = bool(inputTree.GetBranch('genWeight'))
@@ -233,6 +241,8 @@ class HeavyFlavBaseProducer(Module, object):
             self.out.branch(prefix + "sj2_sv1_chi2ndof", "F")
             self.out.branch(prefix + "sj2_sv1_pangle", "F")
             self.out.branch(prefix + "sj12_masscor_dxysig", "F")
+            # sfBDT
+            self.out.branch(prefix + "sfBDT", "F")
             # matching variables
             if self.isMC:
                 self.out.branch(prefix + "nbhadrons", "I")
@@ -561,6 +571,10 @@ class HeavyFlavBaseProducer(Module, object):
             except IndexError:
                 # if len(sv_list) == 0
                 self.out.fillBranch(prefix + "sj12_masscor_dxysig", 0)
+
+            # sfBDT
+            sfbdt_inputs = {k: self.out._branches[k.replace('fj_2_', prefix)].buff[0] for k in self._sfbdt_vars}
+            self.out.fillBranch(prefix + "sfBDT", self.xgb.eval(sfbdt_inputs, model_idx=(event.event % 10)))
 
             # matching variables
             if self.isMC:
