@@ -1,9 +1,24 @@
-import os, tarfile, tempfile, shutil
+import os
+import tempfile
+import shutil
+import itertools
+import logging
+import numpy as np
 import ROOT
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 
+from PhysicsTools.NanoHRTTools.helpers.utils import polarP4, p4, configLogger
 from PhysicsTools.NanoHRTTools.helpers.jetSmearingHelper import jetSmearer, find_and_extract_tarball
-from PhysicsTools.NanoAODTools.postprocessing.modules.jme.JetReCalibrator import JetReCalibrator
+
+logger = logging.getLogger('jme')
+configLogger('jme', loglevel=logging.INFO)
+
+
+def rndSeed(event, jets, extra=0):
+    seed = (event.run << 20) + (event.luminosityBlock << 10) + event.event + extra
+    if len(jets) > 0:
+        seed += int(jets[0].eta / 0.01)
+    return seed
 
 
 def _sf(vals, syst='nominal'):
@@ -17,8 +32,36 @@ def _sf(vals, syst='nominal'):
         raise ValueError('Invalid syst type: %s' % str(syst))
 
 
-def selectJetsForMET(jet):
-    return jet.pt > 15 and jet.chEmEF + jet.neEmEF < 0.9
+class JetCorrector(object):
+
+    def __init__(self, globalTag, jetType, jecPath, applyResidual=True):
+        self.jecLevels = ['L2Relative', 'L3Absolute'] if 'Puppi' in jetType else ['L1FastJet', 'L2Relative', 'L3Absolute']
+        if applyResidual:
+            self.jecLevels += ['L2L3Residual']
+        self.vPar = ROOT.vector(ROOT.JetCorrectorParameters)()
+        logger.info('Init JetCorrector: %s, %s, %s', globalTag, jetType, str(self.jecLevels))
+        for level in self.jecLevels:
+            self.vPar.push_back(ROOT.JetCorrectorParameters(os.path.join(jecPath, "%s_%s_%s.txt" % (globalTag, level, jetType)), ""))
+        self.corrector = ROOT.FactorizedJetCorrector(self.vPar)
+
+    def getCorrection(self, jet, rho, level=None):
+        try:
+            raw_pt = jet.rawP4.pt()
+        except RuntimeError:
+            raw_pt = jet.pt * (1. - jet.rawFactor)
+        self.corrector.setJetPt(raw_pt)
+        self.corrector.setJetPhi(jet.phi)
+        self.corrector.setJetEta(jet.eta)
+        self.corrector.setRho(rho)
+        try:
+            self.corrector.setJetA(jet.area)
+        except RuntimeError:
+            pass
+        if level is None:
+            return self.corrector.getCorrection()
+        else:
+            idx = self.jecLevels.index(level)
+            return self.corrector.getSubCorrections()[idx]
 
 
 class JetMETCorrector(object):
@@ -52,6 +95,9 @@ class JetMETCorrector(object):
         self.jer = jer
         self.jmr = jmr
         self.met_unclustered = met_unclustered
+        self.correctMET = (jetType == 'AK4PFchs')  # FIXME
+
+        self.excludeJetsForMET = None
 
         # set up tags for each year
         if self.year == 2016:
@@ -66,16 +112,17 @@ class JetMETCorrector(object):
                 (278820, 'Summer16_07Aug2017GH_V11_DATA'),
             )
         elif self.year == 2017:
-            self.globalTag = 'Fall17_17Nov2017_V32_MC'
-            self.jerTag = 'Fall17_V3_MC'
+            self.globalTag = 'Summer19UL17_V5_MC'
+            self.jerTag = 'Summer19UL17_JRV2_MC'
             self.dataTags = (
                 # set the name of the tarball with a dummy run number
-                (0, 'Fall17_17Nov2017_V32_DATA'),
+                (0, 'Summer19UL17_V5_DATA'),
                 # (start run number (inclusive), 'tag name')
-                (297020, 'Fall17_17Nov2017B_V32_DATA'),
-                (299337, 'Fall17_17Nov2017C_V32_DATA'),
-                (302030, 'Fall17_17Nov2017DE_V32_DATA'),
-                (304911, 'Fall17_17Nov2017F_V32_DATA'),
+                (297020, 'Summer19UL17_RunB_V5_DATA'),
+                (299337, 'Summer19UL17_RunC_V5_DATA'),
+                (302030, 'Summer19UL17_RunD_V5_DATA'),
+                (303435, 'Summer19UL17_RunE_V5_DATA'),
+                (304911, 'Summer19UL17_RunF_V5_DATA'),
             )
         elif self.year == 2018:
             self.globalTag = 'Autumn18_V19_MC'
@@ -94,34 +141,29 @@ class JetMETCorrector(object):
 
     def beginJob(self):
         # set up JEC
-        if self.jec or self.jes in ['up', 'down']:
+        if self.jec or self.jes in ['up', 'down'] or self.correctMET:
             for library in ["libCondFormatsJetMETObjects", "libPhysicsToolsNanoAODTools"]:
                 if library not in ROOT.gSystem.GetLibraries():
-                    print("Load Library '%s'" % library.replace("lib", ""))
+                    logger.info("Load Library '%s'" % library.replace("lib", ""))
                     ROOT.gSystem.Load(library)
 
             self.jesInputFilePath = tempfile.mkdtemp()
             # extract the MC and unc files
             find_and_extract_tarball(self.globalTag, self.jesInputFilePath)
 
-        # updating JEC
-        if self.jec:
-            self.jetReCalibratorMC = JetReCalibrator(globalTag=self.globalTag,
-                                                     jetFlavour=self.jetType,
-                                                     doResidualJECs=False,
-                                                     jecPath=self.jesInputFilePath,
-                                                     calculateSeparateCorrections=False,
-                                                     calculateType1METCorrection=False)
-            self.jetReCalibratorsDATA = {}
+            # updating JEC/re-correct MET
+            self.jetCorrectorMC = JetCorrector(globalTag=self.globalTag,
+                                               jetType=self.jetType,
+                                               jecPath=self.jesInputFilePath,
+                                               applyResidual=False)
+            self.jetCorrectorsDATA = {}
             for iov, tag in self.dataTags:
                 find_and_extract_tarball(tag, self.jesInputFilePath)
                 if iov > 0:
-                    self.jetReCalibratorsDATA[tag] = JetReCalibrator(globalTag=tag,
-                                                                     jetFlavour=self.jetType,
-                                                                     doResidualJECs=True,
-                                                                     jecPath=self.jesInputFilePath,
-                                                                     calculateSeparateCorrections=False,
-                                                                     calculateType1METCorrection=False)
+                    self.jetCorrectorsDATA[tag] = JetCorrector(globalTag=tag,
+                                                              jetType=self.jetType,
+                                                              jecPath=self.jesInputFilePath,
+                                                              applyResidual=True)
 
         # JES uncertainty
         if self.jes in ['up', 'down']:
@@ -148,59 +190,109 @@ class JetMETCorrector(object):
         if self.jetSmearer is not None:
             self.jetSmearer.setSeed(seed)
 
-    def correctJetAndMET(self, jets, met=None, rho=None, genjets=[], isMC=True, runNumber=None):
+    def calcT1CorrEEFix(self, jet):
+        zero = np.zeros(2, dtype='float')
+        if self.excludeJetsForMET is None or not self.excludeJetsForMET(jet):
+            return zero
+        if jet.neEmEF + jet.chEmEF > 0.9:
+            return zero
+        rawP4 = jet.rawP4 * (1 - jet.muonSubtrFactor)
+        corrP4 = rawP4 * jet._jecFactor  # FIXME: _jecFactor and _jecFactorL1 here should be the JEC used in the NanoAOD production
+        if corrP4.pt() < 15:
+            return zero
+        delta = rawP4 * jet._jecFactorL1 - corrP4
+        return np.array([delta.px(), delta.py()])
+
+    def calcT1Corr(self, jet):
+        zero = np.zeros(2, dtype='float')
+        if self.excludeJetsForMET is not None and self.excludeJetsForMET(jet):
+            return zero
+        if jet.neEmEF + jet.chEmEF > 0.9:
+            return zero
+        muP4 = jet.rawP4 * jet.muonSubtrFactor
+        rawP4 = jet.rawP4 * (jet._smearFactorNominal if self.jer else 1) - muP4
+        corrP4 = rawP4 * jet._jecFactor
+        if corrP4.pt() < 15:
+            return zero
+        delta = rawP4 * jet._jecFactorL1 - corrP4
+        if self.jer in ['up', 'down'] or self.jes in ['up', 'down']:
+            nominalP4 = jet.rawP4 * jet._jecFactor * (jet._smearFactorNominal if self.jer else 1)
+            if self.jer in ['up', 'down']:
+                delta -= nominalP4 * (jet._smearFactor - jet._smearFactorNominal)
+            if self.jes in ['up', 'down']:
+                delta -= nominalP4 * (jet._jesUncFactor - 1)
+        return np.array([delta.px(), delta.py()])
+
+    def correctJetAndMET(self, jets, lowPtJets=None, met=None, rawMET=None, defaultMET=None, rho=None, genjets=[], isMC=True, runNumber=None):
         # for MET correction, use 'Jet' (corr_pt>15) and 'CorrT1METJet' (corr_pt<15) collections
         # Type-1 MET correction: https://github.com/cms-sw/cmssw/blob/master/JetMETCorrections/Type1MET/interface/PFJetMETcorrInputProducerT.h
-        # FIXME: FIX MET correction
-        # prepare to propogate corrections to MET
-        if met is not None:
-            sumJetsP4Orig = ROOT.TLorentzVector()
-            for j in jets:
-                j._forMET = selectJetsForMET(j)
-                if j._forMET:
-                    sumJetsP4Orig += j.p4()
+        if met is None:
+            lowPtJets = []
+        else:
+            for j in lowPtJets:
+                j.pt = j.rawPt
+                j.mass = 0
+                j.rawFactor = 0
+                j.neEmEF = j.chEmEF = 0
 
-        # updating JEC
-        if self.jec:
-            if isMC:
-                jetReCalibrator = self.jetReCalibratorMC
-            else:
-                tag = next(run for iov, run in reversed(self.dataTags) if iov <= runNumber)
-                jetReCalibrator = self.jetReCalibratorsDATA[tag]
-            for j in jets:
-                j.pt, j.mass = jetReCalibrator.correct(j, rho)
+        for j in itertools.chain(jets, lowPtJets):
+            # set JEC factor ( = corrPt / rawPt)
+            j.rawP4 = polarP4(j) * (1. - j.rawFactor)
+            j._jecFactor = None
+            j._jecFactorL1 = None
+            if self.jec or (isMC and met is not None):
+                if isMC:
+                    jetCorrector = self.jetCorrectorMC
+                else:
+                    tag = next(run for iov, run in reversed(self.dataTags) if iov <= runNumber)
+                    jetCorrector = self.jetCorrectorsDATA[tag]
+                j._jecFactor = jetCorrector.getCorrection(j, rho)
+                if self.jec:
+                    j.pt = j.rawP4.pt() * j._jecFactor
+                    j.mass = j.rawP4.mass() * j._jecFactor
+                if met is not None:
+                    j._jecFactorL1 = jetCorrector.getCorrection(j, rho, 'L1FastJet')
 
-        # JES uncertainty
-        if isMC and self.jes in ['up', 'down']:
-            for j in jets:
-                self.jesUncertainty.setJetPt(j.pt)
+            # set JER factor
+            j._smearFactorNominal = 1
+            j._smearFactor = 1
+            if isMC and self.jer is not None:
+                jerFactors = self.jetSmearer.getSmearValsPt(j, genjets, rho)
+                j._smearFactorNominal = _sf(jerFactors)
+                j._smearFactor = _sf(jerFactors, self.jer)
+                j.pt *= j._smearFactor
+                j.mass *= j._smearFactor
+
+            # set JES uncertainty ( = varied-Pt / Pt)
+            j._jesUncFactor = 1
+            if isMC and self.jes in ['up', 'down']:
+                self.jesUncertainty.setJetPt(j.pt)  # corrected(+smeared) pt
                 self.jesUncertainty.setJetEta(j.eta)
                 delta = self.jesUncertainty.getUncertainty(True)
-                sf = 1 + delta if self.jes == 'up' else 1 - delta
-                j.pt *= sf
-                j.mass *= sf
+                j._jesUncFactor = 1 + delta if self.jes == 'up' else 1 - delta
+                j.pt *= j._jesUncFactor
+                j.mass *= j._jesUncFactor
 
-        # jer smearing
-        if isMC and self.jer is not None:
-            for j in jets:
-                jersf = _sf(self.jetSmearer.getSmearValsPt(j, genjets, rho), self.jer)
-                j.pt *= jersf
-                j.mass *= jersf
+            # last thing: calc MET type-1 correction
+            j._t1MetDelta = None
+            if met is not None:
+                j._t1MetDelta = self.calcT1Corr(j) + self.calcT1CorrEEFix(j)
 
-        # propogate to MET
+        # correct MET
         if met is not None:
-            sumJetsP4New = sum([j.p4() for j in jets if j._forMET], ROOT.TLorentzVector())
-            newMET = met.p4() + (sumJetsP4Orig - sumJetsP4New)
-            met.pt, met.phi = newMET.Pt(), newMET.Phi()
-
-        # MET unclustered energy
-        if isMC and met is not None and self.met_unclustered:
-            delta = ROOT.TLorentzVector(met.MetUnclustEnUpDeltaX, met.MetUnclustEnUpDeltaY, 0, 0)
+            met_shift = sum([j._t1MetDelta for j in itertools.chain(jets, lowPtJets)])
+            # MET unclustered energy
+            if isMC and self.met_unclustered:
+                delta = np.array([met.MetUnclustEnUpDeltaX, met.MetUnclustEnUpDeltaY])
             if self.met_unclustered == 'up':
-                newMET = met.p4() + delta
+                met_shift += delta
             elif self.met_unclustered == 'down':
-                newMET = met.p4() - delta
-            met.pt, met.phi = newMET.Pt(), newMET.Phi()
+                met_shift -= delta
+            rawMetP4 = p4(rawMET, eta=None, mass=None)
+            newMET = rawMetP4 + ROOT.Math.XYZTVector(met_shift[0], met_shift[1], 0, 0)
+            if self.excludeJetsForMET is not None:
+                newMET += p4(met, eta=None, mass=None) - p4(defaultMET, eta=None, mass=None)
+            met.pt, met.phi = newMET.pt(), newMET.phi()
 
     def smearJetMass(self, jets, gensubjets=[], isMC=True, runNumber=None):
         # jmr smearing (mass resolution)

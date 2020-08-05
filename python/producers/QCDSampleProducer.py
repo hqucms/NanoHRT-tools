@@ -74,9 +74,6 @@ class QCDSampleProducer(HRTBaseProducer):
         self.fillBaseEventInfo(event)
         self.fillFatJetInfo(event)
 
-        if self._run_tagger:
-            self.runParticleNet(event)
-
         return True
 
 

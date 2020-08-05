@@ -1,10 +1,10 @@
 import ROOT
 import os, tarfile, tempfile, shutil
-import numpy as np
+import math
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
-from PhysicsTools.NanoAODTools.postprocessing.tools import deltaR
+from PhysicsTools.NanoHRTTools.helpers.utils import sumP4, deltaR2
 
 
 def find_and_extract_tarball(name, destination):
@@ -24,17 +24,18 @@ def match(jet, genjets, resolution, coneSize=0.4):
     # Try to find a gen jet matching
     # dR < m_dR_max
     # dPt < m_dPt_max_factor * resolution
-    minDR = 1e99
+    dr2cut = 0.25 * coneSize * coneSize
+    minDR2 = 1e99
     matched = None
     for genj in genjets:
-        dR = deltaR(genj, jet)
-        if dR > minDR:
+        dR2 = deltaR2(genj, jet)
+        if dR2 > minDR2:
             continue
-        if dR < 0.5 * coneSize:
+        if dR2 < dr2cut:
             dPT = abs(genj.pt - jet.pt)
             if dPT > 3. * resolution:
                 continue
-        minDR = dR
+        minDR2 = dR2
         matched = genj
     return matched
 
@@ -136,7 +137,7 @@ class jetSmearer(Module):
                 #
                 # Case 2: we don't have a generator level jet. Smear jet pT using a random Gaussian variation
                 #
-                sigma = jet_pt_resolution * np.sqrt(jet_pt_sf_and_uncertainty[central_or_shift] ** 2 - 1.)
+                sigma = jet_pt_resolution * math.sqrt(jet_pt_sf_and_uncertainty[central_or_shift] ** 2 - 1.)
                 smearFactor = self.rnd.Gaus(1., sigma)
             else:
                 #
@@ -184,7 +185,7 @@ class jetSmearer(Module):
         matched_genjets = [match(sj, gensubjets, 1.e9) for sj in jet.subjets]
         gensdmass = None
         if matched_genjets[0] is not None and matched_genjets[1] is not None:
-            gensdmass = (matched_genjets[0].p4() + matched_genjets[1].p4()).M()
+            gensdmass = sumP4(matched_genjets[0], matched_genjets[1]).M()
 
         smear_vals = {}
         for central_or_shift in [enum_nominal, enum_shift_up, enum_shift_down]:
@@ -200,7 +201,7 @@ class jetSmearer(Module):
                 #
                 # Case 2: we don't have a generator level jet. Smear jet m using a random Gaussian variation
                 #
-                sigma = jet_m_resolution * np.sqrt(jet_m_sf_and_uncertainty[central_or_shift] ** 2 - 1.)
+                sigma = jet_m_resolution * math.sqrt(jet_m_sf_and_uncertainty[central_or_shift] ** 2 - 1.)
                 smearFactor = self.rnd.Gaus(1., sigma)
             else:
                 #

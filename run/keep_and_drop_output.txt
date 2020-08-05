@@ -1,5 +1,6 @@
 # this is a comment
 dropmatch n?[A-Z][a-zA-Z0-9]{1,}.+
+drop fixedGridRho*
 drop btagWeight_*
 # event info
 keep run
@@ -18,3 +19,4 @@ keepmatch HLT_PFHT[0-9]+
 # genweight
 keep genWeight
 keep LHE_Vpt
+keep PSWeight

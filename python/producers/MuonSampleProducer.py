@@ -4,6 +4,7 @@ ROOT.PyConfig.IgnoreCommandLineOptions = True
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 from PhysicsTools.NanoAODTools.postprocessing.tools import deltaPhi, deltaR, closest
 
+from PhysicsTools.NanoHRTTools.helpers.utils import polarP4
 from PhysicsTools.NanoHRTTools.producers.HRTBaseProducer import HRTBaseProducer
 from PhysicsTools.NanoHRTTools.helpers.triggerHelper import passTrigger
 
@@ -51,7 +52,7 @@ class MuonSampleProducer(HRTBaseProducer):
 
         # #leptonic W pt cut
         event.mu = event.muons[0]
-        event.leptonicW = event.mu.p4() + event.met.p4()
+        event.leptonicW = polarP4(event.mu) + event.met.p4()
         if event.leptonicW.Pt() < 150.0:
             return False
 
@@ -99,9 +100,6 @@ class MuonSampleProducer(HRTBaseProducer):
 
         self.fillBaseEventInfo(event)
         self.fillFatJetInfo(event, fillGenMatching=True)
-
-        if self._run_tagger:
-            self.runParticleNet(event)
 
         return True
 

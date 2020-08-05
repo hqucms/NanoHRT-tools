@@ -42,7 +42,7 @@ class ParticleNetJetTagsProducer(object):
                     assert(np.array_equal(counts, a.counts))
                 a = (a - info['var_infos'][var]['median']) * info['var_infos'][var]['norm_factor']
                 a = a.flatten().pad(info['var_length'], clip=True).fillna(0).regular()
-                a = np.clip(a, -5, 5)
+                a = np.clip(a, info['var_infos'][var].get('lower_bound', -5), info['var_infos'][var].get('upper_bound', 5))
                 if self.debug:
                     print(var, a)
                 data[group_name].append(a.astype('float32'))
@@ -63,7 +63,7 @@ class ParticleNetJetTagsProducer(object):
             for var in info['var_names']:
                 a = taginfo[var][event_idx][jet_idx]
                 a = (a - info['var_infos'][var]['median']) * info['var_infos'][var]['norm_factor']
-                a = np.clip(a, -5, 5)
+                a = np.clip(a, info['var_infos'][var].get('lower_bound', -5), info['var_infos'][var].get('upper_bound', 5))
                 try:
                     a = _pad(a, min_length=info['min_length'], max_length=info['max_length'])
                 except KeyError:
@@ -73,7 +73,7 @@ class ParticleNetJetTagsProducer(object):
                 data[group_name].append(a.astype('float32'))
             data[group_name] = np.nan_to_num(np.expand_dims(np.stack(data[group_name], axis=0), 0))
         preds = self.sess.run([], data)[0]
-        outputs = {flav:preds[:, i] for i, flav in enumerate(self.prep_params['output_names'])}
+        outputs = {flav:preds[0, i] for i, flav in enumerate(self.prep_params['output_names'])}
         return outputs
 
 

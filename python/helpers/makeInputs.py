@@ -146,6 +146,7 @@ class ParticleNetTagInfoMaker(object):
         self.eta_sign[self.jetp4.eta <= 0] = -1
         self._make_pfcands(table)
         self._make_sv(table)
+        self.data['_jetp4'] = self.jetp4
         return self.data
 
 
