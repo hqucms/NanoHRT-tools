@@ -40,7 +40,7 @@ class QCDSampleProducer(HeavyFlavBaseProducer):
             event.ak4jets.append(j)
 
         event.ht = sum([j.pt for j in event.ak4jets])
-        if event.ht < 1000.:
+        if event.ht < 200.: ##was 1000.
             return False
 
         ## selection on AK8 jets
@@ -60,10 +60,12 @@ class QCDSampleProducer(HeavyFlavBaseProducer):
 #             if sv.dlenSig > 4:
             if True:
                 event.secondary_vertices.append(sv)
-        if len(event.secondary_vertices) < 2:
-            return False
+        #if len(event.secondary_vertices) < 2: ##LG added this tmp comment
+        #    return False  ##LG added this tmp comment
         event.secondary_vertices = sorted(event.secondary_vertices, key=lambda x: x.pt, reverse=True)  # sort by pt
 #         event.secondary_vertices = sorted(event.secondary_vertices, key=lambda x : x.dxySig, reverse=True)  # sort by dxysig
+
+        self.matchSVToJets(event, event.fatjets)
 
         # selection on the probe jet (sub-leading in pT)
         probe_fj = event.fatjets[1]
@@ -71,8 +73,8 @@ class QCDSampleProducer(HeavyFlavBaseProducer):
             return False
         # require at least 1 SV matched to each subjet
         self.matchSVToSubjets(event, probe_fj)
-        if len(probe_fj.subjets[0].sv_list) == 0 or len(probe_fj.subjets[1].sv_list) == 0:
-            return False
+        #if len(probe_fj.subjets[0].sv_list) == 0 or len(probe_fj.subjets[1].sv_list) == 0: ##LG added this tmp comment
+        #    return False ##LG added this tmp comment
         # match SV also to the leading jet
         if not (len(event.fatjets[0].subjets) == 2):
             return False
@@ -96,6 +98,7 @@ class QCDSampleProducer(HeavyFlavBaseProducer):
             self.out.fillBranch("passHTTrig", event.HLT_PFHT1050)
         self.out.fillBranch("ht", event.ht)
         self.out.fillBranch("nlep", len(event.looseLeptons))
+
 
         self.fillBaseEventInfo(event)
         self.fillFatJetInfo(event)
