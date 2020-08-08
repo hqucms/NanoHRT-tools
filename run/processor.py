@@ -17,9 +17,13 @@ ROOT.PyConfig.IgnoreCommandLineOptions = True
 def xrd_prefix(filepaths):
     prefix = ''
     allow_prefetch = False
+    if not isinstance(filepaths, (list, tuple)):
+        filepaths = [filepaths]
     filepath = filepaths[0]
     if filepath.startswith('/eos/cms'):
         prefix = 'root://eoscms.cern.ch/'
+    elif filepath.startswith('/eos/user'):
+        prefix = 'root://eosuser.cern.ch/'
     elif filepath.startswith('/eos/uscms'):
         prefix = 'root://cmseos.fnal.gov/'
     elif filepath.startswith('/store/'):
@@ -66,7 +70,9 @@ def main(args):
             os.remove(f)
 
     # run postprocessor
-    filepaths, allow_prefetch = xrd_prefix(md['jobs'][args.jobid]['inputfiles'])
+    inputfiles = args.files if len(args.files) else md['jobs'][args.jobid]['inputfiles']
+    filepaths, allow_prefetch = xrd_prefix(inputfiles)
+    print(filepaths)
     outputname = outputName(md, args.jobid)
     p = PostProcessor(outputDir='.',
                       inputFiles=filepaths,
@@ -100,7 +106,8 @@ def main(args):
 
     # stage out
     if md['outputdir'].startswith('/eos'):
-        cmd = 'xrdcp -np {outputname} {outputdir}/{outputname}'.format(outputname=outputname, outputdir=xrd_prefix(md['outputdir'])[0][0])
+        cmd = 'xrdcp --silent -p {outputname} {outputdir}/{outputname}'.format(outputname=outputname, outputdir=xrd_prefix(md['joboutputdir'])[0][0])
+        print(cmd)
         success = False
         for count in range(args.max_retry):
             p = subprocess.Popen(cmd, shell=True)
@@ -130,6 +137,9 @@ if __name__ == "__main__":
         type=int, default=120,
         help='Seconds to wait before retry stageout. Default: %(default)s'
         )
+    parser.add_argument('--files',
+        nargs='*', default=[],
+        help='Run over the specified input file. Default:%(default)s')
     parser.add_argument('jobid', type=int, help='Index of the output job.')
 
     args = parser.parse_args()

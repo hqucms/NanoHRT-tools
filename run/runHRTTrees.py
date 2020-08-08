@@ -11,7 +11,7 @@ hrt_cfgname = 'hrtSFTree_cfg.json'
 default_config = {'data': False, 'channel': None, 'year': None, 'jec': False, 'jes': None, 'jes_source': '', 'jer': 'nominal', 'jmr': None, 'met_unclustered': None}
 cut_dict = {
     'muon': 'Sum$(Muon_pt>55 && abs(Muon_eta)<2.4 && Muon_tightId && Muon_miniPFRelIso_all<0.10)>0 && nFatJet>0 && Sum$(abs(Jet_eta)<2.4 && Jet_btagDeepB>{DeepCSV_WP_M})>0',
-    'photon': 'Sum$(Photon_pt>200 && (Photon_cutBasedBitmap & 2) && Photon_electronVeto)>0 && nFatJet>0',
+    'photon': 'Sum$(Photon_pt>200 && Photon_cutBased>=2 && Photon_electronVeto)>0 && nFatJet>0',
     'qcd': 'Sum$((Jet_pt>25 && abs(Jet_eta)<2.4 && (Jet_jetId & 2)) * Jet_pt)>800 && nFatJet>0',
     }
 
@@ -150,7 +150,7 @@ def main():
     args = parser.parse_args()
 
     if not (args.post or args.add_weight or args.merge):
-        tar_cmssw()
+        tar_cmssw(args.tarball_suffix)
 
     if ',' in args.year:
         years = [int(y) for y in args.year.split(',') if y]

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
+from six.moves import input
 
 import os
 import sys
@@ -180,13 +181,13 @@ def parse_sample_xsec(cfgfile):
     return xsec_dict
 
 
-def tar_cmssw(batchMode=False):
+def tar_cmssw(tarball_suffix, batchMode=False):
     cmsswdir = os.environ['CMSSW_BASE']
-    cmsswtar = os.path.abspath(os.path.expandvars('$CMSSW_BASE/../CMSSW.tar.gz'))
+    cmsswtar = os.path.abspath(os.path.expandvars('$CMSSW_BASE/../CMSSW%s.tar.gz' % tarball_suffix))
     if os.path.exists(cmsswtar):
         if batchMode:
             return
-        ans = raw_input('CMSSW tarball %s already exists, remove? [yn] ' % cmsswtar)
+        ans = input('CMSSW tarball %s already exists, remove? [yn] ' % cmsswtar)
         if ans.lower()[0] == 'y':
             os.remove(cmsswtar)
         else:
@@ -278,6 +279,7 @@ def create_metadata(args):
                                 continue
                         filelist.append(os.path.join(dp, f))
             if len(filelist):
+                filelist = sorted(filelist)
                 md['samples'].append(samp)
                 md['inputfiles'][samp] = filelist
     else:
@@ -294,6 +296,7 @@ def create_metadata(args):
                 if select_sample(dataset):
                     filelist.extend(get_filenames(dataset))
             if len(filelist):
+                filelist = sorted(filelist)
                 md['samples'].append(samp)
                 md['inputfiles'][samp] = filelist
 
@@ -382,7 +385,7 @@ def submit(args, configs):
             if args.batch:
                 logging.warning('jobdir %s already exists! Will not submit new jobs!' % args.jobdir)
                 return
-            ans = raw_input('jobdir %s already exists, remove? [yn] ' % args.jobdir)
+            ans = input('jobdir %s already exists, remove? [yn] ' % args.jobdir)
             if ans.lower()[0] == 'y':
                 shutil.rmtree(args.jobdir)
             else:
@@ -392,7 +395,7 @@ def submit(args, configs):
         # create outputdir
         if os.path.exists(joboutputdir):
             if not args.batch:
-                ans = raw_input('outputdir %s already exists, continue? [yn] ' % joboutputdir)
+                ans = input('outputdir %s already exists, continue? [yn] ' % joboutputdir)
                 if ans.lower()[0] == 'n':
                     sys.exit(1)
         else:
@@ -407,12 +410,13 @@ def submit(args, configs):
 
         # create metadata file
         md = create_metadata(args)
+        md['joboutputdir'] = joboutputdir
         with open(metadatafile, 'w') as f:
             json.dump(md, f, ensure_ascii=True, indent=2, sort_keys=True)
         shutil.copy2(metadatafile, joboutputdir)
 
         # create CMSSW tarball
-        tar_cmssw(args.batch)
+        tar_cmssw(args.tarball_suffix, args.batch)
 
         njobs = len(md['jobs'])
         jobids = [str(jobid) for jobid in range(njobs)]
@@ -427,7 +431,7 @@ def submit(args, configs):
         f.write('\n'.join(jobids))
 
     # prepare the list of files to transfer
-    files_to_transfer = [os.path.expandvars('$CMSSW_BASE/../CMSSW.tar.gz'), macrofile, metadatafile] + configfiles
+    files_to_transfer = [os.path.expandvars('$CMSSW_BASE/../CMSSW%s.tar.gz' % args.tarball_suffix), macrofile, metadatafile] + configfiles
     if args.branchsel_in:
         files_to_transfer.append(args.branchsel_in)
         shutil.copy2(args.branchsel_in, args.jobdir)
@@ -438,6 +442,7 @@ def submit(args, configs):
         for f in args.extra_transfer.split(','):
             files_to_transfer.append(f)
             shutil.copy2(f, args.jobdir)
+    shutil.copy2(macrofile, args.jobdir)
     files_to_transfer = [os.path.abspath(f) for f in files_to_transfer]
 
     condordesc = '''\
@@ -452,22 +457,27 @@ error                 = {jobdir}/$(jobid).err
 log                   = {jobdir}/$(jobid).log
 use_x509userproxy     = true
 Should_Transfer_Files = YES
-initialdir            = {outputdir}
+initialdir            = {initialdir}
 WhenToTransferOutput  = ON_EXIT
 want_graceful_removal = true
 on_exit_remove        = (ExitBySignal == False) && (ExitCode == 0)
 on_exit_hold          = ( (ExitBySignal == True) || (ExitCode != 0) )
 on_exit_hold_reason   = strcat("Job held by ON_EXIT_HOLD due to ", ifThenElse((ExitBySignal == True), "exit by signal", strcat("exit code ",ExitCode)), ".")
 periodic_release      = (NumJobStarts < 3) && ((CurrentTime - EnteredCurrentStatus) > 10*60)
+{transfer_output}
 {site}
+{maxruntime}
 
 queue jobid from {jobids_file}
 '''.format(scriptfile=os.path.abspath(scriptfile),
            files_to_transfer=','.join(files_to_transfer),
            jobdir=os.path.abspath(args.jobdir),
-           outputdir=joboutputdir,
+           # when outputdir is on EOS, disable file transfer as file is manually copied to EOS in processor.py
+           initialdir=os.path.abspath(args.jobdir) if joboutputdir.startswith('/eos') else joboutputdir,
+           transfer_output='transfer_output_files = ""' if joboutputdir.startswith('/eos') else '',
            jobids_file=os.path.abspath(jobids_file),
            site='+DESIRED_Sites = "%s"' % args.site if args.site else '',
+           maxruntime='+MaxRuntime = %s' % args.max_runtime if args.max_runtime else '',
     )
     condorfile = os.path.join(args.jobdir, 'submit.cmd')
     with open(condorfile, 'w') as f:
@@ -598,6 +608,10 @@ def get_arg_parser():
         default=None,
         help='Extra files to transfer, common separated list. Default: %(default)s'
     )
+    parser.add_argument('--tarball-suffix',
+        default='',
+        help='Suffix of the CMSSW tarball. Default: %(default)s'
+    )
     parser.add_argument('-t', '--submittype',
         default='condor', choices=['interactive', 'condor'],
         help='Method of job submission. [Default: %(default)s]'
@@ -637,6 +651,10 @@ def get_arg_parser():
     parser.add_argument('--site',
         default='',
         help='Specify sites for condor submission. Default: %(default)s'
+    )
+    parser.add_argument('--max-runtime',
+        default='24*60*60',
+        help='Max runtime, in seconds. Default: %(default)s'
     )
     parser.add_argument('--add-weight',
         action='store_true', default=False,
@@ -686,7 +704,7 @@ def run(args, configs=None):
     if args.add_weight:
         all_completed, _ = check_job_status(args)
         if not all_completed:
-            ans = raw_input('Warning! There are jobs failed or still running. Continue adding weights? [yn] ')
+            ans = input('Warning! There are jobs failed or still running. Continue adding weights? [yn] ')
             if ans.lower()[0] != 'y':
                 return
         run_add_weight(args)
