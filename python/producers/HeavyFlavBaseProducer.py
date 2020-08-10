@@ -180,6 +180,8 @@ class HeavyFlavBaseProducer(Module, object):
             self.out.branch(prefix + "ParticleNetMD_Xcc", "F")
             self.out.branch(prefix + "ParticleNetMD_Xqq", "F")
             self.out.branch(prefix + "ParticleNetMD_QCD", "F")
+            self.out.branch(prefix + "ParticleNetMD_bbVsLight", "F")
+            self.out.branch(prefix + "ParticleNetMD_ccVsLight", "F")
             self.out.branch(prefix + "ParticleNetMD_XqqVsQCD", "F")
             self.out.branch(prefix + "ParticleNetMD_XbbVsQCD", "F")
             self.out.branch(prefix + "ParticleNetMD_XccVsQCD", "F")
@@ -451,6 +453,14 @@ class HeavyFlavBaseProducer(Module, object):
                 if deltaR(sv, sj) < drcut:
                     sj.sv_list.append(sv)
 
+    def matchSVToJets(self, event, fj):
+        drcut = 0.8
+        for ifj in fj:
+            ifj.sv_list = []
+            for sv in event.secondary_vertices:
+                        if deltaR(sv, ifj) < drcut:
+                                        ifj.sv_list.append(sv)
+
     def _matchSVToFatjet(self, event, fj):
         if 'sv_list' in fj.__dict__:
             return
@@ -510,7 +520,8 @@ class HeavyFlavBaseProducer(Module, object):
                 self.out.fillBranch(prefix + "ParticleNetMD_HbbVsQCD", -1)
                 self.out.fillBranch(prefix + "ParticleNetMD_HccVsQCD", -1)
 
-            if self.isMC and isSignal:
+            #if self.isMC and isSignal:
+            if self.isMC:    
                 h, _ = closest(fj, event.hadGenHs)
                 z, _ = closest(fj, event.hadGenZs)
                 w, _ = closest(fj, event.hadGenWs)
