@@ -83,7 +83,23 @@ def rndSeed(event, jets, extra=0):
 class HRTBaseProducer(Module, object):
 
     def __init__(self, channel, **kwargs):
-        self.year = int(kwargs['year'])
+        self.year =  int(kwargs['year'])
+        self.jetType = kwargs.get('jetType', 'ak8').lower()
+#        self.jetType = kwargs.get('jetType', 'ak8').lower()
+        if self.jetType == 'ak8':
+            self._jetConeSize = 0.8
+            self._fj_name = 'FatJet'
+            self._sj_name = 'SubJet'
+            self._fj_gen_name = 'GenJetAK8'
+            self._sj_gen_name = 'SubGenJetAK8'
+        elif self.jetType == 'ak15':
+            self._jetConeSize = 1.5
+            self._fj_name = 'AK15Puppi'
+            self._sj_name = 'AK15PuppiSubJet'
+            self._fj_gen_name = 'GenJetAK15'
+            self._sj_gen_name = 'GenSubJetAK15'
+        else:
+            raise RuntimeError('Jet type %s is not recognized!' % self.jetType)
         print ('Running on %d DATA/MC' % (self.year))
 
         self._channel = channel
@@ -135,59 +151,63 @@ class HRTBaseProducer(Module, object):
 
         self.out.branch("passmetfilters", "O")
 
+        prefix = self.jetType+'_1_'
+        
         # Large-R jets
-        self.out.branch("n_ak8", "I")
+        self.out.branch("n_"+self.jetType, "I")
 
-        self.out.branch("ak8_1_pt", "F")
-        self.out.branch("ak8_1_eta", "F")
-        self.out.branch("ak8_1_phi", "F")
-        self.out.branch("ak8_1_mass", "F")
-        self.out.branch("ak8_1_corr_sdmass", "F")
-        self.out.branch("ak8_1_n2b1ddt", "F")
-        self.out.branch("ak8_1_n2b1", "F")
-        self.out.branch("ak8_1_n3b1", "F")
-        self.out.branch("ak8_1_tau1", "F")
-        self.out.branch("ak8_1_tau2", "F")
-        self.out.branch("ak8_1_tau3", "F")
-#        self.out.branch("ak8_1_DeepAK8_TvsQCD", "F")
-#        self.out.branch("ak8_1_DeepAK8_WvsQCD", "F")
-#        self.out.branch("ak8_1_DeepAK8_ZvsQCD", "F")
-        self.out.branch("ak8_1_DeepAK8MD_TvsQCD", "F")
-        self.out.branch("ak8_1_DeepAK8MD_WvsQCD", "F")
-        self.out.branch("ak8_1_DeepAK8MD_ZvsQCD", "F")
-        self.out.branch("ak8_1_DeepAK8MD_ZHbbvsQCD", "F")
-        self.out.branch("ak8_1_DeepAK8MD_ZHccvsQCD", "F")
-        self.out.branch("ak8_1_DeepAK8MD_bbvsLight", "F")
-        self.out.branch("ak8_1_DeepAK8MD_ccvsLight", "F")
+        self.out.branch(prefix + "pt", "F")
+        self.out.branch(prefix + "eta", "F")
+        self.out.branch(prefix + "phi", "F")
+        self.out.branch(prefix + "mass", "F")
+        self.out.branch(prefix + "corr_sdmass", "F")
+        if self.jetType=="ak8":
+            self.out.branch(prefix + "n2b1ddt", "F")
+            self.out.branch(prefix + "n2b1", "F")
+            self.out.branch(prefix + "n3b1", "F")
+        self.out.branch(prefix + "tau1", "F")
+        self.out.branch(prefix + "tau2", "F")
+        self.out.branch(prefix + "tau3", "F")
+#        self.out.branch(prefix + "DeepAK8_TvsQCD", "F")
+#        self.out.branch(prefix + "DeepAK8_WvsQCD", "F")
+#        self.out.branch(prefix + "DeepAK8_ZvsQCD", "F")
+        if self.jetType=="ak8":
+            self.out.branch(prefix + "DeepAK8MD_TvsQCD", "F")
+            self.out.branch(prefix + "DeepAK8MD_WvsQCD", "F")
+            self.out.branch(prefix + "DeepAK8MD_ZvsQCD", "F")
+            self.out.branch(prefix + "DeepAK8MD_ZHbbvsQCD", "F")
+            self.out.branch(prefix + "DeepAK8MD_ZHccvsQCD", "F")
+            self.out.branch(prefix + "DeepAK8MD_bbvsLight", "F")
+            self.out.branch(prefix + "DeepAK8MD_ccvsLight", "F")
 
         if self.hasParticleNet:
-#            self.out.branch("ak8_1_ParticleNet_TvsQCD", "F")
-#            self.out.branch("ak8_1_ParticleNet_WvsQCD", "F")
-#            self.out.branch("ak8_1_ParticleNet_ZvsQCD", "F")
-            self.out.branch("ak8_1_ParticleNetMD_Xbb", "F")
-            self.out.branch("ak8_1_ParticleNetMD_Xcc", "F")
-            self.out.branch("ak8_1_ParticleNetMD_Xqq", "F")
-            self.out.branch("ak8_1_ParticleNetMD_QCD", "F")
-            self.out.branch("ak8_1_ParticleNetMD_XbbVsQCD", "F")
-            self.out.branch("ak8_1_ParticleNetMD_XccVsQCD", "F")
-            self.out.branch("ak8_1_ParticleNetMD_XccOrXqqVsQCD", "F")
-            self.out.branch("ak8_1_ParticleNetMD_bbVsNonbb", "F")
-            self.out.branch("ak8_1_ParticleNetMD_ccVsNoncc", "F")
+#            self.out.branch(prefix + "ParticleNet_TvsQCD", "F")
+#            self.out.branch(prefix + "ParticleNet_WvsQCD", "F")
+#            self.out.branch(prefix + "ParticleNet_ZvsQCD", "F")
+            self.out.branch(prefix + "ParticleNetMD_Xbb", "F")
+            self.out.branch(prefix + "ParticleNetMD_Xcc", "F")
+            self.out.branch(prefix + "ParticleNetMD_Xqq", "F")
+            self.out.branch(prefix + "ParticleNetMD_QCD", "F")
+            self.out.branch(prefix + "ParticleNetMD_XbbVsQCD", "F")
+            self.out.branch(prefix + "ParticleNetMD_XccVsQCD", "F")
+            self.out.branch(prefix + "ParticleNetMD_XccOrXqqVsQCD", "F")
+            self.out.branch(prefix + "ParticleNetMD_bbVsNonbb", "F")
+            self.out.branch(prefix + "ParticleNetMD_ccVsNoncc", "F")
 
         # matching variables
         if self.isMC:
-            self.out.branch("ak8_1_dr_fj_top_b", "F")
-            self.out.branch("ak8_1_dr_fj_top_wqmax", "F")
-            self.out.branch("ak8_1_dr_fj_top_wqmin", "F")
-            self.out.branch("ak8_1_dr_fj_tophad", "F")            
-            self.out.branch("ak8_1_dr_fj_Hhad", "F")
-            self.out.branch("ak8_1_dr_fj_Hcc", "F")
-            self.out.branch("ak8_1_dr_fj_Zhad", "F")
-            self.out.branch("ak8_1_dr_fj_Whad", "F")
-            self.out.branch("ak8_1_dr_fj_Wcx", "F")
-            self.out.branch("ak8_1_dr_fj_Wux", "F")
-            self.out.branch("ak8_1_dr_fj_WcxFromTop", "F")
-            self.out.branch("ak8_1_dr_fj_WuxFromTop", "F")
+            self.out.branch(prefix + "dr_fj_top_b", "F")
+            self.out.branch(prefix + "dr_fj_top_wqmax", "F")
+            self.out.branch(prefix + "dr_fj_top_wqmin", "F")
+            self.out.branch(prefix + "dr_fj_tophad", "F")            
+            self.out.branch(prefix + "dr_fj_Hhad", "F")
+            self.out.branch(prefix + "dr_fj_Hcc", "F")
+            self.out.branch(prefix + "dr_fj_Zhad", "F")
+            self.out.branch(prefix + "dr_fj_Whad", "F")
+            self.out.branch(prefix + "dr_fj_Wcx", "F")
+            self.out.branch(prefix + "dr_fj_Wux", "F")
+            self.out.branch(prefix + "dr_fj_WcxFromTop", "F")
+            self.out.branch(prefix + "dr_fj_WuxFromTop", "F")
             
         # gen info about tops and W's
         if self.isMC:
@@ -204,10 +224,10 @@ class HRTBaseProducer(Module, object):
         event._allJets = Collection(event, "Jet")
         event.met = METObject(event, "METFixEE2017") if self.year == 2017 else METObject(event, "MET")
 
-        event._allAK8jets = Collection(event, "FatJet")
-        event.ak8Subjets = Collection(event, "SubJet")  # do not sort subjets after updating!!
+        event._allFatJets = Collection(event, self._fj_name)
+        event.subjets = Collection(event, self._sj_name)  # do not sort subjets after updating!!
         # prevent JetReCalibrator from crashing by setting a dummy jetArea -- this is never used for Puppi jets!
-        for sj in event.ak8Subjets:
+        for sj in event.subjets:
             sj.area = 0.5
 
         if self.isMC or self._systOpt['jec']:
@@ -220,13 +240,15 @@ class HRTBaseProducer(Module, object):
             event._allJets = sorted(event._allJets, key=lambda x: x.pt, reverse=True)  # sort by pt after updating
 
             # correct AK8 fatjets
-            self.ak8Corr.setSeed(rndSeed(event, event._allAK8jets))
-            self.ak8Corr.correctJetAndMET(jets=event._allAK8jets, met=None, rho=rho,
+            if self.jetType == "ak8":
+                self.ak8Corr.setSeed(rndSeed(event, event._allFatJets))
+                self.ak8Corr.correctJetAndMET(jets=event._allFatJets, met=None, rho=rho,
                                           genjets=Collection(event, 'GenJetAK8') if self.isMC else None,
                                           isMC=self.isMC, runNumber=event.run)
             # correct AK8 subjets
-            self.ak8SubjetCorr.setSeed(rndSeed(event, event.ak8Subjets))
-            self.ak8SubjetCorr.correctJetAndMET(jets=event.ak8Subjets, met=None, rho=rho,
+            if self.jetType == "ak8":
+                self.ak8SubjetCorr.setSeed(rndSeed(event, event.subjets))
+                self.ak8SubjetCorr.correctJetAndMET(jets=event.subjets, met=None, rho=rho,
                                                 genjets=Collection(event, 'SubGenJetAK8') if self.isMC else None,
                                                 isMC=self.isMC, runNumber=event.run)
 
@@ -235,12 +257,13 @@ class HRTBaseProducer(Module, object):
             raise NotImplemented
 
         # link fatjet to subjets and recompute softdrop mass
-        for fj in event._allAK8jets:
-            fj.subjets = get_subjets(fj, event.ak8Subjets, ('subJetIdx1', 'subJetIdx2'))
+        for fj in event._allFatJets:
+            fj.subjets = get_subjets(fj, event.subjets, ('subJetIdx1', 'subJetIdx2'))
             fj.msoftdrop = get_sdmass(fj.subjets)
             fj.corr_sdmass = get_corrected_sdmass(fj, fj.subjets)
-            fj.n2b1ddt = self._n2helper.transform(fj.n2b1, pt=fj.pt, msd=fj.corr_sdmass)
-        event._allAK8jets = sorted(event._allAK8jets, key=lambda x: x.pt, reverse=True)  # sort by pt
+            if self.jetType=="ak8":
+                fj.n2b1ddt = self._n2helper.transform(fj.n2b1, pt=fj.pt, msd=fj.corr_sdmass)
+        event._allFatJets = sorted(event._allFatJets, key=lambda x: x.pt, reverse=True)  # sort by pt
 
     def selectLeptons(self, event):
         # do lepton selection
@@ -386,46 +409,49 @@ class HRTBaseProducer(Module, object):
         return filler
 
     def fillFatJetInfo(self, event, fillGenMatching=False):
-        # fill AK8
-        self.out.fillBranch("n_ak8", len(event.ak8jets))
-        ak8 = event.ak8jets[0] if len(event.ak8jets) > 0 else _NullObject()
-        fillBranchAK8 = self._get_filler(ak8)  # wrapper, fill default value if ak8=None
-        fillBranchAK8("ak8_1_pt", ak8.pt)
-        fillBranchAK8("ak8_1_eta", ak8.eta)
-        fillBranchAK8("ak8_1_phi", ak8.phi)
-        fillBranchAK8("ak8_1_mass", ak8.msoftdrop)
-        fillBranchAK8("ak8_1_corr_sdmass", ak8.corr_sdmass)
-        fillBranchAK8("ak8_1_n2b1ddt", ak8.n2b1ddt)
-        fillBranchAK8("ak8_1_n2b1", ak8.n2b1)
-        fillBranchAK8("ak8_1_n3b1", ak8.n3b1)
-        fillBranchAK8("ak8_1_tau1", ak8.tau1)
-        fillBranchAK8("ak8_1_tau2", ak8.tau2)
-        fillBranchAK8("ak8_1_tau3", ak8.tau3)
-#        fillBranchAK8("ak8_1_DeepAK8_TvsQCD", ak8.deepTag_TvsQCD)
-#        fillBranchAK8("ak8_1_DeepAK8_WvsQCD", ak8.deepTag_WvsQCD)
-#        fillBranchAK8("ak8_1_DeepAK8_ZvsQCD", ak8.deepTag_ZvsQCD)
-        fillBranchAK8("ak8_1_DeepAK8MD_TvsQCD", ak8.deepTagMD_TvsQCD)
-        fillBranchAK8("ak8_1_DeepAK8MD_WvsQCD", ak8.deepTagMD_WvsQCD)
-        fillBranchAK8("ak8_1_DeepAK8MD_ZvsQCD", ak8.deepTagMD_ZvsQCD)
-        fillBranchAK8("ak8_1_DeepAK8MD_ZHbbvsQCD", ak8.deepTagMD_ZHbbvsQCD)
-        fillBranchAK8("ak8_1_DeepAK8MD_ZHccvsQCD", ak8.deepTagMD_ZHccvsQCD)
-        fillBranchAK8("ak8_1_DeepAK8MD_bbvsLight", ak8.deepTagMD_bbvsLight)
-        fillBranchAK8("ak8_1_DeepAK8MD_ccvsLight", ak8.deepTagMD_ccvsLight)
+        # fill AK8 / AK15 info
+        self.out.fillBranch("n_"+self.jetType, len(event.fatjets))
+        fj = event.fatjets[0] if len(event.fatjets) > 0 else _NullObject()
+        fillBranchFJ = self._get_filler(fj)  # wrapper, fill default value if ak8=None
+        prefix = self.jetType+'_1_'
+        fillBranchFJ(prefix + "pt", fj.pt)
+        fillBranchFJ(prefix + "eta", fj.eta)
+        fillBranchFJ(prefix + "phi", fj.phi)
+        fillBranchFJ(prefix + "mass", fj.msoftdrop)
+        fillBranchFJ(prefix + "corr_sdmass", fj.corr_sdmass)
+        if self.jetType=="ak8":
+            fillBranchFJ(prefix + "n2b1ddt", fj.n2b1ddt)
+            fillBranchFJ(prefix + "n2b1", fj.n2b1)
+            fillBranchFJ(prefix + "n3b1", fj.n3b1)
+        fillBranchFJ(prefix + "tau1", fj.tau1)
+        fillBranchFJ(prefix + "tau2", fj.tau2)
+        fillBranchFJ(prefix + "tau3", fj.tau3)
+        if self.jetType=="ak8":
+#            fillBranchFJ(prefix + "DeepAK8_TvsQCD", fj.deepTag_TvsQCD)
+#            fillBranchFJ(prefix + "DeepAK8_WvsQCD", fj.deepTag_WvsQCD)
+#            fillBranchFJ(prefix + "DeepAK8_ZvsQCD", fj.deepTag_ZvsQCD)
+            fillBranchFJ(prefix + "DeepAK8MD_TvsQCD", fj.deepTagMD_TvsQCD)
+            fillBranchFJ(prefix + "DeepAK8MD_WvsQCD", fj.deepTagMD_WvsQCD)
+            fillBranchFJ(prefix + "DeepAK8MD_ZvsQCD", fj.deepTagMD_ZvsQCD)
+            fillBranchFJ(prefix + "DeepAK8MD_ZHbbvsQCD", fj.deepTagMD_ZHbbvsQCD)
+            fillBranchFJ(prefix + "DeepAK8MD_ZHccvsQCD", fj.deepTagMD_ZHccvsQCD)
+            fillBranchFJ(prefix + "DeepAK8MD_bbvsLight", fj.deepTagMD_bbvsLight)
+            fillBranchFJ(prefix + "DeepAK8MD_ccvsLight", fj.deepTagMD_ccvsLight)
 
 
         if self.hasParticleNet:
-#            fillBranchAK8("ak8_1_ParticleNet_TvsQCD", convert_prob(ak8, ['Tbcq', 'Tbqq'], prefix='ParticleNet_prob'))
-#            fillBranchAK8("ak8_1_ParticleNet_WvsQCD", convert_prob(ak8, ['Wcq', 'Wqq'], prefix='ParticleNet_prob'))
-#            fillBranchAK8("ak8_1_ParticleNet_ZvsQCD", convert_prob(ak8, ['Zbb', 'Zcc', 'Zqq'], prefix='ParticleNet_prob'))
-            fillBranchAK8("ak8_1_ParticleNetMD_Xbb", ak8.ParticleNetMD_probXbb)
-            fillBranchAK8("ak8_1_ParticleNetMD_Xcc", ak8.ParticleNetMD_probXcc)
-            fillBranchAK8("ak8_1_ParticleNetMD_Xqq", ak8.ParticleNetMD_probXqq)
-            fillBranchAK8("ak8_1_ParticleNetMD_QCD", convert_prob(ak8, None, prefix='ParticleNetMD_prob'))
-            fillBranchAK8("ak8_1_ParticleNetMD_XbbVsQCD", convert_prob(ak8, ['Xbb'], prefix='ParticleNetMD_prob'))
-            fillBranchAK8("ak8_1_ParticleNetMD_XccVsQCD", convert_prob(ak8, ['Xcc'], prefix='ParticleNetMD_prob'))
-            fillBranchAK8("ak8_1_ParticleNetMD_XccOrXqqVsQCD", convert_prob(ak8, ['Xcc', 'Xqq'], prefix='ParticleNetMD_prob')) # WvsQCD renamed
-            fillBranchAK8("ak8_1_ParticleNetMD_bbVsNonbb" , convert_prob(ak8, ['Xbb','QCDbb'] , ['QCDb','QCDcc','QCDc','QCDothers',] , prefix='ParticleNetMD_prob')) # bbVsLight renamed
-            fillBranchAK8("ak8_1_ParticleNetMD_ccVsNoncc" , convert_prob(ak8, ['Xcc','QCDcc'] , ['QCDc','QCDbb','QCDb','QCDothers',] , prefix='ParticleNetMD_prob')) # ccVsLight renamed
+#            fillBranchFJ(prefix + "ParticleNet_TvsQCD", convert_prob(ak8, ['Tbcq', 'Tbqq'], prefix='ParticleNet_prob'))
+#            fillBranchFJ(prefix + "ParticleNet_WvsQCD", convert_prob(ak8, ['Wcq', 'Wqq'], prefix='ParticleNet_prob'))
+#            fillBranchFJ(prefix + "ParticleNet_ZvsQCD", convert_prob(ak8, ['Zbb', 'Zcc', 'Zqq'], prefix='ParticleNet_prob'))
+            fillBranchFJ(prefix + "ParticleNetMD_Xbb", fj.ParticleNetMD_probXbb)
+            fillBranchFJ(prefix + "ParticleNetMD_Xcc", fj.ParticleNetMD_probXcc)
+            fillBranchFJ(prefix + "ParticleNetMD_Xqq", fj.ParticleNetMD_probXqq)
+            fillBranchFJ(prefix + "ParticleNetMD_QCD", convert_prob(fj, None, prefix='ParticleNetMD_prob'))
+            fillBranchFJ(prefix + "ParticleNetMD_XbbVsQCD", convert_prob(fj, ['Xbb'], prefix='ParticleNetMD_prob'))
+            fillBranchFJ(prefix + "ParticleNetMD_XccVsQCD", convert_prob(fj, ['Xcc'], prefix='ParticleNetMD_prob'))
+            fillBranchFJ(prefix + "ParticleNetMD_XccOrXqqVsQCD", convert_prob(fj, ['Xcc', 'Xqq'], prefix='ParticleNetMD_prob')) # WvsQCD renamed
+            fillBranchFJ(prefix + "ParticleNetMD_bbVsNonbb" , convert_prob(fj, ['Xbb','QCDbb'] , ['QCDb','QCDcc','QCDc','QCDothers',] , prefix='ParticleNetMD_prob')) # bbVsLight renamed
+            fillBranchFJ(prefix + "ParticleNetMD_ccVsNoncc" , convert_prob(fj, ['Xcc','QCDcc'] , ['QCDc','QCDbb','QCDb','QCDothers',] , prefix='ParticleNetMD_prob')) # ccVsLight renamed
 
         def drmatch(event, jet):
             dr_b, dr_wq1, dr_wq2 = 999, 999, 999
@@ -454,20 +480,20 @@ class HRTBaseProducer(Module, object):
 
         if self.isMC and fillGenMatching:
             
-            drak8 = drmatch(event, ak8)
-            self.out.fillBranch("ak8_1_dr_fj_top_b", drak8[0])
-            self.out.fillBranch("ak8_1_dr_fj_top_wqmax", drak8[1])
-            self.out.fillBranch("ak8_1_dr_fj_top_wqmin", drak8[2])
+            drfj = drmatch(event, fj)
+            self.out.fillBranch(prefix + "dr_fj_top_b", drfj[0])
+            self.out.fillBranch(prefix + "dr_fj_top_wqmax", drfj[1])
+            self.out.fillBranch(prefix + "dr_fj_top_wqmin", drfj[2])
 
-            self.out.fillBranch("ak8_1_dr_fj_tophad", getmindr(event, ak8, event.hadGenTops))            
-            self.out.fillBranch("ak8_1_dr_fj_Hhad", getmindr(event, ak8, event.hadGenHs))
-            self.out.fillBranch("ak8_1_dr_fj_Hcc", getmindr(event, ak8, event.hadGenHsToCharm))
-            self.out.fillBranch("ak8_1_dr_fj_Zhad", getmindr(event, ak8, event.hadGenZs))
-            self.out.fillBranch("ak8_1_dr_fj_Whad", getmindr(event, ak8, event.hadGenWs))
-            self.out.fillBranch("ak8_1_dr_fj_Wcx", getmindr(event, ak8, event.hadGenWsToCharm))
-            self.out.fillBranch("ak8_1_dr_fj_Wux", getmindr(event, ak8, event.hadGenWsNoCharm))
-            self.out.fillBranch("ak8_1_dr_fj_WcxFromTop", getmindr(event, ak8, event.hadGenTopsToCharm, pickGenW=True))
-            self.out.fillBranch("ak8_1_dr_fj_WuxFromTop", getmindr(event, ak8, event.hadGenTopsNoCharm, pickGenW=True))
+            self.out.fillBranch(prefix + "dr_fj_tophad", getmindr(event, fj, event.hadGenTops))            
+            self.out.fillBranch(prefix + "dr_fj_Hhad", getmindr(event, fj, event.hadGenHs))
+            self.out.fillBranch(prefix + "dr_fj_Hcc", getmindr(event, fj, event.hadGenHsToCharm))
+            self.out.fillBranch(prefix + "dr_fj_Zhad", getmindr(event, fj, event.hadGenZs))
+            self.out.fillBranch(prefix + "dr_fj_Whad", getmindr(event, fj, event.hadGenWs))
+            self.out.fillBranch(prefix + "dr_fj_Wcx", getmindr(event, fj, event.hadGenWsToCharm))
+            self.out.fillBranch(prefix + "dr_fj_Wux", getmindr(event, fj, event.hadGenWsNoCharm))
+            self.out.fillBranch(prefix + "dr_fj_WcxFromTop", getmindr(event, fj, event.hadGenTopsToCharm, pickGenW=True))
+            self.out.fillBranch(prefix + "dr_fj_WuxFromTop", getmindr(event, fj, event.hadGenTopsNoCharm, pickGenW=True))
 
 
     def fillHadGenWsAndTops(self, event, fillGenMatching=False):

@@ -8,12 +8,19 @@ import logging
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
 
 hrt_cfgname = 'hrtSFTree_cfg.json'
-default_config = {'data': False, 'channel': None, 'year': None, 'jec': False, 'jes': None, 'jes_source': '', 'jer': 'nominal', 'jmr': None, 'met_unclustered': None}
-cut_dict = {
+default_config = {'data': False, 'jetType': None, 'channel': None, 'year': None, 'jec': False, 'jes': None, 'jes_source': '', 'jer': 'nominal', 'jmr': None, 'met_unclustered': None}
+cut_dict_ak8 = {
     'muon': 'Sum$(Muon_pt>55 && abs(Muon_eta)<2.4 && Muon_tightId && Muon_miniPFRelIso_all<0.10)>0 && nFatJet>0 && Sum$(abs(Jet_eta)<2.4 && Jet_btagDeepB>{DeepCSV_WP_M})>0',
     'photon': 'Sum$(Photon_pt>200 && (Photon_cutBasedBitmap & 2) && Photon_electronVeto)>0 && nFatJet>0',
     'qcd': 'Sum$((Jet_pt>25 && abs(Jet_eta)<2.4 && (Jet_jetId & 2)) * Jet_pt)>800 && nFatJet>0',
     }
+    
+cut_dict_ak15 = {
+    'muon': 'Sum$(Muon_pt>55 && abs(Muon_eta)<2.4 && Muon_tightId && Muon_miniPFRelIso_all<0.10)>0 && nAK15Puppi>0 && Sum$(abs(Jet_eta)<2.4 && Jet_btagDeepB>{DeepCSV_WP_M})>0',
+    'photon': 'Sum$(Photon_pt>200 && (Photon_cutBasedBitmap & 2) && Photon_electronVeto)>0 && nAK15Puppi>0',
+    'qcd': 'Sum$((Jet_pt>25 && abs(Jet_eta)<2.4 && (Jet_jetId & 2)) * Jet_pt)>800 && nAK15Puppi>0',
+    }    
+
 
 golden_json = {
     2016: 'Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt',
@@ -23,6 +30,7 @@ golden_json = {
 
 
 def _process(args):
+    default_config['jetType'] = args.jet_type
     channel = args.channel
     default_config['channel'] = channel
 
@@ -39,7 +47,7 @@ def _process(args):
     year_dep_cuts = {'DeepCSV_WP_M': {2016: 0.6321, 2017: 0.4941, 2018: 0.4184}[year]}
 
 #     args.batch = True
-    basename = os.path.basename(args.outputdir) + '_' + channel + '_' + str(year)
+    basename = os.path.basename(args.outputdir) + '_' + args.jet_type + '_' + channel + '_' + str(year)
     args.outputdir = os.path.join(os.path.dirname(args.outputdir), basename, 'data' if args.run_data else 'mc')
     args.jobdir = os.path.join('jobs_%s' % basename, 'data' if args.run_data else 'mc')
 
@@ -50,7 +58,10 @@ def _process(args):
     else:
         args.datasets = '%s/%s_%d_MC.yaml' % (args.sample_dir, channel, year)
 
-    args.cut = cut_dict[channel].format(**year_dep_cuts)
+    if args.jet_type == 'ak15':
+        args.cut = cut_dict_ak15[channel]
+    else:
+        args.cut = cut_dict_ak8[channel]
 
     args.imports = [('PhysicsTools.NanoHRTTools.producers.hrtSFTreeProducer', 'hrtSFTreeFromConfig')]
     if not args.run_data:
@@ -118,6 +129,12 @@ def _process(args):
 
 def main():
     parser = get_arg_parser()
+
+    parser.add_argument('--jet-type',
+                        choices=['ak8', 'ak15'],
+                        required=True,
+                        help='Jet type: ak8, ak15'
+                        )
 
     parser.add_argument('--channel',
                         choices=['muon', 'photon', 'qcd'],

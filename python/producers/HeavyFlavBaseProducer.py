@@ -86,7 +86,7 @@ class HeavyFlavBaseProducer(Module, object):
 
     def __init__(self, channel, **kwargs):
         self.year = int(kwargs['year'])
-        self.jetType = kwargs.get('jetType', 'ak8').lower()
+        self.jetType = kwargs.get('jetType', 'ak15').lower()
         if self.jetType == 'ak8':
             self._jetConeSize = 0.8
             self._fj_name = 'FatJet'
@@ -185,6 +185,12 @@ class HeavyFlavBaseProducer(Module, object):
             self.out.branch(prefix + "nsv_ptgt50", "I")
             self.out.branch(prefix + "ntracks", "I")
             self.out.branch(prefix + "ntracks_sv12", "I")
+            self.out.branch(prefix + "deltar_ak4", "F")  
+            self.out.branch(prefix + "ak4count_maxdr0p6", "F")  
+            self.out.branch(prefix + "ak4count_maxdr0p8", "F")  
+            self.out.branch(prefix + "ak4count_maxdr1p5", "F")                  
+            self.out.branch(prefix + "deltar_sj1_sj2", "F")                  
+                      
             # subjet #1
             self.out.branch(prefix + "sj1_pt", "F")
             self.out.branch(prefix + "sj1_eta", "F")
@@ -207,6 +213,8 @@ class HeavyFlavBaseProducer(Module, object):
             self.out.branch(prefix + "sj1_sv1_dlensig", "F")
             self.out.branch(prefix + "sj1_sv1_chi2ndof", "F")
             self.out.branch(prefix + "sj1_sv1_pangle", "F")
+            self.out.branch(prefix + "sj1_deltar_ak4", "F")            
+            self.out.branch(prefix + "sj1_deltar", "F")            
             # subjet #2
             self.out.branch(prefix + "sj2_pt", "F")
             self.out.branch(prefix + "sj2_eta", "F")
@@ -230,6 +238,8 @@ class HeavyFlavBaseProducer(Module, object):
             self.out.branch(prefix + "sj2_sv1_chi2ndof", "F")
             self.out.branch(prefix + "sj2_sv1_pangle", "F")
             self.out.branch(prefix + "sj12_masscor_dxysig", "F")
+            self.out.branch(prefix + "sj2_deltar_ak4", "F")            
+            self.out.branch(prefix + "sj2_deltar", "F")            
             # matching variables
             if self.isMC:
                 self.out.branch(prefix + "nbhadrons", "I")
@@ -241,6 +251,20 @@ class HeavyFlavBaseProducer(Module, object):
                 self.out.branch(prefix + "sj2_nbhadrons", "I")
                 self.out.branch(prefix + "sj2_nchadrons", "I")
                 self.out.branch(prefix + "sj2_partonflavour", "I")
+
+                self.out.branch("ak8_1_dr_fj_b", "F")
+                self.out.branch("ak8_1_dr_fj_wqmax", "F")
+                self.out.branch("ak8_1_dr_fj_wqmin", "F")
+                self.out.branch("ak8_1_dr_fj_tophad", "F")            
+                self.out.branch("ak8_1_dr_fj_Hhad", "F")
+                self.out.branch("ak8_1_dr_fj_Hcc", "F")
+                self.out.branch("ak8_1_dr_fj_Zcc", "F")
+                self.out.branch("ak8_1_dr_fj_Zhad", "F")
+                self.out.branch("ak8_1_dr_fj_Whad", "F")
+                self.out.branch("ak8_1_dr_fj_Wcx", "F")
+                self.out.branch("ak8_1_dr_fj_Wux", "F")
+                self.out.branch("ak8_1_dr_fj_WcxFromTop", "F")
+                self.out.branch("ak8_1_dr_fj_WuxFromTop", "F")
 
 
     def correctJetsAndMET(self, event):
@@ -331,6 +355,14 @@ class HeavyFlavBaseProducer(Module, object):
                 if abs(genparts[idx].pdgId) < 6:
                     return True
             return False
+            
+        def isCharming(gp):
+            if len(gp.dauIdx) == 0:
+                raise ValueError('Particle has no daughters!')
+            for idx in gp.dauIdx:
+                if abs(genparts[idx].pdgId) == 4:
+                    return True
+            return False            
 
         def getFinal(gp):
             for idx in gp.dauIdx:
@@ -346,8 +378,15 @@ class HeavyFlavBaseProducer(Module, object):
 
         event.hadGenTops = []
         event.hadGenWs = []
+        event.hadGenWsToCharm = []
+        event.hadGenWsNoCharm = []
+        event.hadGenTopsToCharm = []
+        event.hadGenTopsNoCharm = []
         event.hadGenZs = []
+        event.hadGenZsToCharm = []
         event.hadGenHs = []
+        event.hadGenHsToCharm = []
+        event.hadGenHsNoCharm = []
 
         for gp in genparts:
             if gp.statusFlags & (1 << 13) == 0:
@@ -361,23 +400,36 @@ class HeavyFlavBaseProducer(Module, object):
                         gp.genW = genW
                         if isHadronic(genW):
                             event.hadGenTops.append(gp)
+                            if isCharming(genW):
+                                event.hadGenTopsToCharm.append(gp)
+                            else:
+                                event.hadGenTopsNoCharm.append(gp)
                     elif abs(dau.pdgId) in (1, 3, 5):
                         gp.genB = dau
             elif abs(gp.pdgId) == 24:
                 event.nGenWs += 1
                 if isHadronic(gp):
                     event.hadGenWs.append(gp)
+                    if isCharming(gp):
+                        event.hadGenWsToCharm.append(gp)
+                    else:
+                        event.hadGenWsNoCharm.append(gp)
             elif abs(gp.pdgId) == 23:
                 event.nGenZs += 1
                 if isHadronic(gp):
                     event.hadGenZs.append(gp)
+                    if isCharming(gp):
+                        event.hadGenZsToCharm.append(gp)
             elif abs(gp.pdgId) == 25:
                 event.nGenHs += 1
                 if isHadronic(gp):
                     event.hadGenHs.append(gp)
+                    if isCharming(gp):
+                        event.hadGenHsToCharm.append(gp)
+                    else:
+                        event.hadGenHsNoCharm.append(gp)
 
         event.genparts = genparts
-
 
     def fillBaseEventInfo(self, event):
         self.out.fillBranch("jetR", self._jetConeSize)
@@ -425,7 +477,50 @@ class HeavyFlavBaseProducer(Module, object):
 
     def fillFatJetInfo(self, event, isSignal=False):
         self.out.fillBranch("n_fatjet", len(event.fatjets))
-        
+
+        def drmatch(event, jet):
+            dr_b, dr_wq1, dr_wq2 = 999, 999, 999
+            if jet:
+                higgs, _ = closest(jet, event.hadGenHs)
+                if higgs:
+                    dr_wq1 = deltaR(jet, event.genparts[higgs.dauIdx[0]])
+                    dr_wq2 = deltaR(jet, event.genparts[higgs.dauIdx[1]])
+                z, _ = closest(jet, event.hadGenZs)
+                if z:
+                    dr_wq1 = deltaR(jet, event.genparts[z.dauIdx[0]])
+                    dr_wq2 = deltaR(jet, event.genparts[z.dauIdx[1]])
+                else:
+                    top, _ = closest(jet, event.hadGenTops)
+                    if top:
+                        dr_b = deltaR(jet, top.genB)
+                        dr_wq1 = deltaR(jet, event.genparts[top.genW.dauIdx[0]])
+                        dr_wq2 = deltaR(jet, event.genparts[top.genW.dauIdx[1]])
+                    else:
+                        w, _ = closest(jet, event.hadGenWs)
+                        if w:
+                            dr_wq1 = deltaR(jet, event.genparts[w.dauIdx[0]])
+                            dr_wq2 = deltaR(jet, event.genparts[w.dauIdx[1]])
+            return dr_b, max(dr_wq1, dr_wq2), min(dr_wq1, dr_wq2)
+
+        def getmindr(event, jet, genParticles, pickGenW=False):
+            dr = 999
+            if jet:
+                gp, _ = closest(jet, genParticles)
+                if gp:
+                    if pickGenW:
+                        gp = gp.genW                
+                    dr = deltaR(jet, gp)
+            return dr
+
+        def drcount(event, jet, countingObjects, maxdr):
+            count = 0
+            for countingObject in countingObjects:
+                dr = deltaR(jet, countingObject)
+                if dr < maxdr:
+                    count +=1
+            return count
+
+                    
         for idx in ([1, 2] if self._channel == 'qcd' else [1]):
             prefix = 'fj_%d_' % idx
             fj = event.fatjets[idx - 1]
@@ -477,7 +572,10 @@ class HeavyFlavBaseProducer(Module, object):
             self.out.fillBranch(prefix + "sdmass", fj.msoftdrop)
             self.out.fillBranch(prefix + "tau21", fj.tau2 / fj.tau1 if fj.tau1 > 0 else 99)
             self.out.fillBranch(prefix + "btagcsvv2", fj.btagCSVV2)
-            self.out.fillBranch(prefix + "btagcmva", fj.btagCMVA)
+            try:
+                self.out.fillBranch(prefix + "btagcmva", fj.btagCMVA)
+            except RuntimeError:
+                self.out.fillBranch(prefix + "btagcmva", -1)
             try:
                 self.out.fillBranch(prefix + "btagjp", fj.btagJP)
             except RuntimeError:
@@ -503,6 +601,18 @@ class HeavyFlavBaseProducer(Module, object):
             self.out.fillBranch(prefix + "ntracks"      , ntracks_)
             self.out.fillBranch(prefix + "ntracks_sv12" , ntracks_sv12_)
 
+            event.centraljets = []
+            for j in event._allJets:
+                if not (j.pt > 25 and abs(j.eta) < 2.4 and (j.jetId == 6 or j.jetId == 7) and (j.puId == 6 or j.puId == 7 or j.pt > 50.0)):
+                    continue
+                event.centraljets.append(j)
+
+            self.out.fillBranch(prefix + "deltar_ak4" ,getmindr(event, fj, event.centraljets))
+
+            self.out.fillBranch(prefix + "ak4count_maxdr0p6", drcount(event, fj, event.centraljets, 0.6))  
+            self.out.fillBranch(prefix + "ak4count_maxdr0p8", drcount(event, fj, event.centraljets, 0.8))  
+            self.out.fillBranch(prefix + "ak4count_maxdr1p5", drcount(event, fj, event.centraljets, 1.5))                  
+                 
             assert(len(fj.subjets) == 2)
             for idx_sj, sj in enumerate(fj.subjets):
                 prefix_sj = prefix + 'sj%d_' % (idx_sj + 1)
@@ -524,6 +634,11 @@ class HeavyFlavBaseProducer(Module, object):
                 except RuntimeError:
                     self.out.fillBranch(prefix_sj + "btagjp", -1)
 
+                self.out.fillBranch(prefix_sj + "deltar_ak4" ,getmindr(event, sj, event.centraljets))
+
+                self.out.fillBranch(prefix_sj + "deltar", deltaR(fj, sj))
+
+
                 ntracks_sj_ = 0
                 for isjsv, sj_sv in enumerate(sj.sv_list):
                     ntracks_sj_ += sj_sv.ntracks
@@ -544,6 +659,7 @@ class HeavyFlavBaseProducer(Module, object):
                 fill_sv(prefix_sj + "sv1_pangle", sv.pAngle)
 
             sj1, sj2 = fj.subjets
+            self.out.fillBranch(prefix + "deltar_sj1_sj2" ,deltaR(sj1, sj2))
             try:
                 sv1, sv2 = sj1.sv_list[0], sj2.sv_list[0]
                 sv = sv1 if sv1.dxySig > sv2.dxySig else sv2
@@ -556,10 +672,33 @@ class HeavyFlavBaseProducer(Module, object):
             if self.isMC:
                 self.out.fillBranch(prefix + "nbhadrons",      fj.nBHadrons)
                 self.out.fillBranch(prefix + "nchadrons",      fj.nCHadrons)
-                self.out.fillBranch(prefix + "partonflavour", fj.partonFlavour)
                 self.out.fillBranch(prefix + "sj1_nbhadrons",     sj1.nBHadrons)
                 self.out.fillBranch(prefix + "sj1_nchadrons",     sj1.nCHadrons)
-                self.out.fillBranch(prefix + "sj1_partonflavour", sj1.partonFlavour)
                 self.out.fillBranch(prefix + "sj2_nbhadrons",     sj2.nBHadrons)
                 self.out.fillBranch(prefix + "sj2_nchadrons",     sj2.nCHadrons)
-                self.out.fillBranch(prefix + "sj2_partonflavour", sj2.partonFlavour)
+                try:
+                    self.out.fillBranch(prefix + "partonflavour", fj.partonFlavour)
+                    self.out.fillBranch(prefix + "sj1_partonflavour", sj1.partonFlavour)
+                    self.out.fillBranch(prefix + "sj2_partonflavour", sj2.partonFlavour)
+                except RuntimeError:
+                    self.out.fillBranch(prefix + "partonflavour", -1)
+                    self.out.fillBranch(prefix + "sj1_partonflavour", -1)
+                    self.out.fillBranch(prefix + "sj2_partonflavour", -1)
+
+            if self.isMC:
+            
+                drak8 = drmatch(event, fj)
+                self.out.fillBranch("ak8_1_dr_fj_b", drak8[0])
+                self.out.fillBranch("ak8_1_dr_fj_wqmax", drak8[1])
+                self.out.fillBranch("ak8_1_dr_fj_wqmin", drak8[2])
+
+                self.out.fillBranch("ak8_1_dr_fj_tophad", getmindr(event, fj, event.hadGenTops))            
+                self.out.fillBranch("ak8_1_dr_fj_Hhad", getmindr(event, fj, event.hadGenHs))
+                self.out.fillBranch("ak8_1_dr_fj_Hcc", getmindr(event, fj, event.hadGenHsToCharm))
+                self.out.fillBranch("ak8_1_dr_fj_Zcc", getmindr(event, fj, event.hadGenZsToCharm))
+                self.out.fillBranch("ak8_1_dr_fj_Zhad", getmindr(event, fj, event.hadGenZs))
+                self.out.fillBranch("ak8_1_dr_fj_Whad", getmindr(event, fj, event.hadGenWs))
+                self.out.fillBranch("ak8_1_dr_fj_Wcx", getmindr(event, fj, event.hadGenWsToCharm))
+                self.out.fillBranch("ak8_1_dr_fj_Wux", getmindr(event, fj, event.hadGenWsNoCharm))
+                self.out.fillBranch("ak8_1_dr_fj_WcxFromTop", getmindr(event, fj, event.hadGenTopsToCharm, pickGenW=True))
+                self.out.fillBranch("ak8_1_dr_fj_WuxFromTop", getmindr(event, fj, event.hadGenTopsNoCharm, pickGenW=True))

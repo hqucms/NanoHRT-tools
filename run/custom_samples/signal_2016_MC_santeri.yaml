@@ -1,0 +1,16 @@
+#ggH-bb:
+# - GluGluHToBB_M125_13TeV_powheg_pythia8
+#vhtocc:
+# - ZH_HToCC_ZToNuNu_M125_13TeV_powheg_pythia8
+#vhtobb:
+# - ZH_HToBB_ZToNuNu_M125_13TeV_powheg_pythia8
+#top-semilept:
+# - TTToSemilepton_TuneCUETP8M2_ttHtranche3_13TeV-powheg-pythia8
+#top:
+# - TT_TuneCUETP8M2T4_PSweights_13TeV-powheg-pythia8
+#top-herwig:
+# - TT_TuneEE5C_13TeV-powheg-herwigpp
+#v-qq:
+#  - WJetsToQQ_HT180_13TeV-madgraphMLM-pythia8
+zz:
+  - ZZTo2Q2Nu_13TeV_amcatnloFXFX_madspin_pythia8

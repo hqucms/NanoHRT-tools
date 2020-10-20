@@ -1,6 +1,6 @@
 from PhysicsTools.NanoHRTTools.producers.HeavyFlavPhotonSampleProducer import PhotonSampleProducer
 from PhysicsTools.NanoHRTTools.producers.HeavyFlavQCDSampleProducer import QCDSampleProducer
-
+from PhysicsTools.NanoHRTTools.producers.HeavyFlavSignalSampleProducer import SignalSampleProducer
 
 def heavyFlavSFTreeFromConfig():
     import yaml
@@ -12,6 +12,8 @@ def heavyFlavSFTreeFromConfig():
         return PhotonSampleProducer(**cfg)
     elif channel == 'qcd':
         return QCDSampleProducer(**cfg)
+    elif channel == 'signal':
+        return SignalSampleProducer(**cfg)
     else:
         return RuntimeError('Unsupported channel %s' % channel)
 

@@ -14,8 +14,8 @@ logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(m
 class MuonSampleProducer(HRTBaseProducer):
 
     def __init__(self, **kwargs):
-        #super(MuonSampleProducer, self).__init__(channel='muon', **kwargs)
-        super(MuonSampleProducer, self).__init__(channel='muon')
+        super(MuonSampleProducer, self).__init__(channel='muon', **kwargs)
+        #super(MuonSampleProducer, self).__init__(channel='muon')
 
     def beginJob(self):
         super(MuonSampleProducer, self).beginJob()
@@ -67,15 +67,15 @@ class MuonSampleProducer(HRTBaseProducer):
         if len(event.bjets) < 1:
             return False
 
-        # # selection on AK8 jets
-        event.ak8jets = []
-        for fj in event._allAK8jets:
+        # # selection on AK8/AK15 jets
+        event.fatjets = []
+        for fj in event._allFatJets:
             if not (fj.pt > 200 and abs(fj.eta) < 2.4 and (fj.jetId & 2)):
                 continue
             if abs(deltaPhi(fj, event.muons[0])) > 2.0:
-                event.ak8jets.append(fj)
+                event.fatjets.append(fj)
 
-        if len(event.ak8jets) < 1:
+        if len(event.fatjets) < 1:
             return False
 
         ## return True if passes selection
