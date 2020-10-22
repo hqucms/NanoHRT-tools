@@ -143,6 +143,7 @@ class HeavyFlavBaseProducer(Module, object):
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.isMC = bool(inputTree.GetBranch('genWeight'))
+        self.isParticleNetV01 = bool(inputTree.GetBranch('AK15Puppi_ParticleNetMD_probQCD'))
         self.out = wrappedOutputTree
         self.out.branch("jetR", "F")
         self.out.branch("passmetfilters", "O")
@@ -537,14 +538,30 @@ class HeavyFlavBaseProducer(Module, object):
                 self.out.fillBranch(prefix + "DeepAK8MD_bbVsTop", -1)
 
             try:
-                self.out.fillBranch(prefix + "ParticleNetMD_Xbb", fj.ParticleNetMD_probXbb)
-                self.out.fillBranch(prefix + "ParticleNetMD_Xcc", fj.ParticleNetMD_probXcc)
-                self.out.fillBranch(prefix + "ParticleNetMD_Xqq", fj.ParticleNetMD_probXqq)
-                self.out.fillBranch(prefix + "ParticleNetMD_QCD", convert_prob(fj, None, prefix='ParticleNetMD_prob'))
-                self.out.fillBranch(prefix + "ParticleNetMD_XbbVsQCD", convert_prob(fj, ['Xbb'], prefix='ParticleNetMD_prob'))
-                self.out.fillBranch(prefix + "ParticleNetMD_XccVsQCD", convert_prob(fj, ['Xcc'], prefix='ParticleNetMD_prob'))
-                self.out.fillBranch(prefix + "ParticleNetMD_bbVsLight" , convert_prob(fj, ['Xbb','QCDbb'] , ['QCDb','QCDcc','QCDc','QCDothers',] , prefix='ParticleNetMD_prob')) 
-                self.out.fillBranch(prefix + "ParticleNetMD_ccVsLight" , convert_prob(fj, ['Xcc','QCDcc'] , ['QCDc','QCDbb','QCDb','QCDothers',] , prefix='ParticleNetMD_prob'))
+                if self.jetType=='ak8':
+                    self.out.fillBranch(prefix + "ParticleNetMD_Xbb", fj.ParticleNetMD_probXbb)
+                    self.out.fillBranch(prefix + "ParticleNetMD_Xcc", fj.ParticleNetMD_probXcc)
+                    self.out.fillBranch(prefix + "ParticleNetMD_Xqq", fj.ParticleNetMD_probXqq)
+                    self.out.fillBranch(prefix + "ParticleNetMD_QCD", convert_prob(fj, None, prefix='ParticleNetMD_prob'))
+                    self.out.fillBranch(prefix + "ParticleNetMD_XbbVsQCD", convert_prob(fj, ['Xbb'], prefix='ParticleNetMD_prob'))
+                    self.out.fillBranch(prefix + "ParticleNetMD_XccVsQCD", convert_prob(fj, ['Xcc'], prefix='ParticleNetMD_prob'))
+                    self.out.fillBranch(prefix + "ParticleNetMD_bbVsLight" , convert_prob(fj, ['Xbb','QCDbb'] , ['QCDb','QCDcc','QCDc','QCDothers',] , prefix='ParticleNetMD_prob')) 
+                    self.out.fillBranch(prefix + "ParticleNetMD_ccVsLight" , convert_prob(fj, ['Xcc','QCDcc'] , ['QCDc','QCDbb','QCDb','QCDothers',] , prefix='ParticleNetMD_prob'))
+                elif self.jetType=='ak15':
+                    if self.isParticleNetV01:
+                        self.out.fillBranch(prefix+"ParticleNetMD_XccVsQCD", convert_prob(fj, ['Xcc'], ['QCD'], prefix='ParticleNetMD_prob'))
+                        self.out.fillBranch(prefix+"ParticleNetMD_XbbVsQCD", convert_prob(fj, ['Xbb'], ['QCD'], prefix='ParticleNetMD_prob'))
+                        self.out.fillBranch(prefix+"ParticleNetMD_Xbb", fj.ParticleNetMD_probXbb)
+                        self.out.fillBranch(prefix+"ParticleNetMD_Xcc", fj.ParticleNetMD_probXcc)
+                        self.out.fillBranch(prefix+"ParticleNetMD_Xqq", fj.ParticleNetMD_probXqq)
+                        self.out.fillBranch(prefix+"ParticleNetMD_QCD", fj.ParticleNetMD_probQCD)
+                    else:
+                        self.out.fillBranch(prefix+"ParticleNetMD_XccVsQCD", convert_prob(fj, ['Xcc'], prefix='ParticleNetMD_prob'))
+                        self.out.fillBranch(prefix+"ParticleNetMD_XbbVsQCD", convert_prob(fj, ['Xbb'], prefix='ParticleNetMD_prob'))
+                        self.out.fillBranch(prefix+"ParticleNetMD_Xbb", fj.ParticleNetMD_probXbb)
+                        self.out.fillBranch(prefix+"ParticleNetMD_Xcc", fj.ParticleNetMD_probXcc)
+                        self.out.fillBranch(prefix+"ParticleNetMD_Xqq", fj.ParticleNetMD_probXqq)
+                        self.out.fillBranch(prefix+"ParticleNetMD_QCD", convert_prob(fj, None, prefix='ParticleNetMD_prob'))
             except RuntimeError:
                 self.out.fillBranch(prefix + "ParticleNetMD_HbbVsQCD", -1)
                 self.out.fillBranch(prefix + "ParticleNetMD_HccVsQCD", -1)
