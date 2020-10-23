@@ -517,7 +517,7 @@ class HeavyFlavBaseProducer(Module, object):
             ntracks_sv12_ = 0
             for isv, sv in enumerate(fj.sv_list):
                 ntracks_ += sv.ntracks
-                if isv<3:
+                if isv<2:
                     ntracks_sv12_ += sv.ntracks
                 if sv.pt>25.:
                     nsv_ptgt25_ += 1
