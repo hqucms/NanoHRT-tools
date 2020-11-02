@@ -111,10 +111,14 @@ class HeavyFlavBaseProducer(Module, object):
             raise RuntimeError('Jet type %s is not recognized!' % self.jetType)
         print ('Running on %d DATA/MC for %s jets' % (self.year, self.jetType))
 
-        self.DeepCSV_WP_L = {2016: 0.2219, 2017: 0.2219, 2018: 0.2219}[self.year] ## 2017, 2018 placeholders
+        #self.DeepCSV_WP_L = {2016: 0.2219, 2017: 0.2219, 2018: 0.2219}[self.year] ## 2017, 2018 placeholders
+        #self.DeepCSV_WP_M = {2016: 0.6321, 2017: 0.4941, 2018: 0.4184}[self.year]
+        #self.DeepCSV_WP_T = {2016: 0.8958, 2017: 0.8958, 2018: 0.8958}[self.year] ## 2017, 2018 placeholders
+        
+        self.DeepCSV_WP_L = {2016: 0.2219, 2017: 0.0521, 2018: 0.1241}[self.year]
         self.DeepCSV_WP_M = {2016: 0.6321, 2017: 0.4941, 2018: 0.4184}[self.year]
-        self.DeepCSV_WP_T = {2016: 0.8958, 2017: 0.8958, 2018: 0.8958}[self.year] ## 2017, 2018 placeholders
-
+        self.DeepCSV_WP_T = {2016: 0.8958, 2017: 0.8001, 2018: 0.7527}[self.year]
+        
         self._channel = channel
         self._systOpt = {'jec': False, 'jes': None, 'jes_source': '', 'jer': 'nominal', 'jmr': None, 'met_unclustered': None}
         for k in kwargs:

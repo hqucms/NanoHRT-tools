@@ -20,4 +20,4 @@ z-qq:
  - DYJetsToQQ_HT180_13TeV-madgraphMLM-pythia8
 
 ggH-bb:
- - GluGluHToBB_M125_13TeV_powheg_pythia8
+ - GluGluHToBB_M-125_13TeV_powheg_MINLO_NNLOPS_pythia8
