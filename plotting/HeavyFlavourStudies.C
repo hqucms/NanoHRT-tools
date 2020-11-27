@@ -30,7 +30,6 @@ double rewgtfunc(double x){
   return hrwgt->GetBinContent(hrwgt->FindFixBin(x));
 }
 
-
 void compDiscInProxyVsSignalJets(TString bkgSample, TString year, TString cat, TString score) {
 
   TH1::SetDefaultSumw2(kTRUE);

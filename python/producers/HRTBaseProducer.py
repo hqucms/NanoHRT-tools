@@ -151,6 +151,7 @@ class HRTBaseProducer(Module, object):
         self.out.branch("ak8_1_DeepAK8_TvsQCD", "F")
         self.out.branch("ak8_1_DeepAK8_WvsQCD", "F")
         self.out.branch("ak8_1_DeepAK8_ZvsQCD", "F")
+        self.out.branch("ak8_1_DeepAK8_ZHbbvsQCD", "F")
         self.out.branch("ak8_1_DeepAK8MD_TvsQCD", "F")
         self.out.branch("ak8_1_DeepAK8MD_WvsQCD", "F")
         self.out.branch("ak8_1_DeepAK8MD_ZvsQCD", "F")
@@ -351,6 +352,11 @@ class HRTBaseProducer(Module, object):
         fillBranchAK8("ak8_1_DeepAK8_TvsQCD", ak8.deepTag_TvsQCD)
         fillBranchAK8("ak8_1_DeepAK8_WvsQCD", ak8.deepTag_WvsQCD)
         fillBranchAK8("ak8_1_DeepAK8_ZvsQCD", ak8.deepTag_ZvsQCD)
+        try:
+            fillBranchAK8("ak8_1_DeepAK8_ZHbbvsQCD", convert_prob(ak8, ['Zbb', 'Hbb'], prefix='deepTag_prob'))
+        except RuntimeError:
+            # in official NanoAOD raw outputs `deepTag_probX` is not saved
+            fillBranchAK8("ak8_1_DeepAK8_ZHbbvsQCD", -1)
         fillBranchAK8("ak8_1_DeepAK8MD_TvsQCD", ak8.deepTagMD_TvsQCD)
         fillBranchAK8("ak8_1_DeepAK8MD_WvsQCD", ak8.deepTagMD_WvsQCD)
         fillBranchAK8("ak8_1_DeepAK8MD_ZvsQCD", ak8.deepTagMD_ZvsQCD)
