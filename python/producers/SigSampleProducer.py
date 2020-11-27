@@ -10,46 +10,57 @@ import logging
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
 
 
-class QCDSampleProducer(HeavyFlavBaseProducer):
+class PhotonSampleProducer(HeavyFlavBaseProducer):
 
     def __init__(self, **kwargs):
-        super(QCDSampleProducer, self).__init__(channel='qcd', **kwargs)
+        super(PhotonSampleProducer, self).__init__(channel='photon', **kwargs)
 
     def beginJob(self):
-        super(QCDSampleProducer, self).beginJob()
+        super(PhotonSampleProducer, self).beginJob()
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
-        super(QCDSampleProducer, self).beginFile(inputFile, outputFile, inputTree, wrappedOutputTree)
+        super(PhotonSampleProducer, self).beginFile(inputFile, outputFile, inputTree, wrappedOutputTree)
 
         ## trigger variables
-        self.out.branch("passHTTrig", "O")
+        self.out.branch("passTrigPhoton", "O")
 
         ## event variables
         self.out.branch("ht", "F")
         self.out.branch("nlep", "I")
 
+        ## photons
+        self.out.branch("nphotons", "I")
+        self.out.branch("pho_1_pt", "F")
+        self.out.branch("pho_1_eta", "F")
+        self.out.branch("pho_1_phi", "F")
+
     def prepareEvent(self, event):
 
         logging.debug('processing event %d' % event.event)
 
-        # # ht selection
-        event.ak4jets = []
-        for j in event._allJets:
-            if not (j.pt > 25 and abs(j.eta) < 2.4 and (j.jetId & 2)):
+        ## select leading photon
+        event._allPhotons = Collection(event, "Photon")
+        event.photons = []
+        for pho in event._allPhotons:
+            if not (pho.pt > 200 and abs(pho.eta) < 2.4 and (pho.cutBasedBitmap & 2) and pho.electronVeto):  # medium ID
                 continue
-            event.ak4jets.append(j)
+            event.photons.append(pho)
 
-        event.ht = sum([j.pt for j in event.ak4jets])
-        if event.ht < 200.: ##was 1000.
+        if len(event.photons) < 1:
             return False
 
-        ## selection on AK8 jets
+        ## selection on AK8 jets / drop if overlaps with a photon
         event.fatjets = []
         for fj in event._allFatJets:
             if not (fj.pt > 200 and abs(fj.eta) < 2.4 and (fj.jetId & 2)):
                 continue
+            # require jet and photon to be back-to-back
+            if deltaPhi(event.photons[0], fj) < 2:
+                continue
+#             if deltaR(event.photons[0], fj) < self._jetConeSize:
+#                 continue
             event.fatjets.append(fj)
-        if len(event.fatjets) < 2:
+        if len(event.fatjets) < 1:
             return False
 
         ## selection on SV
@@ -60,28 +71,27 @@ class QCDSampleProducer(HeavyFlavBaseProducer):
 #             if sv.dlenSig > 4:
             if True:
                 event.secondary_vertices.append(sv)
-        #if len(event.secondary_vertices) < 2: ##LG added this tmp comment
-        #    return False  ##LG added this tmp comment
+        if len(event.secondary_vertices) < 2:
+            return False
         event.secondary_vertices = sorted(event.secondary_vertices, key=lambda x: x.pt, reverse=True)  # sort by pt
 #         event.secondary_vertices = sorted(event.secondary_vertices, key=lambda x : x.dxySig, reverse=True)  # sort by dxysig
 
-        self.matchSVToJets(event, event.fatjets)
-
         # selection on the probe jet (sub-leading in pT)
-        probe_fj = event.fatjets[1]
-        if not (len(probe_fj.subjets) == 2 and probe_fj.msoftdrop > 50 and probe_fj.msoftdrop < 200):
+        probe_fj = event.fatjets[0]
+        if not (probe_fj.pt > 200 and len(probe_fj.subjets) == 2 and probe_fj.msoftdrop > 50 and probe_fj.msoftdrop < 200):
             return False
         # require at least 1 SV matched to each subjet
         self.matchSVToSubjets(event, probe_fj)
-        #if len(probe_fj.subjets[0].sv_list) == 0 or len(probe_fj.subjets[1].sv_list) == 0: ##LG added this tmp comment
-        #    return False ##LG added this tmp comment
-        # match SV also to the leading jet
-        if not (len(event.fatjets[0].subjets) == 2):
+        if len(probe_fj.subjets[0].sv_list) == 0 or len(probe_fj.subjets[1].sv_list) == 0:
             return False
-        self.matchSVToSubjets(event, event.fatjets[0])
 
-        # load gen
-        self.loadGenHistory(event)
+        ## ht
+        event.ak4jets = []
+        for j in event._allJets:
+            if not (j.pt > 25 and abs(j.eta) < 2.4 and (j.jetId & 2)):
+                continue
+            event.ak4jets.append(j)
+        event.ht = sum([j.pt for j in event.ak4jets])
 
         ## return True if passes selection
         return True
@@ -96,12 +106,19 @@ class QCDSampleProducer(HeavyFlavBaseProducer):
             return False
 
         if self.year == 2016:
-            self.out.fillBranch("passHTTrig", event.HLT_PFHT900)
+            self.out.fillBranch("passTrigPhoton", event.HLT_Photon175)
         else:
-            self.out.fillBranch("passHTTrig", event.HLT_PFHT1050)
+            self.out.fillBranch("passTrigPhoton", event.HLT_Photon200)
+
+        ## event variables
         self.out.fillBranch("ht", event.ht)
         self.out.fillBranch("nlep", len(event.looseLeptons))
 
+        ## photon variables
+        self.out.fillBranch("nphotons", len(event.photons))
+        self.out.fillBranch("pho_1_pt", event.photons[0].pt)
+        self.out.fillBranch("pho_1_eta", event.photons[0].eta)
+        self.out.fillBranch("pho_1_phi", event.photons[0].phi)
 
         self.fillBaseEventInfo(event)
         self.fillFatJetInfo(event)
@@ -110,6 +127,7 @@ class QCDSampleProducer(HeavyFlavBaseProducer):
 
 
 # define modules using the syntax 'name = lambda : constructor' to avoid having them loaded when not needed
-QCDTree_2016 = lambda: QCDSampleProducer(year=2016)
-QCDTree_2017 = lambda: QCDSampleProducer(year=2017)
-QCDTree_2018 = lambda: QCDSampleProducer(year=2018)
+PhotonTree_2016 = lambda: PhotonSampleProducer(year=2016)
+PhotonTree_2017 = lambda: PhotonSampleProducer(year=2017)
+PhotonTree_2018 = lambda: PhotonSampleProducer(year=2018)
+
