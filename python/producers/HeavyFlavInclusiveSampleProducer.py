@@ -60,7 +60,7 @@ class InclusiveSampleProducer(HeavyFlavBaseProducer):
         event.secondary_vertices = sorted(event.secondary_vertices, key=lambda x: x.pt, reverse=True)  # sort by pt
 #         event.secondary_vertices = sorted(event.secondary_vertices, key=lambda x : x.dxySig, reverse=True)  # sort by dxysig
 
-        self.matchSVToJets(event, event.fatjets)
+        self.matchSVToFatJets(event, event.fatjets)
 
         # selection on the probe jet (sub-leading in pT)
         probe_fj = event.fatjets[0]
