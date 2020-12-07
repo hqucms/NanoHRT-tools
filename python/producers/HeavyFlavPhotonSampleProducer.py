@@ -42,7 +42,7 @@ class PhotonSampleProducer(HeavyFlavBaseProducer):
         event._allPhotons = Collection(event, "Photon")
         event.photons = []
         for pho in event._allPhotons:
-            if not (pho.pt > 200 and abs(pho.eta) < 2.4 and (pho.cutBasedBitmap & 2) and pho.electronVeto):  # medium ID
+            if not (pho.pt > 200 and abs(pho.eta) < 2.4 and pho.cutBased >= 2 and pho.electronVeto):  # medium ID
                 continue
             event.photons.append(pho)
 
@@ -92,6 +92,9 @@ class PhotonSampleProducer(HeavyFlavBaseProducer):
                 continue
             event.ak4jets.append(j)
         event.ht = sum([j.pt for j in event.ak4jets])
+
+        # load gen
+        self.loadGenHistory(event)
 
         ## return True if passes selection
         return True

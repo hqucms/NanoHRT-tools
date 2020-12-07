@@ -11,11 +11,19 @@ qcd-herwig:
  - QCD_Pt-15to7000_TuneCUETHS1_FlatP6_13TeV_herwigpp
 
 top:
- - TTJets_TuneCUETP8M2T4_13TeV-amcatnloFXFX-pythia8
+ - TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8
+ - ST_tW_antitop_5f_inclusiveDecays_TuneCP5_PSweights_13TeV-powheg-pythia8
+ - ST_tW_top_5f_inclusiveDecays_TuneCP5_PSweights_13TeV-powheg-pythia8
+ - ST_t-channel_top_4f_InclusiveDecays_TuneCP5_PSweights_13TeV-powheg-pythia8
+ - ST_t-channel_antitop_4f_InclusiveDecays_TuneCP5_PSweights_13TeV-powheg-pythia8
 
 v-qq:
- - WJetsToQQ_HT180_13TeV-madgraphMLM-pythia8
- - DYJetsToQQ_HT180_13TeV-madgraphMLM-pythia8
+ - WJetsToQQ_HT400to600_qc19_3j_TuneCUETP8M1_13TeV-madgraphMLM-pythia8
+ - WJetsToQQ_HT600to800_qc19_3j_TuneCUETP8M1_13TeV-madgraphMLM-pythia8
+ - WJetsToQQ_HT-800toInf_qc19_3j_TuneCUETP8M1_13TeV-madgraphMLM-pythia8
+ - ZJetsToQQ_HT400to600_qc19_4j_TuneCUETP8M1_13TeV-madgraphMLM-pythia8
+ - ZJetsToQQ_HT600to800_qc19_4j_TuneCUETP8M1_13TeV-madgraphMLM-pythia8
+ - ZJetsToQQ_HT-800toInf_qc19_4j_TuneCUETP8M1_13TeV-madgraphMLM-pythia8
 
 ggH-bb:
- - GluGluHToBB_M125_13TeV_powheg_pythia8
+ - GluGluHToBB_M-125_13TeV_powheg_MINLO_NNLOPS_pythia8

@@ -15,7 +15,6 @@ class MuonSampleProducer(HRTBaseProducer):
 
     def __init__(self, **kwargs):
         super(MuonSampleProducer, self).__init__(channel='muon', **kwargs)
-        #super(MuonSampleProducer, self).__init__(channel='muon')
 
     def beginJob(self):
         super(MuonSampleProducer, self).beginJob()
@@ -53,7 +52,7 @@ class MuonSampleProducer(HRTBaseProducer):
         # #leptonic W pt cut
         event.mu = event.muons[0]
         event.leptonicW = event.mu.p4() + event.met.p4()
-        if event.leptonicW.Pt() < 250.0:
+        if event.leptonicW.Pt() < 100.0:
             return False
 
         ## b-tag AK4 jet selection
@@ -70,7 +69,7 @@ class MuonSampleProducer(HRTBaseProducer):
         # # selection on AK8/AK15 jets
         event.fatjets = []
         for fj in event._allFatJets:
-            if not (fj.pt > 200 and abs(fj.eta) < 2.4 and (fj.jetId & 2)):
+            if not (fj.pt > 150 and abs(fj.eta) < 2.4 and (fj.jetId & 2)):
                 continue
             if abs(deltaPhi(fj, event.muons[0])) > 2.0:
                 event.fatjets.append(fj)

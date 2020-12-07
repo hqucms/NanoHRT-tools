@@ -168,10 +168,11 @@ class HRTBaseProducer(Module, object):
         self.out.branch(prefix + "tau1", "F")
         self.out.branch(prefix + "tau2", "F")
         self.out.branch(prefix + "tau3", "F")
-#        self.out.branch(prefix + "DeepAK8_TvsQCD", "F")
-#        self.out.branch(prefix + "DeepAK8_WvsQCD", "F")
-#        self.out.branch(prefix + "DeepAK8_ZvsQCD", "F")
         if self.jetType=="ak8":
+            self.out.branch(prefix + "DeepAK8_TvsQCD", "F")
+            self.out.branch(prefix + "DeepAK8_WvsQCD", "F")
+            self.out.branch(prefix + "DeepAK8_ZvsQCD", "F")
+            self.out.branch(prefix + "DeepAK8_ZHbbvsQCD", "F")
             self.out.branch(prefix + "DeepAK8MD_TvsQCD", "F")
             self.out.branch(prefix + "DeepAK8MD_WvsQCD", "F")
             self.out.branch(prefix + "DeepAK8MD_ZvsQCD", "F")
@@ -409,6 +410,7 @@ class HRTBaseProducer(Module, object):
         return filler
 
     def fillFatJetInfo(self, event, fillGenMatching=False):
+
         # fill AK8 / AK15 info
         self.out.fillBranch("n_"+self.jetType, len(event.fatjets))
         fj = event.fatjets[0] if len(event.fatjets) > 0 else _NullObject()
@@ -427,17 +429,20 @@ class HRTBaseProducer(Module, object):
         fillBranchFJ(prefix + "tau2", fj.tau2)
         fillBranchFJ(prefix + "tau3", fj.tau3)
         if self.jetType=="ak8":
-#            fillBranchFJ(prefix + "DeepAK8_TvsQCD", fj.deepTag_TvsQCD)
-#            fillBranchFJ(prefix + "DeepAK8_WvsQCD", fj.deepTag_WvsQCD)
-#            fillBranchFJ(prefix + "DeepAK8_ZvsQCD", fj.deepTag_ZvsQCD)
+            fillBranchFJ("ak8_1_DeepAK8_TvsQCD", fj.deepTag_TvsQCD)
+            fillBranchFJ("ak8_1_DeepAK8_WvsQCD", fj.deepTag_WvsQCD)
+            fillBranchFJ("ak8_1_DeepAK8_ZvsQCD", fj.deepTag_ZvsQCD)
+            try:
+                fillBranchFJ("ak8_1_DeepAK8_ZHbbvsQCD", convert_prob(fj, ['Zbb', 'Hbb'], prefix='deepTag_prob'))
+            except RuntimeError:
+                # in official NanoAOD raw outputs `deepTag_probX` is not saved
+                fillBranchFJ("ak8_1_DeepAK8_ZHbbvsQCD", -1)
             fillBranchFJ(prefix + "DeepAK8MD_TvsQCD", fj.deepTagMD_TvsQCD)
             fillBranchFJ(prefix + "DeepAK8MD_WvsQCD", fj.deepTagMD_WvsQCD)
             fillBranchFJ(prefix + "DeepAK8MD_ZvsQCD", fj.deepTagMD_ZvsQCD)
-            fillBranchFJ(prefix + "DeepAK8MD_ZHbbvsQCD", fj.deepTagMD_ZHbbvsQCD)
             fillBranchFJ(prefix + "DeepAK8MD_ZHccvsQCD", fj.deepTagMD_ZHccvsQCD)
             fillBranchFJ(prefix + "DeepAK8MD_bbvsLight", fj.deepTagMD_bbvsLight)
             fillBranchFJ(prefix + "DeepAK8MD_ccvsLight", fj.deepTagMD_ccvsLight)
-
 
         if self.hasParticleNet:
 #            fillBranchFJ(prefix + "ParticleNet_TvsQCD", convert_prob(ak8, ['Tbcq', 'Tbqq'], prefix='ParticleNet_prob'))

@@ -14,7 +14,7 @@ keep HLT_Ele32_WPTight_Gsf
 keep HLT_Ele32_WPTight_Gsf_L1DoubleEG
 keep HLT_Ele35_WPTight_Gsf
 keep HLT_PFMET*_PFMHT*_IDTight*
-keep HLT_PFHT*
+keepmatch HLT_PFHT[0-9]+
 # genweight
 keep genWeight
 keep LHE_Vpt
