@@ -55,7 +55,7 @@ def _process(args):
         args.extra_transfer = os.path.expandvars('$CMSSW_BASE/src/PhysicsTools/NanoHRTTools/data/JSON/%s' % golden_json[year])
         args.json = golden_json[year]
     else:
-        args.datasets = '%s/%s_%d_MC_santeri.yaml' % (args.sample_dir, channel, year)
+        args.datasets = '%s/%s_%d_MC.yaml' % (args.sample_dir, channel, year)
 
     if args.jet_type == 'ak15':
         args.cut = cut_dict_ak15[channel]
