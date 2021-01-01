@@ -1,7 +1,7 @@
-from PhysicsTools.NanoHRTTools.producers.HeavyFlavPhotonSampleProducer import PhotonSampleProducer
-from PhysicsTools.NanoHRTTools.producers.HeavyFlavQCDSampleProducer import QCDSampleProducer
-from PhysicsTools.NanoHRTTools.producers.HeavyFlavSignalSampleProducer import SignalSampleProducer
-from PhysicsTools.NanoHRTTools.producers.HeavyFlavInclusiveSampleProducer import InclusiveSampleProducer
+from .HeavyFlavPhotonSampleProducer import PhotonSampleProducer
+from .HeavyFlavQCDSampleProducer import QCDSampleProducer
+from .HeavyFlavMuonSampleProducer import MuonSampleProducer
+from .HeavyFlavInclusiveSampleProducer import InclusiveSampleProducer
 
 
 def heavyFlavSFTreeFromConfig():
@@ -14,10 +14,9 @@ def heavyFlavSFTreeFromConfig():
         return PhotonSampleProducer(**cfg)
     elif channel == 'qcd':
         return QCDSampleProducer(**cfg)
-    elif channel == 'signal':
-        return SignalSampleProducer(**cfg)
+    elif channel == 'muon':
+        return MuonSampleProducer(**cfg)
     elif channel == 'inclusive':
         return InclusiveSampleProducer(**cfg)
     else:
         return RuntimeError('Unsupported channel %s' % channel)
-
