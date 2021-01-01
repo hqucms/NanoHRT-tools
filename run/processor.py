@@ -106,7 +106,8 @@ def main(args):
 
     # stage out
     if md['outputdir'].startswith('/eos'):
-        cmd = 'xrdcp --silent -p {outputname} {outputdir}/{outputname}'.format(outputname=outputname, outputdir=xrd_prefix(md['joboutputdir'])[0][0])
+        cmd = 'xrdcp --silent -p -f {outputname} {outputdir}/{outputname}'.format(
+            outputname=outputname, outputdir=xrd_prefix(md['joboutputdir'])[0][0])
         print(cmd)
         success = False
         for count in range(args.max_retry):
@@ -127,19 +128,19 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='NanoAOD postprocessing.')
     parser.add_argument('-m', '--metadata',
-        default='metadata.json',
-        help='Path to the metadata file. Default:%(default)s')
+                        default='metadata.json',
+                        help='Path to the metadata file. Default:%(default)s')
     parser.add_argument('--max-retry',
-        type=int, default=3,
-        help='Max number of retry for stageout. Default: %(default)s'
-        )
+                        type=int, default=3,
+                        help='Max number of retry for stageout. Default: %(default)s'
+                        )
     parser.add_argument('--sleep',
-        type=int, default=120,
-        help='Seconds to wait before retry stageout. Default: %(default)s'
-        )
+                        type=int, default=120,
+                        help='Seconds to wait before retry stageout. Default: %(default)s'
+                        )
     parser.add_argument('--files',
-        nargs='*', default=[],
-        help='Run over the specified input file. Default:%(default)s')
+                        nargs='*', default=[],
+                        help='Run over the specified input file. Default:%(default)s')
     parser.add_argument('jobid', type=int, help='Index of the output job.')
 
     args = parser.parse_args()

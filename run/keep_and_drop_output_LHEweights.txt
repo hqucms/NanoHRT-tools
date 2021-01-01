@@ -1,5 +1,6 @@
 # this is a comment
 dropmatch n?[A-Z][a-zA-Z0-9]{1,}.+
+drop fixedGridRho*
 drop btagWeight_*
 # event info
 keep run

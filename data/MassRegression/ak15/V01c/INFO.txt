@@ -1,0 +1,1 @@
+/data/hqu/training/pytorch/models/20200707_ak15_1718_mass_regression_HiggsQCD_HiggsGenMass_usePID/pf_sv_particle_net_v0_LogCoshLoss_ranger_batch1024_lr2e-2_4gpus_datafrac0p9_14epochs_Dec26/pn_epoch-13_state.pt

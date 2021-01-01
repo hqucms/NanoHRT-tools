@@ -1,15 +1,20 @@
 import ROOT
 import os, tarfile, tempfile, shutil
-import numpy as np
+import math
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 
-from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
-from PhysicsTools.NanoAODTools.postprocessing.tools import deltaR
+from .utils import sumP4, deltaR2
 
 
-def find_and_extract_tarball(name, destination):
-    search_pathes = [os.environ['CMSSW_BASE'] + '/src/PhysicsTools/NanoHRTTools/data/jme/',
+def find_and_extract_tarball(name, destination, copy_txt_with_prefix=None):
+    search_pathes = [os.environ['CMSSW_BASE'] + '/src/PhysicsTools/NanoTrees/data/jme/',
                      os.environ['CMSSW_BASE'] + '/src/PhysicsTools/NanoAODTools/data/jme/']
+    if copy_txt_with_prefix is not None:
+        source_dir = search_pathes[0]  # copy extra txt files that are not in the tarball
+        for f in os.listdir(source_dir):
+            if f.startswith(copy_txt_with_prefix) and name in f and f.endswith('.txt'):
+                shutil.copy2(os.path.join(source_dir, f), destination)
+                print('... copied %s to %s' % (os.path.join(source_dir, f), destination))
     for p in search_pathes:
         for ext in ['.tgz', '.tar.gz']:
             fullpath = os.path.join(p, name + ext)
@@ -20,26 +25,26 @@ def find_and_extract_tarball(name, destination):
                 return fullpath
 
 
-def match(jet, genjets, resolution, coneSize=0.4):
+def match(jet, genjets, resolution, dr2cut=0.04, dptcut=3):
     # Try to find a gen jet matching
     # dR < m_dR_max
     # dPt < m_dPt_max_factor * resolution
-    minDR = 1e99
+    minDR2 = 1e99
     matched = None
     for genj in genjets:
-        dR = deltaR(genj, jet)
-        if dR > minDR:
+        dR2 = deltaR2(genj, jet)
+        if dR2 > minDR2:
             continue
-        if dR < 0.5 * coneSize:
+        if dR2 < dr2cut and dptcut is not None:
             dPT = abs(genj.pt - jet.pt)
-            if dPT > 3. * resolution:
+            if dPT > dptcut * resolution:
                 continue
-        minDR = dR
+        minDR2 = dR2
         matched = genj
     return matched
 
 
-class jetSmearer(Module):
+class jetSmearer(object):
 
     def __init__(self, jerTag, jetType="AK4PFchs"):
 
@@ -51,6 +56,7 @@ class jetSmearer(Module):
             self.coneSize = 0.4
         else:
             raise RuntimeError('Jet type %s is not recognized!' % jetType)
+        self.match_r2 = 0.25 * self.coneSize * self.coneSize  # (0.5r)^2
 
     def beginJob(self):
         # read jet energy resolution (JER) and JER scale factors and uncertainties
@@ -104,9 +110,9 @@ class jetSmearer(Module):
         # --------------------------------------------------------------------------------------------
         # CV: define enums needed to access JER scale factors and uncertainties
         #    (cf. CondFormats/JetMETObjects/interface/JetResolutionObject.h)
-        enum_nominal         = 0
-        enum_shift_up        = 2
-        enum_shift_down      = 1
+        enum_nominal = 0
+        enum_shift_up = 2
+        enum_shift_down = 1
         # --------------------------------------------------------------------------------------------
 
         self.params_resolution.setJetPt(jet.pt)
@@ -118,9 +124,10 @@ class jetSmearer(Module):
         for enum_central_or_shift in [enum_nominal, enum_shift_up, enum_shift_down]:
             self.params_sf_and_uncertainty.setJetEta(jet.eta)
             self.params_sf_and_uncertainty.setJetPt(jet.pt)
-            jet_pt_sf_and_uncertainty[enum_central_or_shift] = self.jerSF_and_Uncertainty.getScaleFactor(self.params_sf_and_uncertainty, enum_central_or_shift)
+            jet_pt_sf_and_uncertainty[enum_central_or_shift] = self.jerSF_and_Uncertainty.getScaleFactor(
+                self.params_sf_and_uncertainty, enum_central_or_shift)
 
-        matched_genjet = match(jet, genjets, jet_pt_resolution * jet.pt, coneSize=self.coneSize)
+        matched_genjet = match(jet, genjets, jet_pt_resolution * jet.pt, dr2cut=self.match_r2)
 
         smear_vals = {}
         for central_or_shift in [enum_nominal, enum_shift_up, enum_shift_down]:
@@ -136,7 +143,7 @@ class jetSmearer(Module):
                 #
                 # Case 2: we don't have a generator level jet. Smear jet pT using a random Gaussian variation
                 #
-                sigma = jet_pt_resolution * np.sqrt(jet_pt_sf_and_uncertainty[central_or_shift] ** 2 - 1.)
+                sigma = jet_pt_resolution * math.sqrt(jet_pt_sf_and_uncertainty[central_or_shift] ** 2 - 1.)
                 smearFactor = self.rnd.Gaus(1., sigma)
             else:
                 #
@@ -166,7 +173,7 @@ class jetSmearer(Module):
         # --------------------------------------------------------------------------------------------
 
         if not hasattr(jet, 'subjets') or len(jet.subjets) != 2 or jet.mass <= 0:
-        #    print("WARNING: jet does not have 2 subjets")
+            #    print("WARNING: jet does not have 2 subjets")
             return (1., 1., 1.)
 
         # --------------------------------------------------------------------------------------------
@@ -184,7 +191,7 @@ class jetSmearer(Module):
         matched_genjets = [match(sj, gensubjets, 1.e9) for sj in jet.subjets]
         gensdmass = None
         if matched_genjets[0] is not None and matched_genjets[1] is not None:
-            gensdmass = (matched_genjets[0].p4() + matched_genjets[1].p4()).M()
+            gensdmass = sumP4(matched_genjets[0], matched_genjets[1]).M()
 
         smear_vals = {}
         for central_or_shift in [enum_nominal, enum_shift_up, enum_shift_down]:
@@ -200,7 +207,7 @@ class jetSmearer(Module):
                 #
                 # Case 2: we don't have a generator level jet. Smear jet m using a random Gaussian variation
                 #
-                sigma = jet_m_resolution * np.sqrt(jet_m_sf_and_uncertainty[central_or_shift] ** 2 - 1.)
+                sigma = jet_m_resolution * math.sqrt(jet_m_sf_and_uncertainty[central_or_shift] ** 2 - 1.)
                 smearFactor = self.rnd.Gaus(1., sigma)
             else:
                 #

@@ -14,7 +14,7 @@ dropmatch n?IsoTrack_.+
 dropmatch n?btagWeight_.+
 
 # HLT
-drop HLT_*
+drop HLT*
 keep HLT_Iso*Mu24
 keep HLT_IsoMu27
 keep HLT_*Mu50
@@ -38,3 +38,7 @@ dropmatch n?Generator_.+
 dropmatch n?LHEReweightingWeight
 dropmatch n?HTXS_.+
 dropmatch n?GenIsolatedPhoton_.+
+dropmatch n?PuppiMET_.+
+dropmatch n?CaloMET_.+
+dropmatch n?ChsMET_.+
+dropmatch n?RawPuppiMET_.+

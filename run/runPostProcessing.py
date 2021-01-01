@@ -83,7 +83,7 @@ def add_weight_branch(file, xsec, lumi=1000., treename='Events', wgtbranch='xsec
             b = tree.Branch(branch_name, buff, branch_name + '/F')
 
         b.SetBasketSize(tree.GetEntries() * 2)  # be sure we do not trigger flushing
-        for i in xrange(tree.GetEntries()):
+        for i in range(tree.GetEntries()):
             if lenVar is not None:
                 b_lenVar.GetEntry(i)
             b.Fill()
@@ -106,14 +106,14 @@ def add_weight_branch(file, xsec, lumi=1000., treename='Events', wgtbranch='xsec
     if tree.GetBranch('LHEScaleWeight'):
         run_tree.GetEntry(0)
         nScaleWeights = run_tree.nLHEScaleSumw
-        scale_weight_norm_buff = array('f', [sumwgts / _get_sum(run_tree, 'LHEScaleSumw[%d]*genEventSumw' % i) for i in xrange(nScaleWeights)])
+        scale_weight_norm_buff = array('f', [sumwgts / _get_sum(run_tree, 'LHEScaleSumw[%d]*genEventSumw' % i) for i in range(nScaleWeights)])
         logging.info('LHEScaleWeightNorm: ' + str(scale_weight_norm_buff))
         _fill_const_branch(tree, 'LHEScaleWeightNorm', scale_weight_norm_buff, lenVar='nLHEScaleWeight')
 
     if tree.GetBranch('LHEPdfWeight'):
         run_tree.GetEntry(0)
         nPdfWeights = run_tree.nLHEPdfSumw
-        pdf_weight_norm_buff = array('f', [sumwgts / _get_sum(run_tree, 'LHEPdfSumw[%d]*genEventSumw' % i) for i in xrange(nPdfWeights)])
+        pdf_weight_norm_buff = array('f', [sumwgts / _get_sum(run_tree, 'LHEPdfSumw[%d]*genEventSumw' % i) for i in range(nPdfWeights)])
         logging.info('LHEPdfWeightNorm: ' + str(pdf_weight_norm_buff))
         _fill_const_branch(tree, 'LHEPdfWeightNorm', pdf_weight_norm_buff, lenVar='nLHEPdfWeight')
 
@@ -222,6 +222,12 @@ def create_metadata(args):
     arg_blacklist = ['metadata', 'select', 'ignore', 'site', 'datasets']
     md = {k: args.__dict__[k] for k in args.__dict__ if k not in arg_blacklist}
 
+    # git info
+    import subprocess
+    cmd = 'git rev-parse HEAD && git status'
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    md['git_info'] = p.communicate()[0].decode('utf-8')
+
     md['samples'] = []
     md['inputfiles'] = {}
     md['jobs'] = []
@@ -323,9 +329,7 @@ def load_metadata(args):
 
 
 def check_job_status(args):
-    metadatafile = os.path.join(args.jobdir, args.metadata)
-    with open(metadatafile) as f:
-        md = json.load(f)
+    md = load_metadata(args)
     njobs = len(md['jobs'])
     jobids = {'running': [], 'failed': [], 'completed': []}
     for jobid in range(njobs):
@@ -413,7 +417,10 @@ def submit(args, configs):
         md['joboutputdir'] = joboutputdir
         with open(metadatafile, 'w') as f:
             json.dump(md, f, ensure_ascii=True, indent=2, sort_keys=True)
-        shutil.copy2(metadatafile, joboutputdir)
+        # store the metadata file to the outputdir as well
+        import gzip
+        with gzip.open(os.path.join(args.outputdir, args.metadata+'.gz'), 'w') as fout:
+            fout.write(json.dumps(md).encode('utf-8'))
 
         # create CMSSW tarball
         tar_cmssw(args.tarball_suffix, args.batch)
@@ -448,6 +455,7 @@ def submit(args, configs):
     condordesc = '''\
 universe              = vanilla
 requirements          = (Arch == "X86_64") && (OpSys == "LINUX")
+request_memory        = {request_memory}
 request_disk          = 10000000
 executable            = {scriptfile}
 arguments             = $(jobid)
@@ -467,6 +475,7 @@ periodic_release      = (NumJobStarts < 3) && ((CurrentTime - EnteredCurrentStat
 {transfer_output}
 {site}
 {maxruntime}
+{condor_extras}
 
 queue jobid from {jobids_file}
 '''.format(scriptfile=os.path.abspath(scriptfile),
@@ -478,6 +487,8 @@ queue jobid from {jobids_file}
            jobids_file=os.path.abspath(jobids_file),
            site='+DESIRED_Sites = "%s"' % args.site if args.site else '',
            maxruntime='+MaxRuntime = %s' % args.max_runtime if args.max_runtime else '',
+           request_memory=args.request_memory,
+           condor_extras=args.condor_extras,
     )
     condorfile = os.path.join(args.jobdir, 'submit.cmd')
     with open(condorfile, 'w') as f:
@@ -508,7 +519,7 @@ def run_add_weight(args):
         logging.debug('...' + cmd)
         p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         log = p.communicate()[0]
-        log_lower = log.lower()
+        log_lower = log.lower().decode('utf-8')
         if 'error' in log_lower or 'fail' in log_lower:
             logging.error(log)
         if p.returncode != 0:
@@ -570,7 +581,7 @@ def run_merge(args):
             log = p.communicate()[0]
             if p.returncode != 0:
                 raise RuntimeError('Hadd failed on %s!' % outname)
-            log_lower = log.lower()
+            log_lower = log.lower().decode('utf-8')
             if 'error' in log_lower or 'fail' in log_lower:
                 logging.error(log)
 
@@ -652,9 +663,17 @@ def get_arg_parser():
         default='',
         help='Specify sites for condor submission. Default: %(default)s'
     )
+    parser.add_argument('--condor-extras',
+        default='',
+        help='Extra parameters for condor, e.g., +AccountingGroup = "group_u_CMST3.all". Default: %(default)s'
+    )
     parser.add_argument('--max-runtime',
         default='24*60*60',
         help='Max runtime, in seconds. Default: %(default)s'
+    )
+    parser.add_argument('--request-memory',
+        default='2000',
+        help='Request memory, in MB. Default: %(default)s'
     )
     parser.add_argument('--add-weight',
         action='store_true', default=False,
@@ -696,6 +715,7 @@ def get_arg_parser():
 
 
 def run(args, configs=None):
+    logging.info('Running w/ config: %s' % configs)
 
     if args.post:
         args.add_weight = True
@@ -704,6 +724,9 @@ def run(args, configs=None):
     if args.add_weight:
         all_completed, _ = check_job_status(args)
         if not all_completed:
+            if args.batch:
+                logging.warning('\033[1;30mThere are jobs failed or still running. Skipping...\033[0m')
+                return
             ans = input('Warning! There are jobs failed or still running. Continue adding weights? [yn] ')
             if ans.lower()[0] != 'y':
                 return
