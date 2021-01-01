@@ -50,7 +50,7 @@ class HeavyFlavBaseProducer(Module, object):
         self._jmeSysts = {'jec': False, 'jes': None, 'jes_source': '', 'jes_uncertainty_file_prefix': '',
                           'jer': None, 'jmr': None, 'met_unclustered': None, 'smearMET': True, 'applyHEMUnc': False}
         self._opts = {'sfbdt_threshold': -1,
-                      'run_tagger': False, 'tagger_versions': ['V02a', 'V02b', 'V02c'],
+                      'run_tagger': False, 'tagger_versions': ['V02b', 'V02c', 'V02d'],
                       'run_mass_regression': False, 'mass_regression_versions': ['V01a', 'V01b', 'V01c'],
                       'WRITE_CACHE_FILE': True}
         for k in kwargs:
