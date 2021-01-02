@@ -49,7 +49,7 @@ class HeavyFlavBaseProducer(Module, object):
         self.jetType = kwargs.get('jetType', 'ak8').lower()
         self._jmeSysts = {'jec': False, 'jes': None, 'jes_source': '', 'jes_uncertainty_file_prefix': '',
                           'jer': None, 'jmr': None, 'met_unclustered': None, 'smearMET': True, 'applyHEMUnc': False}
-        self._opts = {'sfbdt_threshold': -1,
+        self._opts = {'sfbdt_threshold': -99,
                       'run_tagger': False, 'tagger_versions': ['V02b', 'V02c', 'V02d'],
                       'run_mass_regression': False, 'mass_regression_versions': ['V01a', 'V01b', 'V01c'],
                       'WRITE_CACHE_FILE': True}
@@ -95,9 +95,9 @@ class HeavyFlavBaseProducer(Module, object):
         self._fill_sv = self._channel in ('qcd', 'photon', 'inclusive')
 
         if self._needsJMECorr:
-            self.jetmetCorr = JetMETCorrector(year=self._year, jetType="AK4PFchs", **self._jmeSysts)
-            self.fatjetCorr = JetMETCorrector(year=self._year, jetType="AK8PFPuppi", **self._jmeSysts)
-            self.subjetCorr = JetMETCorrector(year=self._year, jetType="AK4PFPuppi", **self._jmeSysts)
+            self.jetmetCorr = JetMETCorrector(year=self.year, jetType="AK4PFchs", **self._jmeSysts)
+            self.fatjetCorr = JetMETCorrector(year=self.year, jetType="AK8PFPuppi", **self._jmeSysts)
+            self.subjetCorr = JetMETCorrector(year=self.year, jetType="AK4PFPuppi", **self._jmeSysts)
 
         if self._opts['run_tagger'] or self._opts['run_mass_regression']:
             from ..helpers.makeInputs import ParticleNetTagInfoMaker
@@ -165,7 +165,6 @@ class HeavyFlavBaseProducer(Module, object):
         self.out.branch("metphi", "F")
 
         # Large-R jets
-        self.out.branch("n_fatjet", "I")
         for idx in ([1, 2] if self._channel == 'qcd' else [1]):
             prefix = 'fj_%d_' % idx
 
@@ -218,6 +217,10 @@ class HeavyFlavBaseProducer(Module, object):
             self.out.branch(prefix + "ParticleNetMD_XbbVsQCD", "F")
             self.out.branch(prefix + "ParticleNetMD_XccVsQCD", "F")
             self.out.branch(prefix + "ParticleNetMD_XccOrXqqVsQCD", "F")
+
+            if self._opts['run_tagger']:
+                self.out.branch(prefix + "origParticleNetMD_XccVsQCD", "F")
+                self.out.branch(prefix + "origParticleNetMD_XbbVsQCD", "F")
 
             # matching variables
             if self.isMC:
@@ -366,7 +369,9 @@ class HeavyFlavBaseProducer(Module, object):
             raise NotImplementedError
 
         # link fatjet to subjets and recompute softdrop mass
-        for fj in event._allFatJets:
+        for idx, fj in enumerate(event._allFatJets):
+            fj.idx = idx
+            fj.is_qualified = True
             fj.subjets = get_subjets(fj, event.subjets, ('subJetIdx1', 'subJetIdx2'))
             fj.msoftdrop = sumP4(*fj.subjets).M()
         event._allFatJets = sorted(event._allFatJets, key=lambda x: x.pt, reverse=True)  # sort by pt
@@ -397,8 +402,7 @@ class HeavyFlavBaseProducer(Module, object):
                 if deltaR(sv, fj) < self._jetConeSize:
                     fj.sv_list.append(sv)
             # match SV to subjets
-            assert(len(fj.subjets) == 2)
-            drcut = min(0.4, 0.5 * deltaR(*fj.subjets))
+            drcut = min(0.4, 0.5 * deltaR(*fj.subjets)) if len(fj.subjets) == 2 else 0.4
             for sj in fj.subjets:
                 sj.sv_list = []
                 for sv in event.secondary_vertices:
@@ -419,22 +423,22 @@ class HeavyFlavBaseProducer(Module, object):
                     fj.nsv_ptgt50 += 1
 
             # sfBDT & sj12_masscor_dxysig
-            sj1, sj2 = fj.subjets
-            if len(sj1.sv_list) > 0 and len(sj2.sv_list) > 0:
-                sj1_sv, sj2_sv = sj1.sv_list[0], sj2.sv_list[0]
-                sfbdt_inputs = {
-                    'fj_2_tau21': fj.tau2 / fj.tau1 if fj.tau1 > 0 else 99,
-                    'fj_2_sj1_rawmass': sj1.mass,
-                    'fj_2_sj2_rawmass': sj2.mass,
-                    'fj_2_ntracks_sv12': fj.ntracks_sv12,
-                    'fj_2_sj1_sv1_pt': sj1_sv.pt,
-                    'fj_2_sj2_sv1_pt': sj2_sv.pt,
-                }
-                fj.sfBDT = self.xgb.eval(sfbdt_inputs, model_idx=(event.event % 10))
-                fj.sj12_masscor_dxysig = corrected_svmass(sj1_sv if sj1_sv.dxySig > sj2_sv.dxySig else sj2_sv)
-            else:
-                fj.sfBDT = -1
-                fj.sj12_masscor_dxysig = 0
+            fj.sfBDT = -1
+            fj.sj12_masscor_dxysig = 0
+            if len(fj.subjets) == 2:
+                sj1, sj2 = fj.subjets
+                if len(sj1.sv_list) > 0 and len(sj2.sv_list) > 0:
+                    sj1_sv, sj2_sv = sj1.sv_list[0], sj2.sv_list[0]
+                    sfbdt_inputs = {
+                        'fj_2_tau21': fj.tau2 / fj.tau1 if fj.tau1 > 0 else 99,
+                        'fj_2_sj1_rawmass': sj1.mass,
+                        'fj_2_sj2_rawmass': sj2.mass,
+                        'fj_2_ntracks_sv12': fj.ntracks_sv12,
+                        'fj_2_sj1_sv1_pt': sj1_sv.pt,
+                        'fj_2_sj2_sv1_pt': sj2_sv.pt,
+                    }
+                    fj.sfBDT = self.xgb.eval(sfbdt_inputs, model_idx=(event.event % 10))
+                    fj.sj12_masscor_dxysig = corrected_svmass(sj1_sv if sj1_sv.dxySig > sj2_sv.dxySig else sj2_sv)
 
     def loadGenHistory(self, event, fatjets):
         # gen matching
@@ -544,8 +548,8 @@ class HeavyFlavBaseProducer(Module, object):
 
     def fillBaseEventInfo(self, event):
         self.out.fillBranch("jetR", self._jetConeSize)
-        self.out.fillBranch("year", self._year)
-        self.out.fillBranch("lumiwgt", lumi_dict[self._year])
+        self.out.fillBranch("year", self.year)
+        self.out.fillBranch("lumiwgt", lumi_dict[self.year])
 
         met_filters = bool(
             event.Flag_goodVertices and
@@ -584,22 +588,19 @@ class HeavyFlavBaseProducer(Module, object):
         return filler
 
     def fillFatJetInfo(self, event, fatjets):
-        self.out.fillBranch("n_fatjet", len(fatjets))
-
         for idx in ([1, 2] if self._channel == 'qcd' else [1]):
             prefix = 'fj_%d_' % idx
+            fj = fatjets[idx - 1]
 
-            try:
-                fj = fatjets[idx - 1]
-            except IndexError:
-                # fill zeros if `fatjets` does not contain enough jets
+            if not fj.is_qualified:
+                # fill zeros if fatjet fails probe selection
                 for b in self.out._branches.keys():
                     if b.startswith(prefix):
                         self.out.fillBranch(b, 0)
                 continue
 
             # fatjet kinematics
-            self.out.fillBranch(prefix + "is_qualified", True)
+            self.out.fillBranch(prefix + "is_qualified", fj.is_qualified)
             self.out.fillBranch(prefix + "pt", fj.pt)
             self.out.fillBranch(prefix + "eta", fj.eta)
             self.out.fillBranch(prefix + "phi", fj.phi)
@@ -685,6 +686,13 @@ class HeavyFlavBaseProducer(Module, object):
             self.out.fillBranch(prefix + "ParticleNetMD_XccVsQCD", fj.pn_XccVsQCD)
             self.out.fillBranch(prefix + "ParticleNetMD_XccOrXqqVsQCD", fj.pn_XccOrXqqVsQCD)
 
+            if self._opts['run_tagger']:
+                bkgs = ['QCD'] if self.isParticleNetV01 else None
+                self.out.fillBranch(prefix + "origParticleNetMD_XccVsQCD",
+                                    convert_prob(fj, ['Xcc'], bkgs, prefix='ParticleNetMD_prob'))
+                self.out.fillBranch(prefix + "origParticleNetMD_XbbVsQCD",
+                                    convert_prob(fj, ['Xbb'], bkgs, prefix='ParticleNetMD_prob'))
+
             # matching variables
             if self.isMC:
                 try:
@@ -754,9 +762,17 @@ class HeavyFlavBaseProducer(Module, object):
                 self.out.fillBranch(prefix + "ntracks", fj.ntracks)
                 self.out.fillBranch(prefix + "ntracks_sv12", fj.ntracks_sv12)
 
-                assert(len(fj.subjets) == 2)
-                for idx_sj, sj in enumerate(fj.subjets):
+                for idx_sj in (0, 1):
                     prefix_sj = prefix + 'sj%d_' % (idx_sj + 1)
+                    try:
+                        sj = fj.subjets[idx_sj]
+                    except IndexError:
+                        # fill zeros if not enough subjets
+                        for b in self.out._branches.keys():
+                            if b.startswith(prefix):
+                                self.out.fillBranch(b, 0)
+                        continue
+
                     self.out.fillBranch(prefix_sj + "ntracks", sum([sv.ntracks for sv in sj.sv_list]))
                     self.out.fillBranch(prefix_sj + "nsv", len(sj.sv_list))
                     sv = sj.sv_list[0] if len(sj.sv_list) else _NullObject()

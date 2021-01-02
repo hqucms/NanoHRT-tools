@@ -38,20 +38,24 @@ class PhotonSampleProducer(HeavyFlavBaseProducer):
         probe_jets = [fj for fj in event.fatjets if abs(deltaPhi(event.photons[0], fj)) > 2]
         if len(probe_jets) == 0:
             return False
+        probe_jets = probe_jets[:1]  # only consider the leading fatjet
 
-        if self._opts['sfbdt_threshold'] > 0:
-            self.selectSV(event)
-            if event.secondary_vertices < 2:
-                return False
-            self.matchSVToFatJets(event, probe_jets)
-            # require: 2 subjets, 50 < sdmass < 200, sfBDT > 0.5 (and >=1 SV matched to each subjet -- included in the sfBDT requirement)
-            probe_jets = [fj for fj in probe_jets
-                          if len(fj.subjets) == 2 and fj.msoftdrop > 50 and fj.msoftdrop < 200
-                          and fj.sfBDT > self._opts['sfbdt_threshold']]
+        if self._opts['sfbdt_threshold'] > -99:
+            # require: 2 subjets, 50 < sdmass < 200
+            probe_jets = [fj for fj in probe_jets if len(fj.subjets) == 2 and fj.msoftdrop > 50 and fj.msoftdrop < 200]
             if len(probe_jets) == 0:
                 return False
 
-        probe_jets = probe_jets[:1]
+            self.selectSV(event)
+            if len(event.secondary_vertices) < 2:
+                return False
+            self.matchSVToFatJets(event, probe_jets)
+
+            # require: sfBDT > 0.5 (and >=1 SV matched to each subjet -- already included in the sfBDT requirement)
+            probe_jets = [fj for fj in probe_jets if fj.sfBDT >= self._opts['sfbdt_threshold']]
+            if len(probe_jets) == 0:
+                return False
+
         self.loadGenHistory(event, probe_jets)
         self.evalTagger(event, probe_jets)
         self.evalMassRegression(event, probe_jets)

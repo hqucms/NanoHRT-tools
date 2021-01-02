@@ -24,16 +24,22 @@ class QCDSampleProducer(HeavyFlavBaseProducer):
             return False
         probe_jets = event.fatjets[:2]
 
-        if self._opts['sfbdt_threshold'] > 0:
+        if self._opts['sfbdt_threshold'] > -99:
             self.selectSV(event)
-            if event.secondary_vertices < 2:
+            if len(event.secondary_vertices) < 2:
                 return False
-            self.matchSVToFatJets(event, probe_jets)
-            # require: 2 subjets, 50 < sdmass < 200, sfBDT > 0.5 (and >=1 SV matched to each subjet -- included in the sfBDT requirement)
-            probe_jets = [fj for fj in probe_jets
-                          if len(fj.subjets) == 2 and fj.msoftdrop > 50 and fj.msoftdrop < 200
-                          and fj.sfBDT > self._opts['sfbdt_threshold']]
-            if len(probe_jets) == 0:
+
+            for fj in probe_jets:
+                if not (len(fj.subjets) == 2 and fj.msoftdrop > 50 and fj.msoftdrop < 200):
+                    fj.is_qualified = False
+                    continue
+
+                self.matchSVToFatJets(event, [fj])
+                if fj.sfBDT < self._opts['sfbdt_threshold']:
+                    fj.is_qualified = False
+                    continue
+
+            if probe_jets[0].is_qualified is False and probe_jets[1].is_qualified is False:
                 return False
 
         self.loadGenHistory(event, probe_jets)

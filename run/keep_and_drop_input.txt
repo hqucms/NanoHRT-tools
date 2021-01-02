@@ -24,6 +24,8 @@ keep HLT_Ele32_WPTight_Gsf
 keep HLT_Ele32_WPTight_Gsf_L1DoubleEG
 keep HLT_Ele35_WPTight_Gsf
 keep HLT_PFMET*_PFMHT*_IDTight*
+keep HLT_Photon175
+keep HLT_Photon200
 keepmatch HLT_PFHT[0-9]+
 
 # L1/TrigObj

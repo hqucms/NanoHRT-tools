@@ -7,7 +7,7 @@ from .utils import sumP4, deltaR2
 
 
 def find_and_extract_tarball(name, destination, copy_txt_with_prefix=None):
-    search_pathes = [os.environ['CMSSW_BASE'] + '/src/PhysicsTools/NanoTrees/data/jme/',
+    search_pathes = [os.environ['CMSSW_BASE'] + '/src/PhysicsTools/NanoHRTTools/data/jme/',
                      os.environ['CMSSW_BASE'] + '/src/PhysicsTools/NanoAODTools/data/jme/']
     if copy_txt_with_prefix is not None:
         source_dir = search_pathes[0]  # copy extra txt files that are not in the tarball

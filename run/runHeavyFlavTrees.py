@@ -9,9 +9,9 @@ import logging
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
 
 hrt_cfgname = 'heavyFlavSFTree_cfg.json'
-default_config = {'sfbdt_threshold': -1,
-                  'run_tagger': True,
-                  'run_mass_regression': True,
+default_config = {'sfbdt_threshold': -99,
+                  'run_tagger': False,
+                  'run_mass_regression': False,
                   'jec': False, 'jes': None, 'jes_source': '', 'jes_uncertainty_file_prefix': '',
                   'jer': 'nominal', 'jmr': None, 'met_unclustered': None, 'smearMET': True, 'applyHEMUnc': False}
 
@@ -37,6 +37,10 @@ golden_json = {
 
 def _process(args):
     default_config['jetType'] = args.jet_type
+    if args.run_tagger:
+        default_config['run_tagger'] = True
+    if args.run_mass_regression:
+        default_config['run_mass_regression'] = True
 
     year = int(args.year)
     channel = args.channel
@@ -75,7 +79,10 @@ def _process(args):
     if args.run_data or not args.run_syst:
         cfg = copy.deepcopy(default_config)
         if args.run_data:
-            cfg['data'] = True
+            cfg['jes'] = None
+            cfg['jer'] = None
+            cfg['jmr'] = None
+            cfg['met_unclustered'] = None
         run(args, configs={hrt_cfgname: cfg})
         return
 
@@ -167,6 +174,16 @@ def main():
                         type=str,
                         default='samples',
                         help='Directory of the sample list files. Default: %(default)s'
+                        )
+
+    parser.add_argument('--run-tagger',
+                        action='store_true', default=False,
+                        help='Run tagger. Default: %(default)s'
+                        )
+
+    parser.add_argument('--run-mass-regression',
+                        action='store_true', default=False,
+                        help='Run mass regression. Default: %(default)s'
                         )
 
     args = parser.parse_args()
