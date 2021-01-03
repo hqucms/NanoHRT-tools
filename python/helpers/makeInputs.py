@@ -152,7 +152,7 @@ class ParticleNetTagInfoMaker(object):
         return self.data
 
     def init_file(self, inputFile, fetch_step=1000):
-        self._uproot_basketcache = uproot.cache.ThreadSafeArrayCache('500MB')
+        self._uproot_basketcache = uproot.cache.ThreadSafeArrayCache('200MB')
         self._uproot_keycache = uproot.cache.ThreadSafeArrayCache('10MB')
         self._uproot_tree = uproot.open(inputFile.GetName())['Events']
         self._uproot_fetch_step = fetch_step
