@@ -741,7 +741,7 @@ class HeavyFlavBaseProducer(Module, object):
                 self.out.fillBranch(prefix + "dr_W_daus",
                                     max([deltaR(fj, dau) for dau in fj.genW.daus]) if fj.genW else 99)
                 self.out.fillBranch(prefix + "W_pt", fj.genW.pt if fj.genW else -1)
-                self.out.fillBranch(prefix + "W_decay", abs(fj.genW.daus[0].pdgId) if fj.genW else 0)
+                self.out.fillBranch(prefix + "W_decay", max([abs(d.pdgId) for d in fj.genW.daus]) if fj.genW else 0)
 
                 # info of the closest hadGenTop
                 drwq1, drwq2 = [deltaR(fj, dau) for dau in fj.genT.genW.daus] if fj.genT else [99, 99]
