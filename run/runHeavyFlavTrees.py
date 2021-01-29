@@ -10,8 +10,8 @@ logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(m
 
 hrt_cfgname = 'heavyFlavSFTree_cfg.json'
 default_config = {'sfbdt_threshold': -99,
-                  'run_tagger': False,
-                  'run_mass_regression': False,
+                  'run_tagger': False, 'tagger_versions': ['V02b', 'V02c', 'V02d'],
+                  'run_mass_regression': False, 'mass_regression_versions': ['V01a', 'V01b', 'V01c'],
                   'jec': False, 'jes': None, 'jes_source': '', 'jes_uncertainty_file_prefix': '',
                   'jer': 'nominal', 'jmr': None, 'met_unclustered': None, 'smearMET': True, 'applyHEMUnc': False}
 
@@ -39,8 +39,14 @@ def _process(args):
     default_config['jetType'] = args.jet_type
     if args.run_tagger:
         default_config['run_tagger'] = True
+        if args.jet_type == 'ak8':
+            raise NotImplementedError('No training for ak8')
+        logging.info('Will run tagger version(s): %s' % ','.join(default_config['tagger_versions']))
     if args.run_mass_regression:
         default_config['run_mass_regression'] = True
+        if args.jet_type == 'ak8':
+            default_config['mass_regression_versions'] = ['ak8V01a', 'ak8V01b', 'ak8V01c']
+        logging.info('Will run mass regression version(s): %s' % ','.join(default_config['mass_regression_versions']))
 
     year = int(args.year)
     channel = args.channel
