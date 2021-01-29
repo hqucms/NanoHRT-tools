@@ -165,9 +165,11 @@ class ParticleNetTagInfoMaker(object):
             # needs to fetch next batch
             self._uproot_start = event_idx
             self._uproot_stop = self._uproot_start + self._uproot_fetch_step
-            table = self._uproot_tree.arrays(
-                ['AK15PuppiToPFCands_candIdx', 'AK15Puppi_nPFCand', 'AK15Puppi_pt',
-                 'AK15Puppi_eta', 'AK15Puppi_phi', 'AK15Puppi_mass', 'PFCands*', 'SV*'],
+            table = self._uproot_tree.arrays([
+                self.fatjet_branch + 'ToPFCands_candIdx', self.fatjet_branch + '_nPFCand',
+                self.fatjet_branch + '_pt', self.fatjet_branch + '_eta',
+                self.fatjet_branch + '_phi', self.fatjet_branch + '_mass',
+                'PFCands*', 'SV*'],
                 namedecode='utf-8', entrystart=self._uproot_start, entrystop=self._uproot_stop,
                 basketcache=self._uproot_basketcache, keycache=self._uproot_keycache,
             )
