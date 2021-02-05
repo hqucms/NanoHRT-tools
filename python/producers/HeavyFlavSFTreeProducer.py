@@ -1,6 +1,7 @@
 from .HeavyFlavPhotonSampleProducer import PhotonSampleProducer
 from .HeavyFlavQCDSampleProducer import QCDSampleProducer
 from .HeavyFlavMuonSampleProducer import MuonSampleProducer
+from .HeavyFlavDibosonSampleProducer import DibosonSampleProducer
 from .HeavyFlavInclusiveSampleProducer import InclusiveSampleProducer
 
 
@@ -16,6 +17,8 @@ def heavyFlavSFTreeFromConfig():
         return QCDSampleProducer(**cfg)
     elif channel == 'muon':
         return MuonSampleProducer(**cfg)
+    elif channel == 'diboson':
+        return DibosonSampleProducer(**cfg)
     elif channel == 'inclusive':
         return InclusiveSampleProducer(**cfg)
     else:
