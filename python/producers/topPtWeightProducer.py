@@ -1,10 +1,11 @@
 import ROOT
-import os
-import numpy as np
+import math
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
+
+from ..helpers.utils import clip
 
 
 class TopPtWeightProducer(Module):
@@ -33,16 +34,20 @@ class TopPtWeightProducer(Module):
         if not self.isMC:
             return True
 
-        genparts = Collection(event, "GenPart")
-        for idx, gp in enumerate(genparts):
-            if not hasattr(gp, 'dauIdx'):
-                gp.dauIdx = []
-            if gp.genPartIdxMother >= 0:
-                mom = genparts[gp.genPartIdxMother]
-                if not hasattr(mom, 'dauIdx'):
-                    mom.dauIdx = [idx]
-                else:
-                    mom.dauIdx.append(idx)
+        try:
+            genparts = event.genparts
+        except RuntimeError as e:
+            genparts = Collection(event, "GenPart")
+            for idx, gp in enumerate(genparts):
+                if 'dauIdx' not in gp.__dict__:
+                    gp.dauIdx = []
+                if gp.genPartIdxMother >= 0:
+                    mom = genparts[gp.genPartIdxMother]
+                    if 'dauIdx' not in mom.__dict__:
+                        mom.dauIdx = [idx]
+                    else:
+                        mom.dauIdx.append(idx)
+            event.genparts = genparts
 
         genTops = []
         for gp in genparts:
@@ -55,12 +60,17 @@ class TopPtWeightProducer(Module):
         topptWeight = 1.
 
         if len(genTops) == 2:
-
             # ttbar (+X ?)
-            def wgt(pt):
-                return np.exp(0.0615 - 0.0005 * np.clip(pt, 0, 800))
 
-            topptWeight = np.sqrt(wgt(genTops[0].pt) * wgt(genTops[1].pt))
+            def wgt(pt):
+                return math.exp(0.0615 - 0.0005 * clip(pt, 0, 800))
+
+            def wgt_nnlo(pt):
+                x = clip(pt, 0, 2000)
+                return 0.103 * math.exp(-0.0118 * x) - 0.000134 * x + 0.973
+
+            # topptWeight = np.sqrt(wgt(genTops[0].pt) * wgt(genTops[1].pt))
+            topptWeight = math.sqrt(wgt_nnlo(genTops[0].pt) * wgt_nnlo(genTops[1].pt))
 
         self.out.fillBranch('topptWeight', topptWeight)
         # accumulation hists

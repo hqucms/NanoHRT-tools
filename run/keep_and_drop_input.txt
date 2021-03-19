@@ -14,7 +14,7 @@ dropmatch n?IsoTrack_.+
 dropmatch n?btagWeight_.+
 
 # HLT
-drop HLT_*
+drop HLT*
 keep HLT_Iso*Mu24
 keep HLT_IsoMu27
 keep HLT_*Mu50
@@ -24,6 +24,8 @@ keep HLT_Ele32_WPTight_Gsf
 keep HLT_Ele32_WPTight_Gsf_L1DoubleEG
 keep HLT_Ele35_WPTight_Gsf
 keep HLT_PFMET*_PFMHT*_IDTight*
+keep HLT_Photon175
+keep HLT_Photon200
 keepmatch HLT_PFHT[0-9]+
 
 # L1/TrigObj
@@ -38,3 +40,7 @@ dropmatch n?Generator_.+
 dropmatch n?LHEReweightingWeight
 dropmatch n?HTXS_.+
 dropmatch n?GenIsolatedPhoton_.+
+dropmatch n?PuppiMET_.+
+dropmatch n?CaloMET_.+
+dropmatch n?ChsMET_.+
+dropmatch n?RawPuppiMET_.+
