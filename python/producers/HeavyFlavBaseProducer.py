@@ -560,7 +560,7 @@ class HeavyFlavBaseProducer(Module, object):
             event.Flag_BadPFMuonFilter
         )
         if self.year in (2017, 2018):
-            met_filters = met_filters and event.Flag_ecalBadCalibFilterV2
+            met_filters = met_filters and event.Flag_ecalBadCalibFilter
         if not self.isMC:
             met_filters = met_filters and event.Flag_eeBadScFilter
         self.out.fillBranch("passmetfilters", met_filters)
@@ -668,12 +668,12 @@ class HeavyFlavBaseProducer(Module, object):
 
             # ParticleNet
             try:
-                self.out.fillBranch(prefix + "ParticleNet_TvsQCD",
-                                    convert_prob(fj, ['Tbcq', 'Tbqq'], prefix='ParticleNet_prob'))
-                self.out.fillBranch(prefix + "ParticleNet_WvsQCD",
-                                    convert_prob(fj, ['Wcq', 'Wqq'], prefix='ParticleNet_prob'))
-                self.out.fillBranch(prefix + "ParticleNet_ZvsQCD",
-                                    convert_prob(fj, ['Zbb', 'Zcc', 'Zqq'], prefix='ParticleNet_prob'))
+                self.out.fillBranch(prefix + "ParticleNet_TvsQCD", fj.particleNet_TvsQCD)
+                                   #convert_prob(fj, ['Tbcq', 'Tbqq'], prefix='ParticleNet_prob'))
+                self.out.fillBranch(prefix + "ParticleNet_WvsQCD", fj.particleNet_WvsQCD)
+                                   #convert_prob(fj, ['Wcq', 'Wqq'], prefix='ParticleNet_prob'))
+                self.out.fillBranch(prefix + "ParticleNet_ZvsQCD", fj.particleNet_ZvsQCD)
+                                   #convert_prob(fj, ['Zbb', 'Zcc', 'Zqq'], prefix='ParticleNet_prob'))
             except RuntimeError:
                 # if no nominal ParticleNet
                 self.out.fillBranch(prefix + "ParticleNet_TvsQCD", -1)
@@ -681,13 +681,25 @@ class HeavyFlavBaseProducer(Module, object):
                 self.out.fillBranch(prefix + "ParticleNet_ZvsQCD", -1)
 
             # ParticleNet-MD
-            self.out.fillBranch(prefix + "ParticleNetMD_Xbb", fj.pn_Xbb)
-            self.out.fillBranch(prefix + "ParticleNetMD_Xcc", fj.pn_Xcc)
-            self.out.fillBranch(prefix + "ParticleNetMD_Xqq", fj.pn_Xqq)
-            self.out.fillBranch(prefix + "ParticleNetMD_QCD", fj.pn_QCD)
-            self.out.fillBranch(prefix + "ParticleNetMD_XbbVsQCD", fj.pn_XbbVsQCD)
-            self.out.fillBranch(prefix + "ParticleNetMD_XccVsQCD", fj.pn_XccVsQCD)
-            self.out.fillBranch(prefix + "ParticleNetMD_XccOrXqqVsQCD", fj.pn_XccOrXqqVsQCD)
+            self.out.fillBranch(prefix + "ParticleNetMD_Xbb", fj.particleNetMD_Xbb)
+            self.out.fillBranch(prefix + "ParticleNetMD_Xcc", fj.particleNetMD_Xcc)
+            self.out.fillBranch(prefix + "ParticleNetMD_Xqq", fj.particleNetMD_Xqq)
+            self.out.fillBranch(prefix + "ParticleNetMD_QCD", fj.particleNetMD_QCD)
+            try:
+                XbbVsQCD = (fj.particleNetMD_Xbb) / (fj.particleNetMD_Xbb + fj.particleNetMD_QCD)
+            except ZeroDivisionError:
+                XbbVsQCD = -10.
+            self.out.fillBranch(prefix + "ParticleNetMD_XbbVsQCD", XbbVsQCD)
+            try:
+                XccVsQCD = (fj.particleNetMD_Xcc) / (fj.particleNetMD_Xcc + fj.particleNetMD_QCD)
+            except ZeroDivisionError:
+                XccVsQCD = -10.
+            self.out.fillBranch(prefix + "ParticleNetMD_XccVsQCD", XccVsQCD)
+            try:
+                XccOrXqqVsQCD = (fj.particleNetMD_Xcc + fj.particleNetMD_Xqq) / (fj.particleNetMD_Xcc + fj.particleNetMD_Xqq + fj.particleNetMD_QCD)
+            except ZeroDivisionError:
+                XccOrXqqVsQCD = -10.
+            self.out.fillBranch(prefix + "ParticleNetMD_XccOrXqqVsQCD", XccOrXqqVsQCD)
 
             if self._opts['run_tagger']:
                 bkgs = ['QCD'] if self.isParticleNetV01 else None
