@@ -58,7 +58,7 @@ class MuonSampleProducer(HeavyFlavBaseProducer):
 
         probe_jets = probe_jets[:1]
         self.loadGenHistory(event, probe_jets)
-        self.evalTagger(event, probe_jets)
+        #self.evalTagger(event, probe_jets)
         self.evalMassRegression(event, probe_jets)
 
         # fill output branches
