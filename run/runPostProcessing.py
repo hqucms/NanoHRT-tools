@@ -174,10 +174,10 @@ def parse_sample_xsec(cfgfile):
                 logging.error('Cannot find cross section:\n%s' % l)
             else:
                 if samp in xsec_dict and xsec_dict[samp] != xsec:
-                    raise RuntimeError('Inconsistent entries for sample %s' % samp)
+                     raise RuntimeError('Inconsistent entries for sample %s' % samp)
                 xsec_dict[samp] = xsec
-                if 'PSweights_' in samp:
-                    xsec_dict[samp.replace('PSweights_', '')] = xsec
+                #if 'PSweights_' in samp:
+                #     xsec_dict[samp.replace('PSweights_', '')] = xsec
     return xsec_dict
 
 
