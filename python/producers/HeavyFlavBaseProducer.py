@@ -92,7 +92,7 @@ class HeavyFlavBaseProducer(Module, object):
         else:
             raise RuntimeError('Jet type %s is not recognized!' % self.jetType)
 
-        self._fill_sv = self._channel in ('qcd', 'photon', 'inclusive')
+        self._fill_sv = self._channel in ('qcd', 'photon', 'inclusive') and self._opts['sfbdt_threshold'] > -99
 
         if self._needsJMECorr:
             self.jetmetCorr = JetMETCorrector(year=self.year, jetType="AK4PFchs", **self._jmeSysts)
