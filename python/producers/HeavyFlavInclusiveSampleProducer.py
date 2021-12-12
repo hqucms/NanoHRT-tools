@@ -64,11 +64,11 @@ class InclusiveSampleProducer(HeavyFlavBaseProducer):
         for j in event._allJets:
             if not (j.pt > 20.0 and abs(j.eta) < 2.4 and (j.jetId & 2)):
                 continue
-            if j.btagDeepB > self.DeepCSV_WP_L:
+            if j.btagDeepFlavB > self.DeepJet_WP_L:
                 event.bljets.append(j)
-            if j.btagDeepB > self.DeepCSV_WP_M:
+            if j.btagDeepFlavB > self.DeepJet_WP_M:
                 event.bmjets.append(j)
-            if j.btagDeepB > self.DeepCSV_WP_T:
+            if j.btagDeepFlavB > self.DeepJet_WP_T:
                 event.btjets.append(j)
 
         # count bjets away from fatjet

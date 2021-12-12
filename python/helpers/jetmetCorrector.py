@@ -105,13 +105,11 @@ class JetMETCorrector(object):
         self.smearMET = smearMET
         self.applyHEMUnc = applyHEMUnc
 
-        if self.year == 2017:
-            self.excludeJetsForMET = lambda jet: jet.rawP4.pt() < 50 and abs(jet.eta) > 2.65 and abs(jet.eta) < 3.139
-        else:
-            self.excludeJetsForMET = None
+        self.excludeJetsForMET = None
 
         # set up tags for each year
         if self.year == 2016:
+            # TODO
             self.globalTag = 'Summer16_07Aug2017_V11_MC'
             self.jerTag = 'Summer16_25nsV1_MC'
             self.dataTags = (
@@ -123,28 +121,29 @@ class JetMETCorrector(object):
                 (278820, 'Summer16_07Aug2017GH_V11_DATA'),
             )
         elif self.year == 2017:
-            self.globalTag = 'Fall17_17Nov2017_V32_MC'
-            self.jerTag = 'Fall17_V3_MC'
+            self.globalTag = 'Summer19UL17_V6_MC'
+            self.jerTag = 'Summer19UL17_JRV2_MC'
             self.dataTags = (
                 # set the name of the tarball with a dummy run number
-                (0, 'Fall17_17Nov2017_V32_DATA'),
+                (0, 'Summer19UL17_V6_DATA'),
                 # (start run number (inclusive), 'tag name')
-                (297020, 'Fall17_17Nov2017B_V32_DATA'),
-                (299337, 'Fall17_17Nov2017C_V32_DATA'),
-                (302030, 'Fall17_17Nov2017DE_V32_DATA'),
-                (304911, 'Fall17_17Nov2017F_V32_DATA'),
+                (297020, 'Summer19UL17_RunB_V6_DATA'),
+                (299337, 'Summer19UL17_RunC_V6_DATA'),
+                (302030, 'Summer19UL17_RunD_V6_DATA'),
+                (303435, 'Summer19UL17_RunE_V6_DATA'),
+                (304911, 'Summer19UL17_RunF_V6_DATA'),
             )
         elif self.year == 2018:
-            self.globalTag = 'Autumn18_V19_MC'
-            self.jerTag = 'Autumn18_V7b_MC'
+            self.globalTag = 'Summer19UL18_V5_MC'
+            self.jerTag = 'Summer19UL18_JRV2_MC'
             self.dataTags = (
                 # set the name of the tarball with a dummy run number
-                (0, 'Autumn18_V19_DATA'),
+                (0, 'Summer19UL18_V5_DATA'),
                 # (start run number (inclusive), 'tag name')
-                (315252, 'Autumn18_RunA_V19_DATA'),
-                (316998, 'Autumn18_RunB_V19_DATA'),
-                (319313, 'Autumn18_RunC_V19_DATA'),
-                (320394, 'Autumn18_RunD_V19_DATA'),
+                (315252, 'Summer19UL18_RunA_V5_DATA'),
+                (316998, 'Summer19UL18_RunB_V5_DATA'),
+                (319313, 'Summer19UL18_RunC_V5_DATA'),
+                (320394, 'Summer19UL18_RunD_V5_DATA'),
             )
         else:
             raise RuntimeError('Invalid year: %s' % (str(self.year)))

@@ -7,6 +7,7 @@ drop Jet_*EF
 keep Jet_*EmEF
 
 # objects
+dropmatch n?boostedTau_.+
 dropmatch n?Tau_.+
 dropmatch n?SoftActivity.+
 dropmatch n?FsrPhoton_.+

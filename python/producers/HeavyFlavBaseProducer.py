@@ -16,7 +16,7 @@ import logging
 logger = logging.getLogger('nano')
 configLogger('nano', loglevel=logging.INFO)
 
-lumi_dict = {2016: 35.92, 2017: 41.53, 2018: 59.74}
+lumi_dict = {2015: 19.52, 2016: 16.81, 2017: 41.48, 2018: 59.83}
 
 
 class _NullObject:
@@ -117,20 +117,21 @@ class HeavyFlavBaseProducer(Module, object):
                     version=ver, cache_suffix='mass') for ver in self._opts['mass_regression_versions']]
 
         # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation
-        self.DeepCSV_WP_L = {2016: 0.2217, 2017: 0.1522, 2018: 0.1241}[self.year]
-        self.DeepCSV_WP_M = {2016: 0.6321, 2017: 0.4941, 2018: 0.4184}[self.year]
-        self.DeepCSV_WP_T = {2016: 0.8953, 2017: 0.8001, 2018: 0.7527}[self.year]
+        self.DeepJet_WP_L = {2015: 0.0508, 2016: 0.0480, 2017: 0.0532, 2018: 0.0490}[self.year]
+        self.DeepJet_WP_M = {2015: 0.2598, 2016: 0.2489, 2017: 0.3040, 2018: 0.2783}[self.year]
+        self.DeepJet_WP_T = {2015: 0.6502, 2016: 0.6377, 2017: 0.7476, 2018: 0.7100}[self.year]
 
     def beginJob(self):
         if self._needsJMECorr:
             self.jetmetCorr.beginJob()
             self.fatjetCorr.beginJob()
             self.subjetCorr.beginJob()
-        self.xgb = XGBEnsemble(self._sfbdt_files, self._sfbdt_vars)
+        if self._opts['sfbdt_threshold'] > -99:
+            self.xgb = XGBEnsemble(self._sfbdt_files, self._sfbdt_vars)
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.isMC = bool(inputTree.GetBranch('genWeight'))
-        self.isParticleNetV01 = bool(inputTree.GetBranch(self._fj_name + '_ParticleNetMD_probQCD'))
+        self.hasParticleNetProb = bool(inputTree.GetBranch(self._fj_name + '_ParticleNetMD_probXbb'))
 
         # remove all possible h5 cache files
         for f in os.listdir('.'):
@@ -338,7 +339,7 @@ class HeavyFlavBaseProducer(Module, object):
         # correct Jets and MET
         event.idx = event._entry if event._tree._entrylist is None else event._tree._entrylist.GetEntry(event._entry)
         event._allJets = Collection(event, "Jet")
-        event.met = METObject(event, "METFixEE2017") if self.year == 2017 else METObject(event, "MET")
+        event.met = METObject(event, "MET")
         event._allFatJets = Collection(event, self._fj_name)
         event.subjets = Collection(event, self._sj_name)  # do not sort subjets after updating!!
 
@@ -529,11 +530,16 @@ class HeavyFlavBaseProducer(Module, object):
                 j.pn_Xqq = outputs['probXqq']
                 j.pn_QCD = convert_prob(outputs, None, prefix='prob')
             else:
-                j.pn_Xbb = j.ParticleNetMD_probXbb
-                j.pn_Xcc = j.ParticleNetMD_probXcc
-                j.pn_Xqq = j.ParticleNetMD_probXqq
-                j.pn_QCD = j.ParticleNetMD_probQCD if self.isParticleNetV01 else convert_prob(
-                    j, None, prefix='ParticleNetMD_prob')
+                if self.hasParticleNetProb:
+                    j.pn_Xbb = j.ParticleNetMD_probXbb
+                    j.pn_Xcc = j.ParticleNetMD_probXcc
+                    j.pn_Xqq = j.ParticleNetMD_probXqq
+                    j.pn_QCD = convert_prob(j, None, prefix='ParticleNetMD_prob')
+                else:
+                    j.pn_Xbb = j.particleNetMD_Xbb
+                    j.pn_Xcc = j.particleNetMD_Xcc
+                    j.pn_Xqq = j.particleNetMD_Xqq
+                    j.pn_QCD = j.particleNetMD_QCD
             j.pn_XbbVsQCD = convert_prob(j, ['Xbb'], ['QCD'], prefix='pn_')
             j.pn_XccVsQCD = convert_prob(j, ['Xcc'], ['QCD'], prefix='pn_')
             j.pn_XccOrXqqVsQCD = convert_prob(j, ['Xcc', 'Xqq'], ['QCD'], prefix='pn_')
@@ -544,7 +550,10 @@ class HeavyFlavBaseProducer(Module, object):
                 outputs = [p.predict_with_cache(self.tagInfoMaker, event.idx, j.idx, j) for p in self.pnMassRegressions]
                 j.regressed_mass = ensemble(outputs, np.median)['mass']
             else:
-                j.regressed_mass = 0
+                try:
+                    j.regressed_mass = j.particleNet_mass
+                except RuntimeError:
+                    j.regressed_mass = 0
 
     def fillBaseEventInfo(self, event):
         self.out.fillBranch("jetR", self._jetConeSize)
@@ -557,16 +566,16 @@ class HeavyFlavBaseProducer(Module, object):
             event.Flag_HBHENoiseFilter and
             event.Flag_HBHENoiseIsoFilter and
             event.Flag_EcalDeadCellTriggerPrimitiveFilter and
-            event.Flag_BadPFMuonFilter
+            event.Flag_BadPFMuonFilter and
+            event.Flag_BadPFMuonDzFilter and
+            event.Flag_eeBadScFilter
         )
         if self.year in (2017, 2018):
-            met_filters = met_filters and event.Flag_ecalBadCalibFilterV2
-        if not self.isMC:
-            met_filters = met_filters and event.Flag_eeBadScFilter
+            met_filters = met_filters and event.Flag_ecalBadCalibFilter
         self.out.fillBranch("passmetfilters", met_filters)
 
         # L1 prefire weights
-        if self.year == 2016 or self.year == 2017:
+        if self.year <= 2017:
             self.out.fillBranch("l1PreFiringWeight", event.L1PreFiringWeight_Nom)
             self.out.fillBranch("l1PreFiringWeightUp", event.L1PreFiringWeight_Up)
             self.out.fillBranch("l1PreFiringWeightDown", event.L1PreFiringWeight_Dn)
@@ -667,18 +676,24 @@ class HeavyFlavBaseProducer(Module, object):
                 self.out.fillBranch(prefix + "DeepAK8_ZHbbvsQCD", -1)
 
             # ParticleNet
-            try:
+            if self.hasParticleNetProb:
                 self.out.fillBranch(prefix + "ParticleNet_TvsQCD",
                                     convert_prob(fj, ['Tbcq', 'Tbqq'], prefix='ParticleNet_prob'))
                 self.out.fillBranch(prefix + "ParticleNet_WvsQCD",
                                     convert_prob(fj, ['Wcq', 'Wqq'], prefix='ParticleNet_prob'))
                 self.out.fillBranch(prefix + "ParticleNet_ZvsQCD",
                                     convert_prob(fj, ['Zbb', 'Zcc', 'Zqq'], prefix='ParticleNet_prob'))
-            except RuntimeError:
-                # if no nominal ParticleNet
-                self.out.fillBranch(prefix + "ParticleNet_TvsQCD", -1)
-                self.out.fillBranch(prefix + "ParticleNet_WvsQCD", -1)
-                self.out.fillBranch(prefix + "ParticleNet_ZvsQCD", -1)
+            else:
+                try:
+                    # nominal ParticleNet from official NanoAOD
+                    self.out.fillBranch(prefix + "ParticleNet_TvsQCD", fj.particleNet_TvsQCD)
+                    self.out.fillBranch(prefix + "ParticleNet_WvsQCD", fj.particleNet_WvsQCD)
+                    self.out.fillBranch(prefix + "ParticleNet_ZvsQCD", fj.particleNet_ZvsQCD)
+                except RuntimeError:
+                    # if no nominal ParticleNet
+                    self.out.fillBranch(prefix + "ParticleNet_TvsQCD", -1)
+                    self.out.fillBranch(prefix + "ParticleNet_WvsQCD", -1)
+                    self.out.fillBranch(prefix + "ParticleNet_ZvsQCD", -1)
 
             # ParticleNet-MD
             self.out.fillBranch(prefix + "ParticleNetMD_Xbb", fj.pn_Xbb)
@@ -690,11 +705,10 @@ class HeavyFlavBaseProducer(Module, object):
             self.out.fillBranch(prefix + "ParticleNetMD_XccOrXqqVsQCD", fj.pn_XccOrXqqVsQCD)
 
             if self._opts['run_tagger']:
-                bkgs = ['QCD'] if self.isParticleNetV01 else None
                 self.out.fillBranch(prefix + "origParticleNetMD_XccVsQCD",
-                                    convert_prob(fj, ['Xcc'], bkgs, prefix='ParticleNetMD_prob'))
+                                    convert_prob(fj, ['Xcc'], None, prefix='ParticleNetMD_prob'))
                 self.out.fillBranch(prefix + "origParticleNetMD_XbbVsQCD",
-                                    convert_prob(fj, ['Xbb'], bkgs, prefix='ParticleNetMD_prob'))
+                                    convert_prob(fj, ['Xbb'], None, prefix='ParticleNetMD_prob'))
 
             # matching variables
             if self.isMC:

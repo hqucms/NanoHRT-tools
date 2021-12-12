@@ -1,5 +1,5 @@
 singlemu:
-- [/SingleMuon/Run2018A-Nano1June2019-v1/NANOAOD,
-/SingleMuon/Run2018B-Nano1June2019-v1/NANOAOD,
-/SingleMuon/Run2018C-Nano1June2019-v1/NANOAOD,
-/SingleMuon/Run2018D-Nano1June2019-v1/NANOAOD]
+- [/SingleMuon/Run2018A-UL2018_MiniAODv2_NanoAODv9-v2/NANOAOD,
+   /SingleMuon/Run2018B-UL2018_MiniAODv2_NanoAODv9-v2/NANOAOD,
+   /SingleMuon/Run2018C-UL2018_MiniAODv2_NanoAODv9-v2/NANOAOD,
+   /SingleMuon/Run2018D-UL2018_MiniAODv2_NanoAODv9-v1/NANOAOD]

@@ -13,7 +13,7 @@ default_config = {'sfbdt_threshold': -99,
                   'run_tagger': False, 'tagger_versions': ['V02b', 'V02c', 'V02d'],
                   'run_mass_regression': False, 'mass_regression_versions': ['V01a', 'V01b', 'V01c'],
                   'jec': False, 'jes': None, 'jes_source': '', 'jes_uncertainty_file_prefix': '',
-                  'jer': 'nominal', 'jmr': None, 'met_unclustered': None, 'smearMET': True, 'applyHEMUnc': False}
+                  'jer': 'nominal', 'jmr': None, 'met_unclustered': None, 'smearMET': False, 'applyHEMUnc': False}
 
 cut_dict_ak8 = {
     'photon': 'Sum$(Photon_pt>200 && Photon_cutBased>=2 && Photon_electronVeto)>0 && nFatJet>0',
@@ -33,9 +33,10 @@ cut_dict_ak15 = {
 }
 
 golden_json = {
-    2016: 'Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt',
-    2017: 'Cert_294927-306462_13TeV_EOY2017ReReco_Collisions17_JSON_v1.txt',
-    2018: 'Cert_314472-325175_13TeV_17SeptEarlyReReco2018ABC_PromptEraD_Collisions18_JSON.txt',
+    2015: 'Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt',
+    2016: 'Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt',
+    2017: 'Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt',
+    2018: 'Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt',
 }
 
 
@@ -82,7 +83,7 @@ def _process(args):
     args.imports = [('PhysicsTools.NanoHRTTools.producers.HeavyFlavSFTreeProducer', 'heavyFlavSFTreeFromConfig')]
     if not args.run_data:
         args.imports.extend([('PhysicsTools.NanoAODTools.postprocessing.modules.common.puWeightProducer',
-                              'puAutoWeight_2017' if year == 2017 else 'puWeight_%d' % year),
+                              'puWeight_UL2016' if year == 2015 else 'puWeight_UL%d' % year),
                              ('PhysicsTools.NanoHRTTools.producers.topPtWeightProducer', 'topPtWeight')])
 
     # data, or just nominal MC
@@ -177,7 +178,7 @@ def main():
     parser.add_argument('--year',
                         type=str,
                         required=True,
-                        help='Year: 2016, 2017, 2018, or comma separated list e.g., `2016,2017,2018`'
+                        help='Year: 2015 (2016 preVFP), 2016 (2016 postVFP), 2017, 2018, or comma separated list e.g., `2016,2017,2018`'
                         )
 
     parser.add_argument('--sample-dir',
@@ -212,11 +213,12 @@ def main():
                 if cat == 'data':
                     opts.run_data = True
                     opts.nfiles_per_job *= 2
-                opts.inputdir = opts.inputdir.rstrip('/').replace('_YEAR_', year)
-                assert(year in opts.inputdir)
-                if opts.inputdir.rsplit('/', 1)[1] not in ['data', 'mc']:
-                    opts.inputdir = os.path.join(opts.inputdir, cat)
-                assert(opts.inputdir.endswith(cat))
+                if opts.inputdir:
+                    opts.inputdir = opts.inputdir.rstrip('/').replace('_YEAR_', year)
+                    assert(year in opts.inputdir)
+                    if opts.inputdir.rsplit('/', 1)[1] not in ['data', 'mc']:
+                        opts.inputdir = os.path.join(opts.inputdir, cat)
+                    assert(opts.inputdir.endswith(cat))
                 opts.year = year
                 opts.channel = chn
                 logging.info('inputdir=%s, year=%s, channel=%s, cat=%s, syst=%s', opts.inputdir, opts.year,
