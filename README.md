@@ -105,3 +105,15 @@ Top quark is treated a bit differently:
  - W(cx)-matched:
    - `((fj_1_T_Wq_max_pdgId==0 && fj_1_dr_W_daus<jetR && fj_1_W_decay==4) || (fj_1_T_Wq_max_pdgId!=0 && fj_1_dr_T_b>=jetR && fj_1_dr_T_Wq_max<jetR && (abs(fj_1_T_Wq_max_pdgId)==4 || abs(fj_1_T_Wq_min_pdgId)==4)))`
 
+### Checklist when updating to new data-taking years / production campaigns
+
+- [ ] triggers
+- [ ] lumi values
+- [ ] golden JSON
+- [ ] PU rewgt
+- [ ] lepton ID/ISO
+- [ ] b-tag WP
+- [ ] JEC/JER
+- [ ] MET filters
+- [ ] MET recipes (if any)
+- [ ] samples (check also those in PRODUCTION status)

@@ -1,8 +1,7 @@
+# This is UL2016 postVFP / no_HIPM
 singlemu:
-- [/SingleMuon/Run2016B_ver2-Nano1June2019_ver2-v1/NANOAOD,
-/SingleMuon/Run2016C-Nano1June2019-v1/NANOAOD,
-/SingleMuon/Run2016D-Nano1June2019-v1/NANOAOD,
-/SingleMuon/Run2016E-Nano1June2019-v1/NANOAOD,
-/SingleMuon/Run2016F-Nano1June2019-v1/NANOAOD,
-/SingleMuon/Run2016G-Nano1June2019-v1/NANOAOD,
-/SingleMuon/Run2016H-Nano1June2019-v1/NANOAOD]
+  - [
+      /SingleMuon/Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD,
+      /SingleMuon/Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD,
+      /SingleMuon/Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD,
+    ]

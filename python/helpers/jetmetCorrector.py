@@ -108,17 +108,26 @@ class JetMETCorrector(object):
         self.excludeJetsForMET = None
 
         # set up tags for each year
-        if self.year == 2016:
-            # TODO
-            self.globalTag = 'Summer16_07Aug2017_V11_MC'
-            self.jerTag = 'Summer16_25nsV1_MC'
+        if self.year == 2015:
+            # hack, actually UL2016 preVFP (APV)
+            self.globalTag = 'Summer19UL16APV_V7_MC'
+            self.jerTag = 'Summer20UL16APV_JRV3_MC'
             self.dataTags = (
                 # set the name of the tarball with a dummy run number
-                (0, 'Summer16_07Aug2017_V11_DATA'),
+                (0, 'Summer19UL16APV_V7_DATA'),
                 # (start run number (inclusive), 'tag name')
-                (272007, 'Summer16_07Aug2017BCD_V11_DATA'),
-                (276831, 'Summer16_07Aug2017EF_V11_DATA'),
-                (278820, 'Summer16_07Aug2017GH_V11_DATA'),
+                (272007, 'Summer19UL16APV_RunBCD_V7_DATA'),
+                (276831, 'Summer19UL16APV_RunEF'),
+            )
+        if self.year == 2016:
+            # hack, actually UL2016 postVFP
+            self.globalTag = 'Summer19UL16_V7_MC'
+            self.jerTag = 'Summer20UL16_JRV3_MC'
+            self.dataTags = (
+                # set the name of the tarball with a dummy run number
+                (0, 'Summer19UL16_V7_DATA'),
+                # (start run number (inclusive), 'tag name')
+                (277772, 'Summer19UL16_RunFGH_V7_DATA'),
             )
         elif self.year == 2017:
             self.globalTag = 'Summer19UL17_V6_MC'
