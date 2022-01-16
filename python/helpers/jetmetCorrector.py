@@ -117,9 +117,9 @@ class JetMETCorrector(object):
                 (0, 'Summer19UL16APV_V7_DATA'),
                 # (start run number (inclusive), 'tag name')
                 (272007, 'Summer19UL16APV_RunBCD_V7_DATA'),
-                (276831, 'Summer19UL16APV_RunEF'),
+                (276831, 'Summer19UL16APV_RunEF_V7_DATA'),
             )
-        if self.year == 2016:
+        elif self.year == 2016:
             # hack, actually UL2016 postVFP
             self.globalTag = 'Summer19UL16_V7_MC'
             self.jerTag = 'Summer20UL16_JRV3_MC'
