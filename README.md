@@ -10,10 +10,28 @@ cmsenv
 git clone https://github.com/cms-nanoAOD/nanoAOD-tools.git PhysicsTools/NanoAODTools
 ```
 
+The following fix is needed on NanoAODTools:
+
+```diff
+diff --git a/python/postprocessing/framework/postprocessor.py b/python/postprocessing/framework/postprocessor.py
+index 1c75036..78f2872 100755
+--- a/python/postprocessing/framework/postprocessor.py
++++ b/python/postprocessing/framework/postprocessor.py
+@@ -63,7 +63,7 @@ class PostProcessor:
+         tmpdir = os.environ['TMPDIR'] if 'TMPDIR' in os.environ else "/tmp"
+         if not fname.startswith("root://"):
+             return fname, False
+-        rndchars = "".join([hex(ord(i))[2:] for i in os.urandom(
++        rndchars = "".join([hex(i)[2:] for i in os.urandom(
+             8)]) if not self.longTermCache else "long_cache-id%d-%s" \
+             % (os.getuid(), hashlib.sha1(fname).hexdigest())
+         localfile = "%s/%s-%s.root" \
+```
+
 ### Get customized NanoAOD tools for HeavyResTagging (NanoHRT-tools)
 
 ```bash
-git clone https://github.com/hqucms/NanoHRT-tools.git PhysicsTools/NanoHRTTools -b dev/UL
+git clone https://github.com/hqucms/NanoHRT-tools.git PhysicsTools/NanoHRTTools -b dev/ResTop
 ```
 
 ### Compile
@@ -32,14 +50,13 @@ Instructions to run the nanoAOD postprocessor can be found at [nanoAOD-tools](ht
 cd PhysicsTools/NanoHRTTools/run
 ```
 
-##### Make trees for MC performance study:
+##### Make trees for resolved top tagger training:
 
 ```bash
-python runPostProcessing.py [-i /path/of/input] -o /path/to/output -d datasets.yaml --friend 
--I PhysicsTools.NanoHRTTools.producers.hrtMCTreeProducer hrtMCTree -n 1
+python runPostProcessing.py -o output -d resTop_samples/resTop_2018_MC.yaml --friend -I PhysicsTools.NanoHRTTools.producers.resTopTreeProducer resTopTree -n 1 --prefetch
 ```
 
-To merge the trees, run the same command but add `--post -w ''` (i.e., set `-w` to an empty string (`''`) -- we do not add the cross sections, but simply reweight signals to match the QCD spectrum afterwards).
+To merge the trees, run the same command but add `--post -w ''` (i.e., set `-w` to an empty string (`''`) -- we do not add the cross sections).
 
 
 ##### Make trees for heavy flavour tagging (bb/cc) or top/W data/MC comparison and scale factor measurement:
