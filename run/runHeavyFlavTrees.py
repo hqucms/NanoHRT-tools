@@ -60,8 +60,7 @@ def _process(args):
     if channel in ('qcd', 'photon'):
         default_config['sfbdt_threshold'] = args.sfbdt
 
-    if year in (2017, 2018):
-        args.weight_file = 'samples/xsec_2017.conf'
+    args.weight_file = 'samples/xsec_2017.conf'
 
     basename = os.path.basename(args.outputdir) + '_' + args.jet_type + '_' + channel + '_' + str(year)
     args.outputdir = os.path.join(os.path.dirname(args.outputdir), basename, 'data' if args.run_data else 'mc')
