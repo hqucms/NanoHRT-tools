@@ -513,8 +513,15 @@ def run_add_weight(args):
         return
     if not os.path.exists(parts_dir):
         os.makedirs(parts_dir)
+    if args.use_tmpdir:
+        tmpdir = os.environ.get('TMPDIR', os.path.expandvars('/tmp/$USER'))
+        tmp_parts_dir = os.path.join(tmpdir, os.path.basename(args.outputdir), 'parts')
+        logging.info('Using tmpdir %s for merging.' % tmp_parts_dir)
+        if not os.path.exists(tmp_parts_dir):
+            os.makedirs(tmp_parts_dir)
+
     for samp in md['samples']:
-        outfile = '{parts_dir}/{samp}_tree.root'.format(parts_dir=parts_dir, samp=samp)
+        outfile = '{parts_dir}/{samp}_tree.root'.format(parts_dir=tmp_parts_dir if args.use_tmpdir else parts_dir, samp=samp)
         cmd = 'haddnano.py {outfile} {outputdir}/pieces/{samp}_*_tree.root'.format(outfile=outfile, outputdir=args.outputdir, samp=samp)
         logging.debug('...' + cmd)
         p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -538,6 +545,10 @@ def run_add_weight(args):
                     logging.info('Not adding weight to sample %s' % samp)
                 else:
                     raise e
+
+        if args.use_tmpdir:
+            shutil.copy(outfile, parts_dir)
+            os.remove(outfile)
     with open(status_file, 'w'):
         pass
 
@@ -554,6 +565,13 @@ def run_merge(args):
     merge_dict = {}  # outname: expected files
     merge_dict_found = {}  # outname: [infile list]
     outtree_to_samples, _ = load_dataset_file(args.datasets)
+
+    if args.use_tmpdir:
+        tmpdir = os.environ.get('TMPDIR', os.path.expandvars('/tmp/$USER'))
+        tmp_outputdir = os.path.join(tmpdir, os.path.basename(args.outputdir))
+        logging.info('Using tmpdir %s for merging.' % tmp_outputdir)
+        if not os.path.exists(tmp_outputdir):
+            os.makedirs(tmp_outputdir)
 
     for outtree_name in outtree_to_samples:
         outname = '%s_tree.root' % outtree_name
@@ -575,7 +593,8 @@ def run_merge(args):
         if len(merge_dict_found[outname]) == 1:
             os.rename(list(merge_dict_found[outname])[0], os.path.join(args.outputdir, outname))
         else:
-            cmd = 'haddnano.py {outfile} {infiles}'.format(outfile=os.path.join(args.outputdir, outname), infiles=' '.join(merge_dict_found[outname]))
+            outfile = os.path.join(tmp_outputdir if args.use_tmpdir else args.outputdir, outname)
+            cmd = 'haddnano.py {outfile} {infiles}'.format(outfile=outfile, infiles=' '.join(merge_dict_found[outname]))
             logging.debug('...' + cmd)
             p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             log = p.communicate()[0]
@@ -584,6 +603,9 @@ def run_merge(args):
             log_lower = log.lower().decode('utf-8')
             if 'error' in log_lower or 'fail' in log_lower:
                 logging.error(log)
+            if args.use_tmpdir:
+                shutil.copy(outfile, args.outputdir)
+                os.remove(outfile)
 
     with open(status_file, 'w'):
         pass
@@ -695,6 +717,10 @@ def get_arg_parser():
         action='store_true', default=False,
         help='Batch mode, do not ask for confirmation and submit the jobs directly. Default: %(default)s'
     )
+    parser.add_argument('--use-tmpdir',
+        action='store_true', default=False,
+        help='Merge files to a temporary directory and then copy to the destination. The tmp dir can be set via `TMPDIR`, or default to `/tmp/$USER`. Default: %(default)s'
+    )
 
     # preserve the options in nano_postproc.py
     parser.add_argument("-s", "--postfix", dest="postfix", default=None, help="Postfix which will be appended to the file name (default: _Friend for friends, _Skim for skims)")
@@ -716,6 +742,11 @@ def get_arg_parser():
 
 def run(args, configs=None):
     logging.info('Running w/ config: %s' % configs)
+
+    import socket
+    host = socket.getfqdn()
+    if 'cern.ch' in host:
+        args.use_tmpdir = True
 
     if args.post:
         args.add_weight = True
@@ -747,6 +778,7 @@ def run(args, configs=None):
 if __name__ == '__main__':
     parser = get_arg_parser()
     args = parser.parse_args()
+
 #     print(args)
 
     run(args)

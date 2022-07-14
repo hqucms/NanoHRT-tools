@@ -57,4 +57,9 @@ status=$?
 
 ls -l
 
+if [ $status -ne 0 ]; then
+    rm *.root
+    ls -l
+fi
+
 exit $status
