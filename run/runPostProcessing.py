@@ -12,6 +12,28 @@ import logging
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
 
 
+def check_grid_proxy(verbose=False, retry=3):
+    import subprocess
+    retry_count = 0
+    while True:
+        retry_count += 1
+        if retry_count > retry:
+            raise RuntimeError('Failed to set up valid grid proxy')
+        p = subprocess.Popen('voms-proxy-info -exists', shell=True)
+        p.communicate()
+        if p.returncode == 0:
+            if verbose:
+                logging.info('Grid proxy is valid:')
+                p = subprocess.Popen('voms-proxy-info', shell=True)
+                p.communicate()
+            break
+        else:
+            if verbose:
+                logging.info('No valid grid proxy, will run `voms-proxy-init -rfc -voms cms -valid 192:00`.')
+            p = subprocess.Popen('voms-proxy-init -rfc -voms cms -valid 192:00', shell=True)
+            p.communicate()
+
+
 def get_chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
@@ -19,8 +41,8 @@ def get_chunks(l, n):
 
 
 def natural_sort(l):
-    convert = lambda text: int(text) if text.isdigit() else text.lower()
-    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
+    def convert(text): return int(text) if text.isdigit() else text.lower()
+    def alphanum_key(key): return [convert(c) for c in re.split('([0-9]+)', key)]
     return sorted(l, key=alphanum_key)
 
 
@@ -41,7 +63,8 @@ def get_filenames(dataset, retry=3):
     cmd = ['dasgoclient', '-query', query, '-json']
     retry_count = 0
     while True:
-        logging.info('Querying DAS:\n  %s' % ' '.join(cmd) + '' if retry_count == 0 else '\n... retry %d ...' % retry_count)
+        logging.info('Querying DAS:\n  %s' % ' '.join(cmd) + '' if retry_count ==
+                     0 else '\n... retry %d ...' % retry_count)
         if retry_count > 0:
             time.sleep(3)
         retry_count += 1
@@ -106,14 +129,18 @@ def add_weight_branch(file, xsec, lumi=1000., treename='Events', wgtbranch='xsec
     if tree.GetBranch('LHEScaleWeight'):
         run_tree.GetEntry(0)
         nScaleWeights = run_tree.nLHEScaleSumw
-        scale_weight_norm_buff = array('f', [sumwgts / _get_sum(run_tree, 'LHEScaleSumw[%d]*genEventSumw' % i) for i in range(nScaleWeights)])
+        scale_weight_norm_buff = array('f',
+                                       [sumwgts / _get_sum(run_tree, 'LHEScaleSumw[%d]*genEventSumw' % i)
+                                        for i in range(nScaleWeights)])
         logging.info('LHEScaleWeightNorm: ' + str(scale_weight_norm_buff))
         _fill_const_branch(tree, 'LHEScaleWeightNorm', scale_weight_norm_buff, lenVar='nLHEScaleWeight')
 
     if tree.GetBranch('LHEPdfWeight'):
         run_tree.GetEntry(0)
         nPdfWeights = run_tree.nLHEPdfSumw
-        pdf_weight_norm_buff = array('f', [sumwgts / _get_sum(run_tree, 'LHEPdfSumw[%d]*genEventSumw' % i) for i in range(nPdfWeights)])
+        pdf_weight_norm_buff = array('f',
+                                     [sumwgts / _get_sum(run_tree, 'LHEPdfSumw[%d]*genEventSumw' % i)
+                                      for i in range(nPdfWeights)])
         logging.info('LHEPdfWeightNorm: ' + str(pdf_weight_norm_buff))
         _fill_const_branch(tree, 'LHEPdfWeightNorm', pdf_weight_norm_buff, lenVar='nLHEPdfWeight')
 
@@ -298,7 +325,8 @@ def create_metadata(args):
                     dataset0 = dataset.split('/')[1]
                 else:
                     if dataset0 != dataset.split('/')[1]:
-                        raise RuntimeError('Inconsistent dataset for samp `%s`: `%s` vs `%s`' % (samp, dataset0, dataset))
+                        raise RuntimeError('Inconsistent dataset for samp `%s`: `%s` vs `%s`' %
+                                           (samp, dataset0, dataset))
                 if select_sample(dataset):
                     filelist.extend(get_filenames(dataset))
             if len(filelist):
@@ -369,7 +397,8 @@ def check_job_status(args):
 
 
 def submit(args, configs):
-    logging.info('Preparing jobs...\n  - modules: %s\n  - cut: %s\n  - outputdir: %s' % (str(args.imports), args.cut, args.outputdir))
+    logging.info('Preparing jobs...\n  - modules: %s\n  - cut: %s\n  - outputdir: %s' %
+                 (str(args.imports), args.cut, args.outputdir))
 
     scriptfile = os.path.join(os.path.dirname(__file__), 'run_postproc_condor.sh')
     macrofile = os.path.join(os.path.dirname(__file__), 'processor.py')
@@ -419,7 +448,7 @@ def submit(args, configs):
             json.dump(md, f, ensure_ascii=True, indent=2, sort_keys=True)
         # store the metadata file to the outputdir as well
         import gzip
-        with gzip.open(os.path.join(args.outputdir, args.metadata+'.gz'), 'w') as fout:
+        with gzip.open(os.path.join(args.outputdir, args.metadata + '.gz'), 'w') as fout:
             fout.write(json.dumps(md).encode('utf-8'))
 
         # create CMSSW tarball
@@ -438,7 +467,8 @@ def submit(args, configs):
         f.write('\n'.join(jobids))
 
     # prepare the list of files to transfer
-    files_to_transfer = [os.path.expandvars('$CMSSW_BASE/../CMSSW%s.tar.gz' % args.tarball_suffix), macrofile, metadatafile] + configfiles
+    files_to_transfer = [os.path.expandvars('$CMSSW_BASE/../CMSSW%s.tar.gz' %
+                                            args.tarball_suffix), macrofile, metadatafile] + configfiles
     if args.branchsel_in:
         files_to_transfer.append(args.branchsel_in)
         shutil.copy2(args.branchsel_in, args.jobdir)
@@ -489,11 +519,12 @@ queue jobid from {jobids_file}
            maxruntime='+MaxRuntime = %s' % args.max_runtime if args.max_runtime else '',
            request_memory=args.request_memory,
            condor_extras=args.condor_extras,
-    )
+           )
     condorfile = os.path.join(args.jobdir, 'submit.cmd')
     with open(condorfile, 'w') as f:
         f.write(condordesc)
 
+    check_grid_proxy()
     cmd = 'condor_submit {condorfile}'.format(condorfile=condorfile)
     print('Run the following command to submit the jobs:\n  %s' % cmd)
     if args.batch:
@@ -521,8 +552,10 @@ def run_add_weight(args):
             os.makedirs(tmp_parts_dir)
 
     for samp in md['samples']:
-        outfile = '{parts_dir}/{samp}_tree.root'.format(parts_dir=tmp_parts_dir if args.use_tmpdir else parts_dir, samp=samp)
-        cmd = 'haddnano.py {outfile} {outputdir}/pieces/{samp}_*_tree.root'.format(outfile=outfile, outputdir=args.outputdir, samp=samp)
+        outfile = '{parts_dir}/{samp}_tree.root'.format(
+            parts_dir=tmp_parts_dir if args.use_tmpdir else parts_dir, samp=samp)
+        cmd = 'haddnano.py {outfile} {outputdir}/pieces/{samp}_*_tree.root'.format(
+            outfile=outfile, outputdir=args.outputdir, samp=samp)
         logging.debug('...' + cmd)
         p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         log = p.communicate()[0]
@@ -588,7 +621,8 @@ def run_merge(args):
             logging.warning('Ignore %s as no input files are found.' % outname)
             continue
         if len(merge_dict_found[outname]) != len(merge_dict[outname]):
-            raise RuntimeError('Incomplete files for merging, missing: %s' % str(set(merge_dict[outname]) - set(merge_dict_found[outname])))
+            raise RuntimeError('Incomplete files for merging, missing: %s' %
+                               str(set(merge_dict[outname]) - set(merge_dict_found[outname])))
 
         if len(merge_dict_found[outname]) == 1:
             os.rename(list(merge_dict_found[outname])[0], os.path.join(args.outputdir, outname))
@@ -628,114 +662,121 @@ def get_arg_parser():
     import argparse
     parser = argparse.ArgumentParser('Preprocess ntuples')
     parser.add_argument('-i', '--inputdir', default=None,
-        help='Input diretory.'
-    )
+                        help='Input diretory.'
+                        )
     parser.add_argument('-o', '--outputdir', required=True,
-        help='Output directory'
-    )
+                        help='Output directory'
+                        )
     parser.add_argument('-m', '--metadata',
-        default='metadata.json',
-        help='Metadata json file. Default: %(default)s'
-    )
+                        default='metadata.json',
+                        help='Metadata json file. Default: %(default)s'
+                        )
     parser.add_argument('--extra-transfer',
-        default=None,
-        help='Extra files to transfer, common separated list. Default: %(default)s'
-    )
+                        default=None,
+                        help='Extra files to transfer, common separated list. Default: %(default)s'
+                        )
     parser.add_argument('--tarball-suffix',
-        default='',
-        help='Suffix of the CMSSW tarball. Default: %(default)s'
-    )
+                        default='',
+                        help='Suffix of the CMSSW tarball. Default: %(default)s'
+                        )
     parser.add_argument('-t', '--submittype',
-        default='condor', choices=['interactive', 'condor'],
-        help='Method of job submission. [Default: %(default)s]'
-    )
+                        default='condor', choices=['interactive', 'condor'],
+                        help='Method of job submission. [Default: %(default)s]'
+                        )
     parser.add_argument('--resubmit',
-        action='store_true', default=False,
-        help='Resubmit failed jobs. Default: %(default)s'
-    )
+                        action='store_true', default=False,
+                        help='Resubmit failed jobs. Default: %(default)s'
+                        )
     parser.add_argument('-j', '--jobdir',
-        default='jobs',
-        help='Directory for job files. [Default: %(default)s]'
-    )
+                        default='jobs',
+                        help='Directory for job files. [Default: %(default)s]'
+                        )
     parser.add_argument('-d', '--datasets', required=False,
-        default='',
-        help='Path to the dataset list file. [Default: %(default)s]'
-    )
+                        default='',
+                        help='Path to the dataset list file. [Default: %(default)s]'
+                        )
     parser.add_argument('--select',
-        default='',
-        help='Selected datasets, common separated regex. [Default: %(default)s]'
-    )
+                        default='',
+                        help='Selected datasets, common separated regex. [Default: %(default)s]'
+                        )
     parser.add_argument('--ignore',
-        default='',
-        help='Ignored datasets, common separated regex. [Default: %(default)s]'
-    )
+                        default='',
+                        help='Ignored datasets, common separated regex. [Default: %(default)s]'
+                        )
 #     parser.add_argument('--nproc',
 #         type=int, default=8,
 #         help='Number of jobs to run in parallel. Default: %(default)s'
 #     )
     parser.add_argument('-n', '--nfiles-per-job',
-        type=int, default=10,
-        help='Number of input files to process in one job. Default: %(default)s'
-    )
+                        type=int, default=10,
+                        help='Number of input files to process in one job. Default: %(default)s'
+                        )
     parser.add_argument('--dryrun',
-        action='store_true', default=False,
-        help='Do not convert -- only produce metadata. Default: %(default)s'
-    )
+                        action='store_true', default=False,
+                        help='Do not convert -- only produce metadata. Default: %(default)s'
+                        )
     parser.add_argument('--site',
-        default='',
-        help='Specify sites for condor submission. Default: %(default)s'
-    )
-    parser.add_argument('--condor-extras',
-        default='',
-        help='Extra parameters for condor, e.g., +AccountingGroup = "group_u_CMST3.all". Default: %(default)s'
-    )
+                        default='',
+                        help='Specify sites for condor submission. Default: %(default)s'
+                        )
+    parser.add_argument(
+        '--condor-extras', default='',
+        help='Extra parameters for condor, e.g., +AccountingGroup = "group_u_CMST3.all". Default: %(default)s')
     parser.add_argument('--max-runtime',
-        default='24*60*60',
-        help='Max runtime, in seconds. Default: %(default)s'
-    )
+                        default='24*60*60',
+                        help='Max runtime, in seconds. Default: %(default)s'
+                        )
     parser.add_argument('--request-memory',
-        default='2000',
-        help='Request memory, in MB. Default: %(default)s'
-    )
-    parser.add_argument('--add-weight',
-        action='store_true', default=False,
-        help='Merge output files of the same dataset and add cross section weight using the file specified in --weight-file. Default: %(default)s'
-    )
+                        default='2000',
+                        help='Request memory, in MB. Default: %(default)s'
+                        )
+    parser.add_argument(
+        '--add-weight', action='store_true', default=False,
+        help='Merge output files of the same dataset and add cross section weight using the file specified in --weight-file. Default: %(default)s')
     parser.add_argument('-w', '--weight-file',
-        default='samples/xsec.conf',
-        help='File with xsec of each sample. If empty, xsec wgt will not be added. Default: %(default)s'
-    )
-    parser.add_argument('--merge',
-        action='store_true', default=False,
-        help='Merge output files of different sample as specified in --datasets file. Default: %(default)s'
-    )
+                        default='samples/xsec.conf',
+                        help='File with xsec of each sample. If empty, xsec wgt will not be added. Default: %(default)s'
+                        )
+    parser.add_argument(
+        '--merge', action='store_true', default=False,
+        help='Merge output files of different sample as specified in --datasets file. Default: %(default)s')
     parser.add_argument('--post',
-        action='store_true', default=False,
-        help='Add weight and merge. Default: %(default)s'
-    )
-    parser.add_argument('--batch',
-        action='store_true', default=False,
-        help='Batch mode, do not ask for confirmation and submit the jobs directly. Default: %(default)s'
-    )
-    parser.add_argument('--use-tmpdir',
-        action='store_true', default=False,
-        help='Merge files to a temporary directory and then copy to the destination. The tmp dir can be set via `TMPDIR`, or default to `/tmp/$USER`. Default: %(default)s'
-    )
+                        action='store_true', default=False,
+                        help='Add weight and merge. Default: %(default)s'
+                        )
+    parser.add_argument(
+        '--batch', action='store_true', default=False,
+        help='Batch mode, do not ask for confirmation and submit the jobs directly. Default: %(default)s')
+    parser.add_argument(
+        '--use-tmpdir', action='store_true', default=False,
+        help='Merge files to a temporary directory and then copy to the destination. The tmp dir can be set via `TMPDIR`, or default to `/tmp/$USER`. Default: %(default)s')
 
     # preserve the options in nano_postproc.py
-    parser.add_argument("-s", "--postfix", dest="postfix", default=None, help="Postfix which will be appended to the file name (default: _Friend for friends, _Skim for skims)")
+    parser.add_argument(
+        "-s", "--postfix", dest="postfix", default=None,
+        help="Postfix which will be appended to the file name (default: _Friend for friends, _Skim for skims)")
     parser.add_argument("-J", "--json", dest="json", default=None, help="Select events using this JSON file")
     parser.add_argument("-c", "--cut", dest="cut", default=None, help="Cut string")
-    parser.add_argument("--bi", "--branch-selection-input", dest="branchsel_in", default='keep_and_drop_input.txt', help="Branch selection input")
-    parser.add_argument("--bo", "--branch-selection-output", dest="branchsel_out", default='keep_and_drop_output.txt', help="Branch selection output")
-    parser.add_argument("--friend", dest="friend", action="store_true", default=False, help="Produce friend trees in output (current default is to produce full trees)")
-    parser.add_argument("-I", "--import", dest="imports", default=[], action="append", nargs=2, help="Import modules (python package, comma-separated list of ")
-    parser.add_argument("-z", "--compression", dest="compression", default=("LZ4:4"), help="Compression: none, or (algo):(level) ")
-    parser.add_argument("-P", "--prefetch", dest="prefetch", action="store_true", default=False, help="Prefetch input files locally instead of accessing them via xrootd")
-    parser.add_argument("--long-term-cache", dest="longTermCache", action="store_true", default=False, help="Keep prefetched files across runs instead of deleting them at the end")
-    parser.add_argument("-N", "--max-entries", dest="maxEntries", type=int, default=None, help="Maximum number of entries to process from any single given input tree")
-    parser.add_argument("--first-entry", dest="firstEntry", type=int, default=0, help="First entry to process in the three (to be used together with --max-entries)")
-    parser.add_argument("--justcount", dest="justcount", default=False, action="store_true", help="Just report the number of selected events")
+    parser.add_argument("--bi", "--branch-selection-input", dest="branchsel_in",
+                        default='keep_and_drop_input.txt', help="Branch selection input")
+    parser.add_argument("--bo", "--branch-selection-output", dest="branchsel_out",
+                        default='keep_and_drop_output.txt', help="Branch selection output")
+    parser.add_argument("--friend", dest="friend", action="store_true", default=False,
+                        help="Produce friend trees in output (current default is to produce full trees)")
+    parser.add_argument("-I", "--import", dest="imports", default=[], action="append", nargs=2,
+                        help="Import modules (python package, comma-separated list of ")
+    parser.add_argument("-z", "--compression", dest="compression", default=("LZ4:4"),
+                        help="Compression: none, or (algo):(level) ")
+    parser.add_argument("-P", "--prefetch", dest="prefetch", action="store_true", default=False,
+                        help="Prefetch input files locally instead of accessing them via xrootd")
+    parser.add_argument("--long-term-cache", dest="longTermCache", action="store_true", default=False,
+                        help="Keep prefetched files across runs instead of deleting them at the end")
+    parser.add_argument("-N", "--max-entries", dest="maxEntries", type=int, default=None,
+                        help="Maximum number of entries to process from any single given input tree")
+    parser.add_argument("--first-entry", dest="firstEntry", type=int, default=0,
+                        help="First entry to process in the three (to be used together with --max-entries)")
+    parser.add_argument("--justcount", dest="justcount", default=False, action="store_true",
+                        help="Just report the number of selected events")
 
     return parser
 
