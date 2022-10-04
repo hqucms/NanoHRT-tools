@@ -36,7 +36,7 @@ def find_and_extract_tarball(name, destination, copy_txt_with_prefix=None):
                             if not is_within_directory(path, member_path):
                                 raise Exception("Attempted Path Traversal in Tar File")
                     
-                        tar.extractall(path, members, numeric_owner) 
+                        tar.extractall(path, members, numeric_owner=numeric_owner) 
                         
                     
                     safe_extract(tar, destination)
