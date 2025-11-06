@@ -20,7 +20,6 @@ keep HLT_Iso*Mu24
 keep HLT_IsoMu27
 keep HLT_*Mu50
 keep HLT_*Mu100
-keep HLT_Ele27_WPTight_Gsf
 keep HLT_Ele32_WPTight_Gsf
 keep HLT_Ele32_WPTight_Gsf_L1DoubleEG
 keep HLT_Ele35_WPTight_Gsf
@@ -41,7 +40,7 @@ dropmatch n?Generator_.+
 dropmatch n?LHEReweightingWeight
 dropmatch n?HTXS_.+
 dropmatch n?GenIsolatedPhoton_.+
-dropmatch n?PuppiMET_.+
+# dropmatch n?PuppiMET_.+
 dropmatch n?CaloMET_.+
 dropmatch n?ChsMET_.+
-dropmatch n?RawPuppiMET_.+
+#dropmatch n?RawPuppiMET_.+

@@ -94,7 +94,10 @@ class JetMETCorrector(object):
 
         self.year = year
         self.jetType = jetType
-        self.jec = jec
+        if (self.year == 2015 or self.year == 2016 or self.year == 2017 or self.year == 2018):
+            self.jec = False   ##################################
+        else:                  ##  might need to change this   ## 
+            self.jec = True    ##################################
         self.jes = jes
         self.jes_source = '' if jes_source is None else jes_source
         self.jes_uncertainty_file_prefix = '' if jes_uncertainty_file_prefix is None else jes_uncertainty_file_prefix
@@ -154,6 +157,51 @@ class JetMETCorrector(object):
                 (319313, 'Summer19UL18_RunC_V5_DATA'),
                 (320394, 'Summer19UL18_RunD_V5_DATA'),
             )
+        elif self.year == 20220:
+            # hack, actually 2022 pre EE
+            self.globalTag = 'Summer22_22Sep2023_V2_MC'
+            self.jerTag = 'Summer22_22Sep2023_JRV1_MC'
+            self.dataTags = (
+                # set the name of the tarball with a dummy run number
+                (0, 'Summer22_22Sep2023_RunCD_V2_DATA'),
+                # (start run number (inclusive), 'tag name')
+                (355794, 'Summer22_22Sep2023_RunCD_V2_DATA'),
+            )
+        elif self.year == 20221:
+            # hack, actually 2022 post EE
+            self.globalTag = 'Summer22EE_22Sep2023_V2_MC'
+            self.jerTag = 'Summer22EE_22Sep2023_JRV1_MC'
+            self.dataTags = (
+                # set the name of the tarball with a dummy run number
+                (0, 'Summer22EE_22Sep2023_V2_DATA'),
+                # (start run number (inclusive), 'tag name')
+                (359022, 'Summer22EE_22Sep2023_RunE_V2_DATA'),
+                (360332, 'Summer22EE_22Sep2023_RunF_V2_DATA'),
+                (362350, 'Summer22EE_22Sep2023_RunG_V2_DATA'),
+            )
+        elif self.year == 20230:
+            # hack, actually 2023 pre BPix
+            self.globalTag = 'Summer23Prompt23_V2_MC'
+            self.jerTag = 'Summer23Prompt23_RunCv1234_JRV1_MC'
+            self.dataTags = (
+                # set the name of the tarball with a dummy run number
+                (0, 'Summer23Prompt23_RunC_V2_DATA'),
+                # (start run number (inclusive), 'tag name')
+                (367080, 'Summer23Prompt23_RunCv123_V2_DATA'),
+                (367765, 'Summer23Prompt23_RunCv4_V2_DATA'),
+            )
+
+        elif self.year == 20231:
+            # hack, actually 2023 post BPix
+            self.globalTag = 'Summer23BPixPrompt23_V3_MC'
+            self.jerTag = 'Summer23BPixPrompt23_RunD_JRV1_MC'
+            self.dataTags = (
+                # set the name of the tarball with a dummy run number
+                (0, 'Summer23BPixPrompt23_V3_DATA'),
+                # (start run number (inclusive), 'tag name')
+                (367621, 'Summer23BPixPrompt23_RunD_V3_DATA'),
+            )
+
         else:
             raise RuntimeError('Invalid year: %s' % (str(self.year)))
 
@@ -274,7 +322,10 @@ class JetMETCorrector(object):
                     j.pt = j.rawP4.pt() * j._jecFactor
                     j.mass = j.rawP4.mass() * j._jecFactor
                 if met is not None:
-                    j._jecFactorL1 = jetCorrector.getCorrection(j, rho, 'L1FastJet')
+                    try:
+                        j._jecFactorL1 = jetCorrector.getCorrection(j, rho, 'L1FastJet')
+                    except:
+                        j._jecFactorL1 = 1 #jetCorrector.getCorrection(j, rho,'L2Relative')
 
             # set JER factor
             j._smearFactorNominal = 1
@@ -322,11 +373,20 @@ class JetMETCorrector(object):
             met_shift = sum([j._t1MetDelta for j in itertools.chain(jets, lowPtJets)])
             # MET unclustered energy
             if isMC and self.met_unclustered:
-                delta = np.array([met.MetUnclustEnUpDeltaX, met.MetUnclustEnUpDeltaY])
-            if self.met_unclustered == 'up':
-                met_shift += delta
-            elif self.met_unclustered == 'down':
-                met_shift -= delta
+                if (self.year == 2015 or self.year == 2016 or self.year == 2017 or self.year == 2018):  ################### 
+                    delta = np.array([met.MetUnclustEnUpDeltaX, met.MetUnclustEnUpDeltaY])              #                 #
+                else:                                                                                   #                 #
+                    delta = np.array([met.ptUnclusteredUp, met.ptUnclusteredDown])                      #      this       #
+            if self.met_unclustered == 'up':                                                            #      will       #
+                if (self.year == 2015 or self.year == 2016 or self.year == 2017 or self.year == 2018):  #      also       #
+                    met_shift += delta                                                                  #       be        #
+                else:                                                                                   #       an        #
+                    met_shift += met.ptUnclusteredUp                                                    #      issue      #
+            elif self.met_unclustered == 'down':                                                        #                 #
+                if (self.year == 2015 or self.year == 2016 or self.year == 2017 or self.year == 2018):  #                 #
+                    met_shift -= delta                                                                  #                 #
+                else:                                                                                   ###################
+                    met_shift -= abs(met.ptUnclusteredDown)
             rawMetP4 = p4(rawMET, eta=None, mass=None)
             newMET = rawMetP4 + ROOT.Math.XYZTVector(met_shift[0], met_shift[1], 0, 0)
             if self.excludeJetsForMET is not None:

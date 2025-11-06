@@ -1,0 +1,5 @@
+singlemu:
+- [/Muon0/Run2023D-22Sep2023_v1-v1/NANOAOD,
+  /Muon0/Run2023D-22Sep2023_v2-v1/NANOAOD]
+- [/Muon1/Run2023D-22Sep2023_v1-v1/NANOAOD,
+  /Muon1/Run2023D-22Sep2023_v2-v1/NANOAOD]

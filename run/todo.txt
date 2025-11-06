@@ -1,0 +1,5 @@
+runHeavyFlav with neither options, see what happens
+to run interactive, copy all the files needed for processor, rm the past ones, then run interatctive
+grep exit code
+
+--run-data w/ --post

@@ -1,0 +1,70 @@
+DEBUG 2025-07-03 14:57:27.858 UTC: 	 CRAB Client version: v3.250522
+DEBUG 2025-07-03 14:57:27.858 UTC: 	 Running on: Linux lxplus809.cern.ch 4.18.0-553.58.1.el8_10.x86_64 #1 SMP Thu Jun 12 14:27:07 EDT 2025 x86_64 x86_64 x86_64 GNU/Linux
+DEBUG 2025-07-03 14:57:27.858 UTC: 	 Not using Singularity
+DEBUG 2025-07-03 14:57:27.858 UTC: 	 Operating System: Red Hat Enterprise Linux 8.10 (Ootpa)
+DEBUG 2025-07-03 14:57:27.858 UTC: 	 Executing command: 'checkwrite'
+DEBUG 2025-07-03 14:57:27.858 UTC: 	 Could not find CRAB cache file /afs/cern.ch/user/h/hlarson/.crab3; creating a new one.
+DEBUG 2025-07-03 14:57:27.862 UTC: 	 Checking credentials
+DEBUG 2025-07-03 14:57:27.863 UTC: 	 Found proxy file /afs/cern.ch/user/h/hlarson/.gridproxy.pem
+DEBUG 2025-07-03 14:57:27.863 UTC: 	 Making sure it has proper VOMS extension
+DEBUG 2025-07-03 14:57:27.863 UTC: 	 Executing command :
+ voms-proxy-info --vo --file /afs/cern.ch/user/h/hlarson/.gridproxy.pem
+DEBUG 2025-07-03 14:57:28.384 UTC: 	 output : cms
+
+ error: 
+ retcode : 0
+DEBUG 2025-07-03 14:57:28.385 UTC: 	 Getting proxy life time left
+DEBUG 2025-07-03 14:57:28.385 UTC: 	 Executing command :
+ voms-proxy-info --actimeleft --timeleft --file /afs/cern.ch/user/h/hlarson/.gridproxy.pem
+DEBUG 2025-07-03 14:57:28.920 UTC: 	 output : 521685
+521685
+
+ error: 
+ retcode : 0
+DEBUG 2025-07-03 14:57:28.920 UTC: 	 Proxy valid for 144:54:45 hours
+DEBUG 2025-07-03 14:57:28.920 UTC: 	 Retrieving username ...
+DEBUG 2025-07-03 14:57:28.920 UTC: 	 Retrieving username from CRIC...
+DEBUG 2025-07-03 14:57:29.796 UTC: 	 username is hlarson
+INFO 2025-07-03 14:57:34.930 UTC: 	 Rucio client intialized for account hlarson
+DEBUG 2025-07-03 14:57:34.931 UTC: 	 Command use: checkwrite
+DEBUG 2025-07-03 14:57:34.931 UTC: 	 Options use: ['--site=T3_US_FNALLPC']
+DEBUG 2025-07-03 14:57:34.931 UTC: 	 Instance is None
+DEBUG 2025-07-03 14:57:34.931 UTC: 	 Server base url is None
+DEBUG 2025-07-03 14:57:34.931 UTC: 	 Retrieving username ...
+DEBUG 2025-07-03 14:57:34.931 UTC: 	 Retrieving username from CRIC...
+DEBUG 2025-07-03 14:57:35.674 UTC: 	 username is hlarson
+INFO 2025-07-03 14:57:35.674 UTC: 	 Will check write permission in the default location /store/user/<username>
+INFO 2025-07-03 14:57:35.674 UTC: 	 Validating LFN /store/user/hlarson...
+INFO 2025-07-03 14:57:35.674 UTC: 	 LFN /store/user/hlarson is valid.
+INFO 2025-07-03 14:57:35.687 UTC: 	 Will use `gfal-copy`, `gfal-rm` commands for checking write permissions
+INFO 2025-07-03 14:57:35.688 UTC: 	 Will check write permission in /store/user/hlarson on site T3_US_FNALLPC
+INFO 2025-07-03 14:57:35.747 UTC: 	 Will use PFN: davs://cmseos.fnal.gov:9000/eos/uscms/store/user/hlarson/crab3checkwrite_20250703_165735_f79ebdf2-a822-4919-a659-9dd355915705/f79ebdf2-a822-4919-a659-9dd355915705.tmp
+INFO 2025-07-03 14:57:35.747 UTC: 	 
+Attempting to create (dummy) directory crab3checkwrite_20250703_165735_f79ebdf2-a822-4919-a659-9dd355915705 and copy (dummy) file f79ebdf2-a822-4919-a659-9dd355915705.tmp to /store/user/hlarson
+
+INFO 2025-07-03 14:57:35.751 UTC: 	 Executing command: which scram >/dev/null 2>&1 && eval `scram unsetenv -sh`; gfal-copy -p -v -t 180 file:///afs/cern.ch/user/h/hlarson/topwSF/CMSSW_12_6_4/src/PhysicsTools/NanoHRTTools/run/f79ebdf2-a822-4919-a659-9dd355915705.tmp 'davs://cmseos.fnal.gov:9000/eos/uscms/store/user/hlarson/crab3checkwrite_20250703_165735_f79ebdf2-a822-4919-a659-9dd355915705/f79ebdf2-a822-4919-a659-9dd355915705.tmp'
+INFO 2025-07-03 14:57:35.751 UTC: 	 Please wait...
+INFO 2025-07-03 14:57:38.360 UTC: 	 Failed running copy command
+INFO 2025-07-03 14:57:38.361 UTC: 	   Stdout:
+    Copying 85 bytes file:///afs/cern.ch/user/h/hlarson/topwSF/CMSSW_12_6_4/src/PhysicsTools/NanoHRTTools/run/f79ebdf2-a822-4919-a659-9dd355915705.tmp => davs://cmseos.fnal.gov:9000/eos/uscms/store/user/hlarson/crab3checkwrite_20250703_165735_f79ebdf2-a822-4919-a659-9dd355915705/f79ebdf2-a822-4919-a659-9dd355915705.tmp
+    event: [1751554657654] BOTH   GFAL2:CORE:COPY	LIST:ENTER	
+    event: [1751554657654] BOTH   GFAL2:CORE:COPY	LIST:ITEM	file:///afs/cern.ch/user/h/hlarson/topwSF/CMSSW_12_6_4/src/PhysicsTools/NanoHRTTools/run/f79ebdf2-a822-4919-a659-9dd355915705.tmp => davs://cmseos.fnal.gov:9000/eos/uscms/store/user/hlarson/crab3checkwrite_20250703_165735_f79ebdf2-a822-4919-a659-9dd355915705/f79ebdf2-a822-4919-a659-9dd355915705.tmp
+    event: [1751554657654] BOTH   GFAL2:CORE:COPY	LIST:EXIT	
+    event: [1751554657654] BOTH   http_plugin	PREPARE:ENTER	file:///afs/cern.ch/user/h/hlarson/topwSF/CMSSW_12_6_4/src/PhysicsTools/NanoHRTTools/run/f79ebdf2-a822-4919-a659-9dd355915705.tmp => davs://cmseos.fnal.gov:9000/eos/uscms/store/user/hlarson/crab3checkwrite_20250703_165735_f79ebdf2-a822-4919-a659-9dd355915705/f79ebdf2-a822-4919-a659-9dd355915705.tmp
+    
+INFO 2025-07-03 14:57:38.361 UTC: 	   Stderr:
+    gfal-copy error: 1 (Operation not permitted) - DESTINATION MAKE_PARENT HTTP 403 : Permission refused 
+    
+INFO 2025-07-03 14:57:38.365 UTC: 	 
+Checkwrite Result:
+INFO 2025-07-03 14:57:38.366 UTC: 	 Unable to check write permission in /store/user/hlarson on site T3_US_FNALLPC
+Please try again later or contact the site administrators sending them the 'crab checkwrite' output as printed above.
+INFO 2025-07-03 14:57:38.366 UTC: 	 Note: You cannot write to a site if you did not ask permission.
+WARNING 2025-07-03 14:57:38.366 UTC: 	 Command checkwrite failed
+ERROR 2025-07-03 14:57:38.366 UTC: 	 Caught CommandFailedException exception
+Traceback (most recent call last):
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.250522.00/bin/crab.py", line 157, in <module>
+    client()
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.250522.00/bin/crab.py", line 144, in __call__
+    raise CommandFailedException("Command %s failed" % str(args[0]))
+CRABClient.ClientExceptions.CommandFailedException: Command checkwrite failed

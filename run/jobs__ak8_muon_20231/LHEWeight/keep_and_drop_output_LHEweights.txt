@@ -1,0 +1,24 @@
+# this is a comment
+dropmatch n?[A-Z][a-zA-Z0-9]{1,}.+
+dropmatch n?boostedTau_.+
+drop fixedGridRho*
+drop btagWeight_*
+# event info
+keep run
+keep luminosityBlock
+keep event
+keep PV_npvs
+# triggers
+keep HLT_Iso*Mu24
+keep HLT_IsoMu27
+keep HLT_Ele32_WPTight_Gsf
+keep HLT_Ele32_WPTight_Gsf_L1DoubleEG
+keep HLT_Ele35_WPTight_Gsf
+keep HLT_PFMET*_PFMHT*_IDTight*
+keepmatch HLT_PFHT[0-9]+
+# genweight
+keep genWeight
+keep LHE_Vpt
+# PDF/Scale weights
+keep *LHE*Weight
+keep *PSWeight

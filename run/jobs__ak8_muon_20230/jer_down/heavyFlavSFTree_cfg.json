@@ -1,0 +1,27 @@
+{
+  "applyHEMUnc": false,
+  "channel": "muon",
+  "jec": false,
+  "jer": "down",
+  "jes": null,
+  "jes_source": "",
+  "jes_uncertainty_file_prefix": "",
+  "jetType": "ak8",
+  "jmr": null,
+  "mass_regression_versions": [
+    "V01a",
+    "V01b",
+    "V01c"
+  ],
+  "met_unclustered": null,
+  "run_mass_regression": false,
+  "run_tagger": false,
+  "sfbdt_threshold": -99,
+  "smearMET": false,
+  "tagger_versions": [
+    "V02b",
+    "V02c",
+    "V02d"
+  ],
+  "year": 20230
+}

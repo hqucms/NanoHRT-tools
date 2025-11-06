@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from __future__ import print_function
 
 import os
@@ -57,6 +57,7 @@ def main(args):
         obj = sys.modules[mod]
         selnames = names.split(",")
         for name in dir(obj):
+            print("error starts at this for loop. name is %s, and mod is %s" % (name, mod))
             if name[0] == "_":
                 continue
             if name in selnames:
@@ -97,6 +98,7 @@ def main(args):
     p = subprocess.Popen('haddnano.py %s *.root' % outputname, shell=True)
     p.communicate()
     if p.returncode != 0:
+        print("the error is here ;-;", p.returncode)
         raise RuntimeError('Hadd failed!')
 
     # keep only the hadd file

@@ -1,5 +1,5 @@
 #!/bin/bash
-
+#set -o verbose
 workdir=`pwd`
 
 echo `hostname`
@@ -12,12 +12,15 @@ jobid=$1
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 tar -xf CMSSW*.tar.gz --warning=no-timestamp
 
+echo "printing pwd"
+pwd
+
 ### --------------------------------###
 #Keep track of release sandbox version
 basedir=$PWD
 rel=$(echo CMSSW_*)
-arch=$(ls $rel/.SCRAM/|grep slc) || echo "Failed to determine SL release!"
-old_release_top=$(awk -F= '/RELEASETOP/ {print $2}' $rel/.SCRAM/slc*/Environment) || echo "Failed to determine old releasetop!"
+arch=$(ls $rel/.SCRAM/|grep el) || echo "Failed to determine SL release!"
+old_release_top=$(awk -F= '/RELEASETOP/ {print $2}' $rel/.SCRAM/el*/Environment) || echo "Failed to determine old releasetop!"
  
 # Creating new release
 # This is done so e.g CMSSW_BASE and other variables are not hardcoded to the sandbox setting paths
@@ -28,7 +31,7 @@ mkdir tmp
 cd tmp
 export SCRAM_ARCH="$arch"
 scramv1 project -f CMSSW $rel
-new_release_top=$(awk -F= '/RELEASETOP/ {print $2}' $rel/.SCRAM/slc*/Environment)
+new_release_top=$(awk -F= '/RELEASETOP/ {print $2}' $rel/.SCRAM/el*/Environment)
 cd $rel
 echo ">>> preparing sandbox release $rel"
  
@@ -52,7 +55,7 @@ ls -l
 
 export MLAS_DYNAMIC_CPU_ARCH=99
 export TMPDIR=`pwd`
-python processor.py $jobid
+python3 processor.py $jobid
 status=$?
 
 ls -l
@@ -61,5 +64,5 @@ if [ $status -ne 0 ]; then
     rm *.root
     ls -l
 fi
-
+#set +o verbose
 exit $status

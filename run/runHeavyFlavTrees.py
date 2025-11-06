@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from __future__ import print_function
 
 import os
@@ -37,6 +37,11 @@ golden_json = {
     2016: 'Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt',
     2017: 'Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt',
     2018: 'Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt',
+    20220: 'Cert_Collisions2022_355100_362760_Golden.json',
+    20221: 'Cert_Collisions2022_355100_362760_Golden.json',
+    20230: 'Cert_Collisions2023_366442_370790_Golden.json',
+    20231: 'Cert_Collisions2023_366442_370790_Golden.json',
+
 }
 
 
@@ -60,7 +65,10 @@ def _process(args):
     if channel in ('qcd', 'photon'):
         default_config['sfbdt_threshold'] = args.sfbdt
 
-    args.weight_file = 'samples/xsec_2017.conf'
+    if year < 2020:                                     ##########################
+        args.weight_file = 'samples/xsec_2017.conf'     #     this will need     #
+    else:                                               #     to be edited       #
+        args.weight_file = 'samples/xsec_2022.conf'     ##########################
 
     basename = os.path.basename(args.outputdir) + '_' + args.jet_type + '_' + channel + '_' + str(year)
     args.outputdir = os.path.join(os.path.dirname(args.outputdir), basename, 'data' if args.run_data else 'mc')
@@ -82,7 +90,7 @@ def _process(args):
     args.imports = [('PhysicsTools.NanoHRTTools.producers.HeavyFlavSFTreeProducer', 'heavyFlavSFTreeFromConfig')]
     if not args.run_data:
         args.imports.extend([('PhysicsTools.NanoAODTools.postprocessing.modules.common.puWeightProducer',
-                              'puWeight_UL2016' if year == 2015 else 'puWeight_UL%d' % year),
+                              'puWeight_UL2016' if year == 2015 else 'puWeight_UL%d' % year if year <2020 else 'puWeight_%d' % year),
                              ('PhysicsTools.NanoHRTTools.producers.topPtWeightProducer', 'topPtWeight')])
 
     # data, or just nominal MC
@@ -177,7 +185,7 @@ def main():
     parser.add_argument('--year',
                         type=str,
                         required=True,
-                        help='Year: 2015 (2016 preVFP), 2016 (2016 postVFP), 2017, 2018, or comma separated list e.g., `2016,2017,2018`'
+                        help='Year: 2015 (2016 preVFP), 2016 (2016 postVFP), 2017, 2018, 20220, 20221, 20230, 20231 or comma separated list e.g., `2016,2017,2018`'
                         )
 
     parser.add_argument('--sample-dir',

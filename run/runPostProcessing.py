@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from __future__ import print_function
 from six.moves import input
-
+ 
 import os
 import sys
 import json
@@ -150,6 +150,7 @@ def add_weight_branch(file, xsec, lumi=1000., treename='Events', wgtbranch='xsec
 
 def load_dataset_file(dataset_file):
     import yaml
+    print("\n inside load_dataset_file: ",dataset_file)
     with open(dataset_file) as f:
         d = yaml.safe_load(f)
 
@@ -189,11 +190,15 @@ def parse_sample_xsec(cfgfile):
                 else:
                     try:
                         xsec = float(s)
-                    except ValueError:
+                        print("\n xsec = float(s) =", xsec)
+                    except ValueError as e:
+                        print("Error:", e)
                         try:
                             import numexpr
                             xsec = numexpr.evaluate(s).item()
+                            print("\n xsec = numexpr.evaluate(s).item()  =", xsec)
                         except:
+                            print("xsec = numexpr.evaluate(s).item() failed as well...")
                             pass
             if samp is None:
                 logging.warning('Ignore line:\n%s' % l)
@@ -205,6 +210,7 @@ def parse_sample_xsec(cfgfile):
                 xsec_dict[samp] = xsec
                 if 'PSweights_' in samp:
                     xsec_dict[samp.replace('PSweights_', '')] = xsec
+    print("\n xsec_dict: \n", xsec_dict)
     return xsec_dict
 
 
@@ -351,6 +357,7 @@ def create_metadata(args):
 
 def load_metadata(args):
     metadatafile = os.path.join(args.jobdir, args.metadata)
+    print("\n\n inside load_metadata: metadatafile \n", metadatafile)
     with open(metadatafile) as f:
         md = json.load(f)
     return md
@@ -359,12 +366,12 @@ def load_metadata(args):
 def check_job_status(args):
     md = load_metadata(args)
     njobs = len(md['jobs'])
-    jobids = {'running': [], 'failed': [], 'completed': []}
+    jobids = {'running': [], 'failed': [], 'lost':[], 'completed': []}
     for jobid in range(njobs):
         logpath = os.path.join(args.jobdir, '%d.log' % jobid)
         if not os.path.exists(logpath):
-            logging.debug('Cannot find log file %s' % logpath)
-            jobids['failed'].append(str(jobid))
+            #logging.debug('Cannot find log file %s' % logpath)
+            jobids['lost'].append(str(jobid))
             continue
         with open(logpath) as logfile:
             errormsg = None
@@ -378,11 +385,12 @@ def check_job_status(args):
                 if 'return value' in line:
                     if 'return value 0' in line:
                         finished = True
-                    else:
-                        errormsg = line
+#                    else:
+#                        errormsg = line
                     break
             if errormsg:
-                logging.debug(logpath + '\n   ' + errormsg)
+                if jobid > 131:
+                    logging.debug(logpath + '\n   ' + errormsg)
                 jobids['failed'].append(str(jobid))
             else:
                 if finished:
@@ -403,8 +411,9 @@ def submit(args, configs):
     scriptfile = os.path.join(os.path.dirname(__file__), 'run_postproc_condor.sh')
     macrofile = os.path.join(os.path.dirname(__file__), 'processor.py')
     metadatafile = os.path.join(args.jobdir, args.metadata)
-    joboutputdir = os.path.join(args.outputdir, 'pieces')
-
+    joboutputdir = os.path.join(args.outputdir, 'parts')
+    print("inside submit: joboutputdir \n", joboutputdir)
+    
     # create config file for the scripts
     configfiles = []
     if configs is not None:
@@ -520,6 +529,8 @@ queue jobid from {jobids_file}
            request_memory=args.request_memory,
            condor_extras=args.condor_extras,
            )
+    
+    print("inside submit: jobir (after submit.cmd text) \n", args.jobdir)
     condorfile = os.path.join(args.jobdir, 'submit.cmd')
     with open(condorfile, 'w') as f:
         f.write(condordesc)
@@ -535,10 +546,15 @@ queue jobid from {jobids_file}
 def run_add_weight(args):
     if args.weight_file:
         xsec_dict = parse_sample_xsec(args.weight_file)
-
+        #print("\n in run_add_weight: xsec_dict = \n", xsec_dict)
+    else:
+        print("\n in run_add_weight: no xsec_dict?????")
+        
     import subprocess
     md = load_metadata(args)
     parts_dir = os.path.join(args.outputdir, 'parts')
+    print("inside run_add_wieght: parts_dir \n", parts_dir)
+    
     status_file = os.path.join(parts_dir, '.success')
     if os.path.exists(status_file):
         return
@@ -551,24 +567,33 @@ def run_add_weight(args):
         if not os.path.exists(tmp_parts_dir):
             os.makedirs(tmp_parts_dir)
 
+    print("inside run_add_wieght: md['samples'] \n", md["samples"])
+    
     for samp in md['samples']:
         outfile = '{parts_dir}/{samp}_tree.root'.format(
             parts_dir=tmp_parts_dir if args.use_tmpdir else parts_dir, samp=samp)
+        print("outfile = ", outfile)
         cmd = 'haddnano.py {outfile} {outputdir}/pieces/{samp}_*_tree.root'.format(
             outfile=outfile, outputdir=args.outputdir, samp=samp)
         logging.debug('...' + cmd)
         p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        print("\n\n inside run_add_wieghts: outfile \n", outfile)
         log = p.communicate()[0]
         log_lower = log.lower().decode('utf-8')
         if 'error' in log_lower or 'fail' in log_lower:
             logging.error(log)
+        print("\n return code = ",p.returncode)
+        print("\n hadd log = ",log_lower)
         if p.returncode != 0:
             raise RuntimeError('Hadd failed on %s!' % samp)
 
         # add weight
         if args.weight_file:
             try:
+                print("\n xsec_dict: \n", xsec_dict)
+                print("\n samp = ", samp)
                 xsec = xsec_dict[samp]
+                #print("\n xsec = ", xsec)
                 if xsec is not None:
                     logging.info('Adding xsec weight to file %s, xsec=%f' % (outfile, xsec))
                     add_weight_branch(outfile, xsec)
@@ -591,14 +616,18 @@ def run_merge(args):
 
     status_file = os.path.join(args.outputdir, '.success')
     if os.path.exists(status_file):
+        print("ending run_merge: .success exists")
         return
 
     parts_dir = os.path.join(args.outputdir, 'parts')
+    print("\n\n\ Parts_dir: \n", parts_dir, "\n\n")
     allfiles = [f for f in os.listdir(parts_dir) if f.endswith('.root')]
     merge_dict = {}  # outname: expected files
     merge_dict_found = {}  # outname: [infile list]
+    print("\n\n args.datasets:\n",args.datasets)
     outtree_to_samples, _ = load_dataset_file(args.datasets)
-
+    print("\n\n\ outtree_to_samples: \n", outtree_to_samples , "\n\n")
+    
     if args.use_tmpdir:
         tmpdir = os.environ.get('TMPDIR', os.path.expandvars('/tmp/$USER'))
         tmp_outputdir = os.path.join(tmpdir, os.path.basename(args.outputdir))
@@ -633,6 +662,7 @@ def run_merge(args):
             p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             log = p.communicate()[0]
             if p.returncode != 0:
+                print(log)
                 raise RuntimeError('Hadd failed on %s!' % outname)
             log_lower = log.lower().decode('utf-8')
             if 'error' in log_lower or 'fail' in log_lower:
@@ -788,10 +818,12 @@ def run(args, configs=None):
     host = socket.getfqdn()
     if 'cern.ch' in host:
         args.use_tmpdir = True
+        print("finished if 'cern.ch' in host")
 
     if args.post:
         args.add_weight = True
         args.merge = True
+        print("finished if args.post")
 
     if args.add_weight:
         all_completed, _ = check_job_status(args)
@@ -803,11 +835,14 @@ def run(args, configs=None):
             if ans.lower()[0] != 'y':
                 return
         run_add_weight(args)
+        print("finished if args.add_weight, run_add_weight(args)")
 
     if args.merge:
         run_merge(args)
+        print("finished if args.merge, run_merge(args)")
 
     if args.add_weight or args.merge:
+        print("ending run in if args.add_weight or args.merge")
         return
 
     if args.submittype == 'interactive':

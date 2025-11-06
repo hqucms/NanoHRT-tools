@@ -11,7 +11,6 @@ keep PV_npvs
 # triggers
 keep HLT_Iso*Mu24
 keep HLT_IsoMu27
-keep HLT_Ele27_WPTight_Gsf
 keep HLT_Ele32_WPTight_Gsf
 keep HLT_Ele32_WPTight_Gsf_L1DoubleEG
 keep HLT_Ele35_WPTight_Gsf

@@ -1,0 +1,305 @@
+[2025-09-18 19:38:48,471] INFO: inputdir=/eos/user/h/hlarson/NanoHRT/_ak8_muon_20231/mc, year=20231, channel=muon, cat=mc, syst=syst
+[2025-09-18 19:38:48,471] INFO: Start making nominal trees with PDF/scale weights...
+[2025-09-18 19:38:48,471] INFO: Running w/ config: {'heavyFlavSFTree_cfg.json': {'sfbdt_threshold': -99, 'run_tagger': False, 'tagger_versions': ['V02b', 'V02c', 'V02d'], 'run_mass_regression': False, 'mass_regression_versions': ['V01a', 'V01b', 'V01c'], 'jec': False, 'jes': None, 'jes_source': '', 'jes_uncertainty_file_prefix': '', 'jer': 'nominal', 'jmr': None, 'met_unclustered': None, 'smearMET': False, 'applyHEMUnc': False, 'jetType': 'ak8', 'year': 20231, 'channel': 'muon'}}
+[2025-09-18 19:38:48,751] DEBUG: jobs__ak8_muon_20231/LHEWeight/0.log
+   009 (8419064.000.000) 07/28 10:30:14 Job was aborted.
+
+[2025-09-18 19:38:48,755] DEBUG: jobs__ak8_muon_20231/LHEWeight/1.log
+   009 (8419064.001.000) 07/28 10:30:14 Job was aborted.
+
+[2025-09-18 19:38:48,762] DEBUG: jobs__ak8_muon_20231/LHEWeight/2.log
+   009 (8419064.002.000) 07/28 10:30:14 Job was aborted.
+
+[2025-09-18 19:38:48,783] DEBUG: jobs__ak8_muon_20231/LHEWeight/3.log
+   009 (8419064.003.000) 07/28 10:30:14 Job was aborted.
+
+[2025-09-18 19:38:48,786] DEBUG: jobs__ak8_muon_20231/LHEWeight/4.log
+   009 (8419064.004.000) 07/28 10:30:14 Job was aborted.
+
+[2025-09-18 19:38:48,789] DEBUG: jobs__ak8_muon_20231/LHEWeight/5.log
+   009 (8419064.005.000) 07/28 10:30:14 Job was aborted.
+
+[2025-09-18 19:38:48,795] DEBUG: jobs__ak8_muon_20231/LHEWeight/6.log
+   009 (8419064.006.000) 07/28 10:30:14 Job was aborted.
+
+[2025-09-18 19:38:48,803] DEBUG: jobs__ak8_muon_20231/LHEWeight/8.log
+   009 (8419064.007.000) 07/28 10:30:14 Job was aborted.
+
+[2025-09-18 19:38:48,814] DEBUG: jobs__ak8_muon_20231/LHEWeight/9.log
+   009 (8419064.008.000) 07/28 10:30:14 Job was aborted.
+
+[2025-09-18 19:38:48,816] DEBUG: jobs__ak8_muon_20231/LHEWeight/11.log
+   009 (8419064.009.000) 07/28 10:30:14 Job was aborted.
+
+[2025-09-18 19:38:48,819] DEBUG: jobs__ak8_muon_20231/LHEWeight/12.log
+   009 (8419064.010.000) 07/28 10:30:14 Job was aborted.
+
+[2025-09-18 19:38:48,850] DEBUG: jobs__ak8_muon_20231/LHEWeight/15.log
+   009 (8419064.011.000) 07/28 10:33:02 Job was aborted.
+
+[2025-09-18 19:38:48,856] DEBUG: jobs__ak8_muon_20231/LHEWeight/18.log
+   009 (8419064.012.000) 07/28 10:30:14 Job was aborted.
+
+[2025-09-18 19:38:48,863] DEBUG: jobs__ak8_muon_20231/LHEWeight/19.log
+   009 (8419064.013.000) 07/28 10:30:14 Job was aborted.
+
+[2025-09-18 19:38:48,866] DEBUG: jobs__ak8_muon_20231/LHEWeight/20.log
+   009 (8419064.014.000) 07/28 10:30:14 Job was aborted.
+
+[2025-09-18 19:38:48,868] DEBUG: jobs__ak8_muon_20231/LHEWeight/21.log
+   009 (8419064.015.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:48,871] DEBUG: jobs__ak8_muon_20231/LHEWeight/23.log
+   009 (8419064.016.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:48,877] DEBUG: jobs__ak8_muon_20231/LHEWeight/24.log
+   009 (8419064.017.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:48,880] DEBUG: jobs__ak8_muon_20231/LHEWeight/25.log
+   009 (8419064.018.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:48,883] DEBUG: jobs__ak8_muon_20231/LHEWeight/26.log
+   009 (8419064.019.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:48,889] DEBUG: jobs__ak8_muon_20231/LHEWeight/27.log
+   009 (8419064.020.000) 07/28 10:33:02 Job was aborted.
+
+[2025-09-18 19:38:48,897] DEBUG: jobs__ak8_muon_20231/LHEWeight/28.log
+   009 (8419064.021.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:48,900] DEBUG: jobs__ak8_muon_20231/LHEWeight/29.log
+   009 (8419064.022.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:48,915] DEBUG: jobs__ak8_muon_20231/LHEWeight/33.log
+   009 (8419064.023.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:48,920] DEBUG: jobs__ak8_muon_20231/LHEWeight/35.log
+   009 (8419064.024.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:48,926] DEBUG: jobs__ak8_muon_20231/LHEWeight/36.log
+   009 (8419064.025.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:48,934] DEBUG: jobs__ak8_muon_20231/LHEWeight/38.log
+   009 (8419064.026.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:48,949] DEBUG: jobs__ak8_muon_20231/LHEWeight/40.log
+   009 (8419064.027.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:48,952] DEBUG: jobs__ak8_muon_20231/LHEWeight/41.log
+   009 (8419064.028.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:48,955] DEBUG: jobs__ak8_muon_20231/LHEWeight/46.log
+   009 (8419064.029.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:48,966] DEBUG: jobs__ak8_muon_20231/LHEWeight/48.log
+   009 (8419064.030.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:48,968] DEBUG: jobs__ak8_muon_20231/LHEWeight/49.log
+   009 (8419064.031.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:48,971] DEBUG: jobs__ak8_muon_20231/LHEWeight/50.log
+   009 (8419064.032.000) 07/28 10:33:02 Job was aborted.
+
+[2025-09-18 19:38:48,976] DEBUG: jobs__ak8_muon_20231/LHEWeight/51.log
+   009 (8419064.033.000) 07/28 10:33:02 Job was aborted.
+
+[2025-09-18 19:38:48,984] DEBUG: jobs__ak8_muon_20231/LHEWeight/52.log
+   009 (8419064.034.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:48,986] DEBUG: jobs__ak8_muon_20231/LHEWeight/53.log
+   009 (8419064.035.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:48,989] DEBUG: jobs__ak8_muon_20231/LHEWeight/54.log
+   009 (8419064.036.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:48,996] DEBUG: jobs__ak8_muon_20231/LHEWeight/55.log
+   009 (8419064.037.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:49,004] DEBUG: jobs__ak8_muon_20231/LHEWeight/57.log
+   009 (8419064.038.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:49,006] DEBUG: jobs__ak8_muon_20231/LHEWeight/58.log
+   009 (8419064.039.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:49,008] DEBUG: jobs__ak8_muon_20231/LHEWeight/61.log
+   009 (8419064.040.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:49,011] DEBUG: jobs__ak8_muon_20231/LHEWeight/62.log
+   009 (8419064.041.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:49,013] DEBUG: jobs__ak8_muon_20231/LHEWeight/65.log
+   009 (8419064.042.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:49,015] DEBUG: jobs__ak8_muon_20231/LHEWeight/66.log
+   009 (8419064.043.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:49,018] DEBUG: jobs__ak8_muon_20231/LHEWeight/68.log
+   009 (8419064.044.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:49,025] DEBUG: jobs__ak8_muon_20231/LHEWeight/69.log
+   009 (8419064.045.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:49,032] DEBUG: jobs__ak8_muon_20231/LHEWeight/71.log
+   009 (8419064.046.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:49,042] DEBUG: jobs__ak8_muon_20231/LHEWeight/72.log
+   009 (8419064.047.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:49,045] DEBUG: jobs__ak8_muon_20231/LHEWeight/74.log
+   009 (8419064.048.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:49,047] DEBUG: jobs__ak8_muon_20231/LHEWeight/75.log
+   009 (8419064.049.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:49,062] DEBUG: jobs__ak8_muon_20231/LHEWeight/76.log
+   009 (8419064.050.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:49,067] DEBUG: jobs__ak8_muon_20231/LHEWeight/77.log
+   009 (8419064.051.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:49,082] DEBUG: jobs__ak8_muon_20231/LHEWeight/78.log
+   009 (8419064.052.000) 07/28 10:30:15 Job was aborted.
+
+[2025-09-18 19:38:49,093] DEBUG: jobs__ak8_muon_20231/LHEWeight/79.log
+   009 (8419064.053.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,100] DEBUG: jobs__ak8_muon_20231/LHEWeight/81.log
+   009 (8419064.054.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,110] DEBUG: jobs__ak8_muon_20231/LHEWeight/86.log
+   009 (8419064.055.000) 07/28 10:33:02 Job was aborted.
+
+[2025-09-18 19:38:49,114] DEBUG: jobs__ak8_muon_20231/LHEWeight/87.log
+   009 (8419064.056.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,128] DEBUG: jobs__ak8_muon_20231/LHEWeight/89.log
+   009 (8419064.057.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,133] DEBUG: jobs__ak8_muon_20231/LHEWeight/90.log
+   009 (8419064.058.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,137] DEBUG: jobs__ak8_muon_20231/LHEWeight/91.log
+   009 (8419064.059.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,150] DEBUG: jobs__ak8_muon_20231/LHEWeight/93.log
+   009 (8419064.060.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,154] DEBUG: jobs__ak8_muon_20231/LHEWeight/94.log
+   009 (8419064.061.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,158] DEBUG: jobs__ak8_muon_20231/LHEWeight/95.log
+   009 (8419064.062.000) 07/28 10:33:02 Job was aborted.
+
+[2025-09-18 19:38:49,164] DEBUG: jobs__ak8_muon_20231/LHEWeight/97.log
+   009 (8419064.063.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,167] DEBUG: jobs__ak8_muon_20231/LHEWeight/98.log
+   009 (8419064.064.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,170] DEBUG: jobs__ak8_muon_20231/LHEWeight/99.log
+   009 (8419064.065.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,177] DEBUG: jobs__ak8_muon_20231/LHEWeight/100.log
+   009 (8419064.066.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,180] DEBUG: jobs__ak8_muon_20231/LHEWeight/101.log
+   009 (8419064.067.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,183] DEBUG: jobs__ak8_muon_20231/LHEWeight/102.log
+   009 (8419064.068.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,186] DEBUG: jobs__ak8_muon_20231/LHEWeight/104.log
+   009 (8419064.069.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,189] DEBUG: jobs__ak8_muon_20231/LHEWeight/105.log
+   009 (8419064.070.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,199] DEBUG: jobs__ak8_muon_20231/LHEWeight/106.log
+   009 (8419064.071.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,206] DEBUG: jobs__ak8_muon_20231/LHEWeight/108.log
+   009 (8419064.072.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,215] DEBUG: jobs__ak8_muon_20231/LHEWeight/109.log
+   009 (8419064.073.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,219] DEBUG: jobs__ak8_muon_20231/LHEWeight/110.log
+   009 (8419064.074.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,225] DEBUG: jobs__ak8_muon_20231/LHEWeight/111.log
+   009 (8419064.075.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,236] DEBUG: jobs__ak8_muon_20231/LHEWeight/112.log
+   009 (8419064.076.000) 07/28 10:33:02 Job was aborted.
+
+[2025-09-18 19:38:49,244] DEBUG: jobs__ak8_muon_20231/LHEWeight/113.log
+   009 (8419064.077.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,254] DEBUG: jobs__ak8_muon_20231/LHEWeight/115.log
+   009 (8419064.078.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,260] DEBUG: jobs__ak8_muon_20231/LHEWeight/116.log
+   009 (8419064.079.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,280] DEBUG: jobs__ak8_muon_20231/LHEWeight/122.log
+   009 (8419064.080.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,295] DEBUG: jobs__ak8_muon_20231/LHEWeight/123.log
+   009 (8419064.081.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,299] DEBUG: jobs__ak8_muon_20231/LHEWeight/124.log
+   009 (8419064.082.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,302] DEBUG: jobs__ak8_muon_20231/LHEWeight/125.log
+   009 (8419064.083.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,305] DEBUG: jobs__ak8_muon_20231/LHEWeight/127.log
+   009 (8419064.084.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,310] DEBUG: jobs__ak8_muon_20231/LHEWeight/128.log
+   009 (8419064.085.000) 07/28 10:33:02 Job was aborted.
+
+[2025-09-18 19:38:49,314] DEBUG: jobs__ak8_muon_20231/LHEWeight/129.log
+   009 (8419064.086.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,317] DEBUG: jobs__ak8_muon_20231/LHEWeight/130.log
+   009 (8419064.087.000) 07/28 10:33:02 Job was aborted.
+
+[2025-09-18 19:38:49,320] DEBUG: jobs__ak8_muon_20231/LHEWeight/131.log
+   009 (8419064.088.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,324] DEBUG: jobs__ak8_muon_20231/LHEWeight/240.log
+   009 (8419064.089.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,327] DEBUG: jobs__ak8_muon_20231/LHEWeight/241.log
+   009 (8419064.090.000) 07/28 10:33:02 Job was aborted.
+
+[2025-09-18 19:38:49,330] DEBUG: jobs__ak8_muon_20231/LHEWeight/242.log
+   009 (8419064.091.000) 07/28 10:33:02 Job was aborted.
+
+[2025-09-18 19:38:49,349] DEBUG: jobs__ak8_muon_20231/LHEWeight/244.log
+   009 (8419064.092.000) 07/28 10:33:02 Job was aborted.
+
+[2025-09-18 19:38:49,357] DEBUG: jobs__ak8_muon_20231/LHEWeight/245.log
+   009 (8419064.093.000) 07/28 10:33:02 Job was aborted.
+
+[2025-09-18 19:38:49,360] DEBUG: jobs__ak8_muon_20231/LHEWeight/246.log
+   009 (8419064.094.000) 07/28 10:30:16 Job was aborted.
+
+[2025-09-18 19:38:49,361] INFO: Job jobs__ak8_muon_20231/LHEWeight status: {'failed': 95, 'lost': 251}
+finished if 'cern.ch' in host
+finished if args.post
+
+
+ inside load_metadata: metadatafile 
+ jobs__ak8_muon_20231/LHEWeight/metadata.json
+Warning! There are jobs failed or still running. Continue adding weights? [yn] Traceback (most recent call last):
+  File "runHeavyFlavTrees.py", line 237, in <module>
+    main()
+  File "runHeavyFlavTrees.py", line 233, in main
+    _process(opts)
+  File "runHeavyFlavTrees.py", line 118, in _process
+    run(opts, configs={hrt_cfgname: cfg})
+  File "/afs/cern.ch/user/h/hlarson/topwSF/CMSSW_12_6_4/src/PhysicsTools/NanoHRTTools/run/runPostProcessing.py", line 833, in run
+    ans = input('Warning! There are jobs failed or still running. Continue adding weights? [yn] ')
+KeyboardInterrupt
